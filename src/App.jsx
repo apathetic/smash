@@ -10,7 +10,9 @@ function App() {
     <>
       <div>
         <h1>Smash.</h1>
+        <button onClick={()=>setCount((count) => count+1)}>{count}</button>
       </div>
+      
     </>
   )
 }
