@@ -1,0 +1,38 @@
+// uno.config.ts
+import { defineConfig, presetUno, presetTypography } from 'unocss';
+
+export default defineConfig({
+
+  rules: [
+
+    ['my-custom-width', {
+      'width': '27rem'
+    }],
+
+    ['another-ex', {
+      'min-height': '20em'
+    }],
+
+  ],
+  shortcuts: {
+    'items':       'flex flex-wrap gap-1',
+    'container':   'max-w-3xl m-auto px-8',
+    'bg-base':     'bg-white        dark:bg-[#1e1e20]',
+    'color-base':  'text-[#181818]  dark:text-[#ddd]',
+
+  },
+  theme: {
+    breakpoints: {
+      'sm': '480px',
+      'md': '480px',
+      'lg': '960px',
+    },
+    colors: {
+      'dark-pink': '#d5008f'
+    }
+  },
+  presets: [
+    presetTypography(),
+    presetUno({ dark: 'media' }),
+  ]
+})
