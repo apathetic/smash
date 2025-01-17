@@ -13,6 +13,7 @@
     "@solidjs/start": "^1.0.11",
     "@unocss/reset": "^0.62.4",
     "solid-js": "^1.9.3",
+    "three": "^0.172.0",
     "unocss": "^0.65.1",
     "vinxi": "^0.4.3"
   },

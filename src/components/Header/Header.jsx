@@ -10,7 +10,7 @@ const Header = () => {
       : "border-transparent hover:border-sky-600";
 
   return (
-    <header class="sm:flex items-center text-center md:text-right w-full">
+    <header class="sm:flex items-center text-center md:text-right w-full z-100">
       <A class="no-underline inline-block [&>svg]:w-8 [&>svg]:h-8" href="/home" innerHTML={logo} />
 
       <nav class="w-full text-sm lg:text-right font-extralight">
