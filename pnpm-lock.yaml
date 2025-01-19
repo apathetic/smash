@@ -14,6 +14,9 @@ dependencies:
   '@unocss/reset':
     specifier: ^0.62.4
     version: 0.62.4
+  oxlint:
+    specifier: ^0.15.7
+    version: 0.15.7
   solid-js:
     specifier: ^1.9.3
     version: 1.9.4
@@ -26,11 +29,6 @@ dependencies:
   vinxi:
     specifier: ^0.4.3
     version: 0.4.3(typescript@5.7.3)
-
-devDependencies:
-  oxlint:
-    specifier: ^0.15.7
-    version: 0.15.7
 
 packages:
 
@@ -1251,7 +1249,7 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/darwin-x64@0.15.7:
@@ -1259,7 +1257,7 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/linux-arm64-gnu@0.15.7:
@@ -1267,7 +1265,7 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/linux-arm64-musl@0.15.7:
@@ -1275,7 +1273,7 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/linux-x64-gnu@0.15.7:
@@ -1283,7 +1281,7 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/linux-x64-musl@0.15.7:
@@ -1291,7 +1289,7 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/win32-arm64@0.15.7:
@@ -1299,7 +1297,7 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@oxlint/win32-x64@0.15.7:
@@ -1307,7 +1305,7 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: true
+    dev: false
     optional: true
 
   /@parcel/watcher-android-arm64@2.5.0:
@@ -4149,7 +4147,7 @@ packages:
       '@oxlint/linux-x64-musl': 0.15.7
       '@oxlint/win32-arm64': 0.15.7
       '@oxlint/win32-x64': 0.15.7
-    dev: true
+    dev: false
 
   /package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
