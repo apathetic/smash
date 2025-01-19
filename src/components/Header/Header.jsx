@@ -1,5 +1,5 @@
 import { useLocation, A } from "@solidjs/router";
-import logo from '~/assets/images/solid.svg?raw';
+import logo from "~/assets/images/solid.svg?raw";
 
 
 const Header = () => {

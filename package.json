@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "lint": "oxlint . --fix -D correctness"
   },
   "dependencies": {
     "@solidjs/router": "^0.15.2",
     "@solidjs/start": "^1.0.11",
     "@unocss/reset": "^0.62.4",
+    "oxlint": "^0.15.7",
     "solid-js": "^1.9.3",
     "three": "^0.172.0",
     "unocss": "^0.65.1",

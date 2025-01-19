@@ -1,10 +1,10 @@
-import { Router, Route, Navigate, useNavigate } from "@solidjs/router";
+import { Router, Route, Navigate } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Suspense, isServer } from 'solid-js/web';
-import { Header } from './components/Header';
-import '@unocss/reset/tailwind.css'
+import { Suspense } from "solid-js/web";
+import { Header } from "./components/Header";
+import "@unocss/reset/tailwind.css"
 import "uno.css"
-import './app.css';
+import "./app.css";
 
 
 // const check = isServer ? () => {} : () => {

@@ -1,1 +1,1 @@
-export {gameState} from './game-state.js';
+export { gameState } from "./gameState.js";
