@@ -6,12 +6,16 @@ export default defineConfig({
   // ssr: true, // render things server-side where possible. Requires that the code is isomorphic, etc
   vite: {
     plugins: [unoCSS()],
-    ssr: {
-      // external: [...]
-    },
+
+    // NOTE: this is already a built-in alias:
+    // resolve: {
+    //   alias: {
+    //     "~/*": "./src/"
+    //   }
+    // },
   },
-  // server: {
+  server: {
   //   preset: 'vercel',
-  //   compatibilityDate: '2025-01-01'
-  // }
+    compatibilityDate: '2025-01-01'
+  }
 });

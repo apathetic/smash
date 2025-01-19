@@ -25,7 +25,7 @@ const Layout = ({ children }) => (
 export default function App() {
   return (
     <Router root={Layout}>
-      <Route path="/" component={() => <Navigate href="/home" />} />
+      <Route path="/" component={() => <Navigate href="/home" />} /> {/* example redirect. useful if we want to check user/state/auth/etc/etc */}
       <Route path="*" load={check}><FileRoutes /></Route>
     </Router>
   );
