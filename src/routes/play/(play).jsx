@@ -6,7 +6,7 @@ export default function Play() {
     <Page>
       <ThreeStage />
       
-      <div className='ui' class={'relative z-2'}>
+      <div className='ui' class='relative z-2'>
         some threejs thing
       </div>
     </Page>
