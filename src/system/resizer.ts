@@ -1,8 +1,14 @@
+import type { PerspectiveCamera, WebGLRenderer } from 'three';
 
-const createResizer = ({ element, camera, renderer }) => {
+interface ResizerProps {
+  camera: PerspectiveCamera;
+  renderer: WebGLRenderer;
+}
+
+function createResizer({ camera, renderer }: ResizerProps) {
   const onResize = () => {
-    const w = element.offsetWidth;
-    const h = element.offsetHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
@@ -19,6 +25,4 @@ const createResizer = ({ element, camera, renderer }) => {
 };
 
 
-export {
-  createResizer
-};
+export { createResizer };
