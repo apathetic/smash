@@ -4,6 +4,7 @@ import { createTimeline } from './loop';
 import { createControls } from './controls';
 import { createPhysics } from './physics';
 
+
 // import Ground from '../assets/models/ground/ground';
 
 
@@ -23,19 +24,42 @@ function initWorld(canvas: HTMLCanvasElement) {
   timeline.add(controls as any);
 
 
-  function addToWorld(item: any) {
+  function add(item: any) {
     // physics.add(item);
     timeline.add(item);
     scene.add(item);
   }
 
-  function startWorld() {
+  function start() {
     // physics.start();
     timeline.start();
   }
 
-  return { addToWorld, startWorld };
+  return { add, start, /* stop, reset */ };
 };
 
 
-export { initWorld };
+
+
+let worldHandle: ReturnType<typeof initWorld>;
+function useWorld(canvas: HTMLCanvasElement) {
+
+  // OPTION 1
+  // if it hasn't yet been initialized
+  // if (!worldHandle) {
+  //   ....
+
+  // OPTION 2
+  // alternatively - we could assume that if there's a canvas, it'll need to be (re)initialized.
+  // Could also use a flag or something more sophisticated in the args.
+  // As it currently stands, this _will_ be (re)initialized each time the user clicks away from Play and back... b/c we pass in a new canvas in the onMount.
+  if (canvas) {
+    worldHandle = initWorld(canvas);
+  }
+
+  return worldHandle;
+}
+
+
+
+export { useWorld };

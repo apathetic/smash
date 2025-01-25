@@ -1,5 +1,8 @@
 import { onMount } from "solid-js";
-import { initWorld } from "~/system/world";
+import { useWorld } from "~/system/world";
+
+
+
 import { Cube } from '../../assets/models/Cube'; // i know not a model, but need a place for these
 // import RagDoll from '../models/RagDoll';
 
@@ -8,11 +11,10 @@ const Stage = () => {
   let canvas;
 
   onMount(() => {
-    const { addToWorld, startWorld } = initWorld(canvas);
     const cube = Cube();
-
-    addToWorld(cube);
-    startWorld();
+    const { add, start } = useWorld(canvas);
+    add(cube);
+    start();
   });
 
   return (
