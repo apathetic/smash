@@ -15,30 +15,22 @@ function createTimeline({ camera, scene, renderer }: TimelineProps) {
   const timer = new Timer();
   const timelineItems: IUpdatable[] = [];
 
-
-  const tick = () => {
-    // physics.update();
-    timer.update();
-    const delta = timer.getDelta();
-
-    timelineItems.forEach((item) => item.tick(delta));
-  };
-
-  const start = () => {
+  function start() {
     renderer.setAnimationLoop(() => {
-      tick();
+      const delta = timer.update().getDelta();
+      // physics.update();
+      timelineItems.forEach((item) => item.update(delta));
       renderer.render(scene, camera);
     });
-  };
+  }
 
-  const stop = () => {
+  function stop() {
     renderer.setAnimationLoop(null);
   };
 
-  const add = (item: IUpdatable) => {
+  function add(item: IUpdatable) {
     timelineItems.push(item);
   };
-
 
   return { start, stop, add };
 };

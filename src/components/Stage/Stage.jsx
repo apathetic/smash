@@ -3,16 +3,19 @@ import { useWorld } from "~/system/world";
 
 
 
-import { Cube } from '../../assets/models/Cube'; // i know not a model, but need a place for these
-// import RagDoll from '../models/RagDoll';
+import { Cube } from '~/game/objects/Cube';
+// import { RagDoll } from '~/game/ragdoll';
 
 
 const Stage = () => {
   let canvas;
 
   onMount(() => {
-    const cube = Cube();
     const { add, start } = useWorld(canvas);
+
+    const cube = /* new */ Cube();
+    // const ragdoll = new RagDoll();
+
     add(cube);
     start();
   });

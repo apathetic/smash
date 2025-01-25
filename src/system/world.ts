@@ -42,20 +42,15 @@ function initWorld(canvas: HTMLCanvasElement) {
 
 
 let worldHandle: ReturnType<typeof initWorld>;
+
 function useWorld(canvas: HTMLCanvasElement) {
-
-  // OPTION 1
-  // if it hasn't yet been initialized
-  // if (!worldHandle) {
-  //   ....
-
-  // OPTION 2
-  // alternatively - we could assume that if there's a canvas, it'll need to be (re)initialized.
-  // Could also use a flag or something more sophisticated in the args.
-  // As it currently stands, this _will_ be (re)initialized each time the user clicks away from Play and back... b/c we pass in a new canvas in the onMount.
   if (canvas) {
     worldHandle = initWorld(canvas);
   }
+
+  // if (!worldHandle) {
+  //   console.log('world init needs to be called with a canvas before use');
+  // }
 
   return worldHandle;
 }
