@@ -1,42 +1,18 @@
-import RAPIER from '@dimforge/rapier3d';
+import rapier from '@dimforge/rapier3d';
 
 import {
   Mesh,
   MathUtils,
   BoxGeometry,
-  MeshNormalMaterial,
-  Object3D
+  MeshNormalMaterial
 } from 'three';
-import { IUpdatable } from '~/types';
-
-/**
-  * Cube
-  *
-  * A Cube class that extends Object3D and adds an update method (IUpdatable).
-  */
-// export class CubeSS extends Object3D implements IUpdatable {
-//   // public cube: Mesh;
-//   private rotationAmount: number;
-
-//   constructor() {
-//     super();
-//     const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
-//     const material = new MeshNormalMaterial();
-//     const cube = new Mesh(geometry, material);
-//     const rotation = MathUtils.degToRad(30);
-
-//     this.rotationAmount = rotation;
-//   }
-
-//   update(delta: number) {
-//     this.cube.rotation.x += this.rotationAmount * delta;
-//     this.cube.rotation.y += this.rotationAmount * delta;
-//   };
-// }
+import { useWorld } from '~/system/world';
+import { IUpdatable } from '~/types.d';
 
 
-// or, keep it as a function:
-///////////////////////////
+export interface IWorldEntity extends IUpdatable {
+  setup: (world: any) => void;
+}
 
 
 
@@ -49,30 +25,90 @@ When generating a game object, it requires 2 elements:
 
 
 
-export const Cube = () => {
-  
+/// Cube AS A CLASS
+// --------------------------------------------------
+
+/**
+  * Cube
+  *
+  * A Cube class that extends Mesh and adds an update method (IWorldEntity).
+  * And maybe a physics setup method. TBD.
+  */
+export class Cube extends Mesh implements IWorldEntity {
+  private rotateBy: number = MathUtils.degToRad(30);
+  public collider: any;
+
+
+  constructor() {
+    const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
+    const material = new MeshNormalMaterial();
+
+    super(geometry, material);
+
+
+    this.collider = rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5);
+
+
+    // OPTION 1
+    //   -- assuems world will have been setup by this point
+    //   -- not wrong, but a hook is really weird in a class
+    // const { physicsWorld } = useWorld();
+    // physicsWorld.add(collider);
+  };
+
+  // OPTION 2
+  // or addPhysics() or ...
+  setup(physicsWorld: any) {
+    physicsWorld.add(this.collider);
+  }
+
+  update(delta: number) {
+    this.rotation.x += this.rotateBy * delta;
+    this.rotation.y += this.rotateBy * delta;
+  };
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/// Cube AS A FUNCTION
+// --------------------------------------------------
+
+export interface IWorldEntityII {
+  id: string;
+  mesh: Mesh;
+  collider: any;
+  update: (delta: number) => void;
+  setup: (world: any) => void;
+}
+
+export const CubeII = () => {
   const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
   const material = new MeshNormalMaterial();
   const rotation = MathUtils.degToRad(30);
 
-  // const cube = new Mesh(geometry, material) as unknown as IUpdatable;
-  // cube.update = (delta) => {
-  //   cube.rotation.x += rotation * delta;
-  //   cube.rotation.y += rotation * delta;
-  // };
+    // OPTION 1
+    // const { physicsWorld } = useWorld(); // assumes world will have been setup by this point
+    // physicsWorld.add(collider);
 
-
-
-  const cube = {
+  const cube: IWorldEntityII = {
     id: 'cube',
     mesh: new Mesh(geometry, material),
-    collider: RAPIER.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5)
-  }  as unknown as IUpdatable;
+    collider: rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5),
 
-  cube.update = (delta: number) => {
-    cube.mesh.rotation.x += rotation * delta;
-    cube.mesh.rotation.y += rotation * delta;
+    // OPTION 2
+    // allows for async setup. more verbose.
+    setup: (physicsWorld: any) => { //  (or setupPhysics etc)
+      physicsWorld.add(cube.collider);
+    },
+
+    update: (delta: number) => {
+      cube.mesh.rotation.x += rotation * delta;
+      cube.mesh.rotation.y += rotation * delta;
+    }
   };
+
 
   return cube;
 };

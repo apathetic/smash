@@ -13,7 +13,7 @@ const Stage = () => {
   onMount(() => {
     const { add, start } = useWorld(canvas);
 
-    const cube = /* new */ Cube();
+    const cube = new Cube();
     // const ragdoll = new RagDoll();
 
     add(cube);
@@ -21,7 +21,7 @@ const Stage = () => {
   });
 
   return (
-    <canvas ref={canvas} class="fixed  top-0 left-0 w-full h-full XXXinset-0 z-1 bg-red"></canvas>
+    <canvas ref={canvas} class="fixed inset-0 z-1 bg-red"></canvas>
   );
 }
 

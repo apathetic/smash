@@ -1,8 +1,8 @@
-import RAPIER from '@dimforge/rapier3d';
+import rapier from '@dimforge/rapier3d';
 
 const createPhysics = () => {
   const gravity = { x: 0.0, y: -9.81, z: 0.0 };
-  const physicsWorld = new RAPIER.World(gravity);
+  const physicsWorld = new rapier.World(gravity);
   const dynamicBodies = [] as any;
   //TODO: tune physics props
   // - broadpass algorithms
@@ -20,19 +20,19 @@ const createPhysics = () => {
   }
 
   function add(item: any) {
+    const xxx = item.physics;
     // physicsWorld.add()// add phys obj
     console.log("PHYSICS: ", item);
 
-    // const body = 
+    // const body =
 
-  //  // const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x0000FF}))
-  //  // cubeMesh.castShadow = true
-  //  // scene.add(cubeMesh)
+    // const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x0000FF}))
+    // cubeMesh.castShadow = true
+    // scene.add(cubeMesh)
 
-    // const cubeBody = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(-4, 5, 2).setCanSleep(false))
+    //   const cubeBody = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(-4, 5, 2).setCanSleep(false))
     // const cubeShape = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setMass(1).setRestitution(0.5)
     // world.createCollider(cubeShape, cubeBody)
-    
     // dynamicBodies.push([cubeMesh, cubeBody])
 
 
