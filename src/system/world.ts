@@ -1,4 +1,3 @@
-import { Scene } from 'three';
 import { createCamera, createRenderer, createLights, createScene } from './scene';
 import { createResizer } from './resizer';
 import { createTimeline } from './loop';
@@ -12,14 +11,13 @@ import { createPhysics } from './physics';
  * The return object exposes a number of function for interacting
  * with the World: `add` `start`, `physics`, etc
  */
-// let worldHandle: World;
 let worldHandle: ReturnType<typeof initWorld>;
 
 
 function initWorld(canvas: HTMLCanvasElement) {
-  const scene = createScene();
+  const scene = createScene(); // or graphicsWorld ?
   const camera = createCamera();
-  const physics = createPhysics();
+  const physics = createPhysics(); // physicsWorld ?
   const renderer = createRenderer(canvas);
   const controls = createControls(camera, canvas);
   const xxremove = createResizer({ camera, renderer });
@@ -31,6 +29,7 @@ function initWorld(canvas: HTMLCanvasElement) {
   scene.add(light, ambientLight/* , ground */);
   timeline.add(controls as any);
 
+
   function add(item: any) {
     console.log("WORLD:", item);
 
@@ -39,58 +38,24 @@ function initWorld(canvas: HTMLCanvasElement) {
     scene.add(item.mesh);
   }
 
+  function remove(item: any) {
+    //
+  }
+
   function start() {
     timeline.start();
   }
 
-  return { add, start, /* stop, reset */ physics };
+  function stop() {
+    //
+  }
+
+  function reset() {
+    //
+  }
+
+  return { add, start, stop, reset };
 };
-
-/*
-class World {
-  public scene: Scene; // or graphicsWorld ?
-  public timeline: ReturnType<typeof createTimeline>;
-  public physics: ReturnType<typeof createPhysics>;
-
-  constructor(canvas: HTMLCanvasElement) {
-    const scene = createScene();
-    const camera = createCamera();
-    const physics = createPhysics();
-    const renderer = createRenderer(canvas);
-    const controls = createControls(camera, canvas);
-    const xxremove = createResizer({ camera, renderer });
-    const timeline = createTimeline({ camera, scene, renderer, physics });
-    const { ambientLight, light } = createLights();
-
-    // const ground = Ground();
-
-    scene.add(light, ambientLight/* , ground * /);
-    timeline.add(controls as any);
-
-    this.scene = scene;
-    this.timeline = timeline;
-    this.physics = physics;
-  }
-
-  add(item: any) {
-    // this.physics.add(item);
-    this.timeline.add(item);
-    this.scene.add(item);
-  }
-
-  start() {
-    // this.physics.start();
-    this.timeline.start();
-  }
-};
-
-*/
-
-
-
-
-
-
 
 
 /**
@@ -106,9 +71,9 @@ function useWorld(canvas?: HTMLCanvasElement) {
     worldHandle = initWorld(canvas);
   }
 
-  // if (!worldHandle) {
-  //   console.log('world init needs to be called with a canvas before use');
-  // }
+  if (!worldHandle) {
+    throw new Error('useWorld needs to be called with a `canvas` before use');
+  }
 
   return worldHandle;
 }

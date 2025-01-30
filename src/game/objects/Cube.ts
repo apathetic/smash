@@ -1,20 +1,5 @@
 import rapier from '@dimforge/rapier3d';
-
-import {
-  Mesh,
-  MathUtils,
-  BoxGeometry,
-  MeshNormalMaterial
-} from 'three';
-import { useWorld } from '~/system/world';
-import { IUpdatable } from '~/types.d';
-
-
-export interface IWorldEntity extends IUpdatable {
-  setup: (world: any) => void;
-}
-
-
+import { Mesh, MathUtils, BoxGeometry, MeshNormalMaterial } from 'three';
 
 /*
 // PSEUDO
@@ -23,59 +8,7 @@ When generating a game object, it requires 2 elements:
 2. Model (Physics Collider)
 */
 
-
-
-/// Cube AS A CLASS
-// --------------------------------------------------
-
-/**
-  * Cube
-  *
-  * A Cube class that extends Mesh and adds an update method (IWorldEntity).
-  * And maybe a physics setup method. TBD.
-  */
-export class Cube extends Mesh implements IWorldEntity {
-  private rotateBy: number = MathUtils.degToRad(30);
-  public collider: any;
-
-
-  constructor() {
-    const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
-    const material = new MeshNormalMaterial();
-
-    super(geometry, material);
-
-
-    this.collider = rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5);
-
-
-    // OPTION 1
-    //   -- assuems world will have been setup by this point
-    //   -- not wrong, but a hook is really weird in a class
-    // const { physicsWorld } = useWorld();
-    // physicsWorld.add(collider);
-  };
-
-  // OPTION 2
-  // or addPhysics() or ...
-  setup(physicsWorld: any) {
-    physicsWorld.add(this.collider);
-  }
-
-  update(delta: number) {
-    this.rotation.x += this.rotateBy * delta;
-    this.rotation.y += this.rotateBy * delta;
-  };
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/// Cube AS A FUNCTION
-// --------------------------------------------------
-
-export interface IWorldEntityII {
+export interface IWorldEntity {
   id: string;
   mesh: Mesh;
   collider: any;
@@ -83,26 +16,32 @@ export interface IWorldEntityII {
   setup: (world: any) => void;
 }
 
-export const CubeII = () => {
+export const Cube = () => {
   const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
   const material = new MeshNormalMaterial();
   const rotation = MathUtils.degToRad(30);
+  const mesh = new Mesh(geometry, material);
 
-    // OPTION 1
-    // const { physicsWorld } = useWorld(); // assumes world will have been setup by this point
-    // physicsWorld.add(collider);
+    // cubeMesh.castShadow = true
 
-  const cube: IWorldEntityII = {
+  const collider = rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5);
+  const rigidBody = rapier.RigidBodyDesc.dynamic().setTranslation(0, 5, 0).setCanSleep(false);
+
+  const cube: IWorldEntity = {
     id: 'cube',
-    mesh: new Mesh(geometry, material),
-    collider: rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5),
+    mesh,
+    collider,
+    // or setupPhysics() etc. physics(), or addPhysics()
+    setup: (physicsWorld: any) => {
+      const body = physicsWorld.createRigidBody(rigidBody)
+      physicsWorld.createCollider(collider, body)
 
-    // OPTION 2
-    // allows for async setup. more verbose.
-    setup: (physicsWorld: any) => { //  (or setupPhysics etc)
-      physicsWorld.add(cube.collider);
+      return([mesh, body]);
     },
 
+    // [question]
+    // question: is this actually... necessary?  worn't the physics system handle how the cube moves?
+    // and, if an object had its own animation, isn't that handled in the model?
     update: (delta: number) => {
       cube.mesh.rotation.x += rotation * delta;
       cube.mesh.rotation.y += rotation * delta;
