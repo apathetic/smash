@@ -15,7 +15,7 @@ function initWorld(canvas: HTMLCanvasElement) {
   const renderer = createRenderer(canvas);
   const controls = createControls(camera, canvas);
   const xxremove = createResizer({ camera, renderer });
-  const timeline = createTimeline({ camera, scene, renderer /* physics */ });
+  const timeline = createTimeline({ camera, scene, renderer, physics });
   const { ambientLight, light } = createLights();
 
   // const ground = Ground();
@@ -23,15 +23,15 @@ function initWorld(canvas: HTMLCanvasElement) {
   scene.add(light, ambientLight/* , ground */);
   timeline.add(controls as any);
 
-
   function add(item: any) {
-    // physics.add(item);
+    console.log("WORLD:", item);
+    
     timeline.add(item);
-    scene.add(item);
+    physics.add(item);
+    scene.add(item.mesh);
   }
 
   function start() {
-    // physics.start();
     timeline.start();
   }
 

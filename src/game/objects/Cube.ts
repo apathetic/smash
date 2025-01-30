@@ -1,3 +1,5 @@
+import RAPIER from '@dimforge/rapier3d';
+
 import {
   Mesh,
   MathUtils,
@@ -35,15 +37,41 @@ import { IUpdatable } from '~/types';
 
 // or, keep it as a function:
 ///////////////////////////
+
+
+
+/*
+// PSEUDO
+When generating a game object, it requires 2 elements:
+1. Visual (3D Mesh)
+2. Model (Physics Collider)
+*/
+
+
+
 export const Cube = () => {
+  
   const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
   const material = new MeshNormalMaterial();
-  const cube = new Mesh(geometry, material) as unknown as IUpdatable;
   const rotation = MathUtils.degToRad(30);
 
-  cube.update = (delta) => {
-    cube.rotation.x += rotation * delta;
-    cube.rotation.y += rotation * delta;
+  // const cube = new Mesh(geometry, material) as unknown as IUpdatable;
+  // cube.update = (delta) => {
+  //   cube.rotation.x += rotation * delta;
+  //   cube.rotation.y += rotation * delta;
+  // };
+
+
+
+  const cube = {
+    id: 'cube',
+    mesh: new Mesh(geometry, material),
+    collider: RAPIER.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5)
+  }  as unknown as IUpdatable;
+
+  cube.update = (delta: number) => {
+    cube.mesh.rotation.x += rotation * delta;
+    cube.mesh.rotation.y += rotation * delta;
   };
 
   return cube;

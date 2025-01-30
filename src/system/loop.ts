@@ -1,4 +1,4 @@
-import { Timer } from 'three/addons/misc/Timer.js';
+import { Clock } from 'three';
 import type { IUpdatable } from '~/types';
 import type { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
@@ -7,20 +7,26 @@ interface TimelineProps {
   camera: PerspectiveCamera;
   scene: Scene;
   renderer: WebGLRenderer;
-  // physics: any;
+  physics: any;
 }
 
 
-function createTimeline({ camera, scene, renderer }: TimelineProps) {
-  const timer = new Timer();
+function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
+  const clock = new Clock();
+  
   const timelineItems: IUpdatable[] = [];
 
   function start() {
     renderer.setAnimationLoop(() => {
-      const delta = timer.update().getDelta();
-      // physics.update();
-      timelineItems.forEach((item) => item.update(delta));
+      const delta = clock.getDelta();
+      physics.update(delta);
+
+      timelineItems.forEach((item) => {
+        item.update(delta)
+      })
+      
       renderer.render(scene, camera);
+    
     });
   }
 
