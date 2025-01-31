@@ -4,8 +4,6 @@ import { createTimeline } from './loop';
 import { createControls } from './controls';
 import { createPhysics } from './physics';
 
-// import Ground from '../assets/models/ground/ground';
-import { Floor } from '~/game/ground/Floor';
 
 /**
  * A reference to a world instance.
@@ -25,11 +23,7 @@ function initWorld(canvas: HTMLCanvasElement) {
   const timeline = createTimeline({ camera, scene, renderer, physics });
   const { ambientLight, light } = createLights();
 
-  // const ground = Ground();
-  const floor = Floor(); // this ground by default? or dynamic / per level?
-
-  scene.add(light, ambientLight, floor.mesh);
-  physics.add(floor);
+  scene.add(light, ambientLight);
   timeline.add(controls as any);
 
 
