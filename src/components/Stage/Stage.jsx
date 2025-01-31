@@ -3,6 +3,7 @@ import { useWorld } from "~/system/world";
 
 
 
+import { Floor } from '~/game/ground/Floor';
 import { Cube } from '~/game/objects/Cube';
 // import { RagDoll } from '~/game/ragdoll';
 

@@ -16,7 +16,7 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
 
   function update(delta: number) {
     timelineItems.forEach((item) => {
-      item.update(delta)
+      item.update?.(delta)
     });
   }
 

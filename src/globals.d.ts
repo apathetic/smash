@@ -12,7 +12,7 @@ interface IUpdatable {
   id: string,
   // mesh: Object3D,
   // collider: any;
-  update: (delta: number) => void;
+  update?: (delta: number) => void;
 }
 
 interface IWorldEntity extends IUpdatable {
