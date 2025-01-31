@@ -36,7 +36,7 @@ export const Cube = () => {
       const body = physicsWorld.createRigidBody(rigidBody)
       physicsWorld.createCollider(collider, body)
 
-      return([mesh, body]);
+      return { mesh, body };
     },
 
     // [question]

@@ -1,5 +1,4 @@
 import { Clock } from 'three';
-import type { IUpdatable } from '~/types.d';
 import type { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 
