@@ -1,15 +1,22 @@
-import rapier from '@dimforge/rapier3d';
+import { World } from '@dimforge/rapier3d';
 
+/**
+ * A reference to a physics World instance.
+ * The return object exposes a number of functions for interacting with
+ * the World, but this provides a direct reference to the World instance.
+ */
+let physicsHandle: World;
 
-const createPhysics = () => {
-  const gravity = { x: 0.0, y: -9.81, z: 0.0 };
-  const physicsWorld = new rapier.World(gravity);
-  const dynamicBodies: IDynamicBody[] = [];
 
   // TODO: tune physics props
   // - broadpass algorithms
   // - solver.iterations value
   // - allowSleep toggle
+
+const createPhysics = () => {
+  const gravity = { x: 0.0, y: -9.81, z: 0.0 };
+  const physicsWorld = new World(gravity);
+  const dynamicBodies: IDynamicBody[] = [];
 
   function update(delta: number) {
     physicsWorld.timestep = Math.min(delta, 0.01);
@@ -22,11 +29,7 @@ const createPhysics = () => {
   }
 
   function add(item: any) {
-    console.log("PHYSICS: ", item);
-
-    // call setup() fn to allow item to set itself up in the world.
-    // i just like "set itself up in the world" like it's a teen leaving home for the first time
-    const { mesh, body } = item.setup(physicsWorld);
+    const { mesh, body } = item;
     dynamicBodies.push({ mesh, body });
   }
 
@@ -34,9 +37,32 @@ const createPhysics = () => {
     console.log("Removed ", item);
   }
 
+  // NOTE: this may be a bit weird. We use the physicsHandle/phsyicsWorld in
+  // the hook, but return `add`,`remove`, and `update` functions here.
+  // TBD
+  physicsHandle = physicsWorld;
+
   return { add, remove, update };
 }
 
+
+/**
+ * A hook to provide access to the physics world instance.
+ * This is a singleton pattern, so the world instance is
+ * created once and then returned on subsequent calls.
+ *
+ * @returns World
+ */
+function usePhysics() {
+  if (!physicsHandle) {
+    throw new Error('[usePhysics]: createPhysics has not been called!');
+  }
+
+  return physicsHandle;
+}
+
+
 export {
-  createPhysics
+  createPhysics,
+  usePhysics
 };

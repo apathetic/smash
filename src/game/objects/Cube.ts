@@ -1,53 +1,45 @@
-import rapier from '@dimforge/rapier3d';
 import { Mesh, MathUtils, BoxGeometry, MeshNormalMaterial } from 'three';
+import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
+import { usePhysics } from '~/system/physics';
 
-/*
-// PSEUDO
-When generating a game object, it requires 2 elements:
-1. Visual (3D Mesh)
-2. Model (Physics Collider)
-*/
+const rotateBy = MathUtils.degToRad(30);
 
-export interface IWorldEntity {
-  id: string;
-  mesh: Mesh;
-  collider: any;
-  update: (delta: number) => void;
-  setup: (world: any) => void;
-}
 
-export const Cube = () => {
+/**
+ * Cube game object.
+ * @returns IWorldEntity
+ */
+export function Cube() {
   const geometry = new BoxGeometry( 0.2, 0.2, 0.2 );
   const material = new MeshNormalMaterial();
-  const rotation = MathUtils.degToRad(30);
   const mesh = new Mesh(geometry, material);
 
-    // cubeMesh.castShadow = true
+  const physics = usePhysics();
+  const colliderDesc = ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5);
+  const rigidBodyDesc = RigidBodyDesc.dynamic().setTranslation(0, 5, 0).setCanSleep(false);
+  const body = physics.createRigidBody(rigidBodyDesc);
+  const collider = physics.createCollider(colliderDesc, body);
 
-  const collider = rapier.ColliderDesc.cuboid(0.2, 0.2, 0.2).setMass(1).setRestitution(0.5);
-  const rigidBody = rapier.RigidBodyDesc.dynamic().setTranslation(0, 5, 0).setCanSleep(false);
+  // [question]
+  // question: is this actually... necessary?  won't the physics system handle how the cube moves?
+  // and, if an object had its own animation, isn't that handled in the model?
+  const update = (delta: number) => {
+    mesh.rotation.x += rotateBy * delta;
+    mesh.rotation.y += rotateBy * delta;
+  };
+
+  const destroy = () => {
+
+  };
 
   const cube: IWorldEntity = {
     id: 'cube',
-    mesh,
     collider,
-    // or setupPhysics() etc. physics(), or addPhysics()
-    setup: (physicsWorld: any) => {
-      const body = physicsWorld.createRigidBody(rigidBody)
-      physicsWorld.createCollider(collider, body)
-
-      return { mesh, body };
-    },
-
-    // [question]
-    // question: is this actually... necessary?  worn't the physics system handle how the cube moves?
-    // and, if an object had its own animation, isn't that handled in the model?
-    update: (delta: number) => {
-      cube.mesh.rotation.x += rotation * delta;
-      cube.mesh.rotation.y += rotation * delta;
-    }
+    mesh,
+    body,
+    update,
+    destroy,
   };
 
-
   return cube;
-};
+}

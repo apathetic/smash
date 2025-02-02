@@ -15,8 +15,8 @@ const Stage = () => {
     const { add, start } = useWorld(canvas);
 
     // const ground = Ground();
-    const floor = Floor(); // this ground by default? or dynamic / per level?
-    const cube = new Cube();
+    const floor = Floor();
+    const cube = Cube();
     // const ragdoll = new RagDoll();
 
     add(floor);

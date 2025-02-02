@@ -6,7 +6,7 @@ interface TimelineProps {
   camera: PerspectiveCamera;
   scene: Scene;
   renderer: WebGLRenderer;
-  physics?: any;
+  physics: any;
 }
 
 
@@ -24,7 +24,7 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
 
-      update(delta); // update visual (3d mesh)
+      update(delta);         // update visual (3d mesh)
       physics.update(delta); // update physics models
       renderer.render(scene, camera);
     });
@@ -34,11 +34,19 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
     renderer.setAnimationLoop(null);
   }
 
+  function reset() {
+    //
+  }
+
   function add(item: IUpdatable) {
     timelineItems.push(item);
   }
 
-  return { start, stop, add };
+  function remove(item: IUpdatable) {
+    // timelineItems = timelineItems.filter((i) => i === item);
+  }
+
+  return { start, stop, add, remove };
 };
 
 

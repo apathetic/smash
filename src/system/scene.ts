@@ -4,7 +4,7 @@ import {
   PerspectiveCamera,
   DirectionalLight,
   HemisphereLight,
-  Color,
+  // Color,
 } from 'three';
 
 
