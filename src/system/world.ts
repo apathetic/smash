@@ -28,31 +28,21 @@ function createWorld(canvas: HTMLCanvasElement) {
 
 
   function add(item: IWorldEntity) {
-    console.log("WORLD:", item);
-
+    // timeline.add(item.update);
     timeline.add(item);
-    physics.add(item);
     scene.add(item.mesh);
   }
 
   function remove(item: IWorldEntity) {
     timeline.remove(item);
-    physics.remove(item);
     scene.remove(item.mesh);
-    // item.destroy();  // or, would we want to keep this around? For example, if the user removes it from the scene, but then later re-adds it, and have it retain the same properties, position, etc..
+
+    // or, would we want to keep item around? For example, if the user removes
+    // it from the scene, but then later re-adds it, and have it retain the
+    // same properties, position, etc..
+    // item.mesh.geometry.dispose();
+    // item.mesh.material.dispose();
   }
-
-  // function start() {
-  //   timeline.start();
-  // }
-
-  // function stop() {
-  //   timeline.stop();
-  // }
-
-  // function reset() {
-  //   timeline.reset();
-  // }
 
   return { ...timeline, add, remove };
   // return { add, remove, start, stop, reset };

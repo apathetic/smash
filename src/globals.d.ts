@@ -1,20 +1,6 @@
 /// <reference types="@solidjs/start/env" />
 
-// import { RigidBody } from "@dimforge/rapier3d";
 
-// import { Collider } from '@dimforge/rapier3d';
-// import type { Object3D } from 'three';
-
-
-interface IDynamicBody {
-  mesh: Mesh;
-  body: RigidBody;
-}
-
-interface IUpdatable {
-  id: string,
-  update?: (delta: number) => void;
-}
 
 
 /*
@@ -24,12 +10,19 @@ When generating a game object, it requires 2 elements:
 2. Model (Physics Collider)
 */
 
+
+interface IDynamicBody {
+  mesh: Mesh;       // skin
+  body: RigidBody;  // skeleton
+}
+
+interface IUpdatable {
+  update?: (delta: number) => void;
+}
+
 interface IWorldEntity extends IDynamicBody, IUpdatable {
   id: string;
-  collider: any;       // physics
-  // mesh: Mesh;       // skin
-  // body?: RigidBody; // skeleton
-  // update?: (delta: number) => void;
+  collider?: Collider;
+  body?: RigidBody; // make this optional
   dispose: () => void;
-  // setup?: (world: any) => IDynamicBody;
 }

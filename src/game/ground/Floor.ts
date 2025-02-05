@@ -21,15 +21,17 @@ export function Floor() {
   mesh.receiveShadow = true
   mesh.position.y = -1;
 
+  const dispose = () => {
+    geometry.dispose();
+    material.dispose();
+  };
+
   const floor: IWorldEntity = {
     id: 'floor',
-    collider,
+    dispose,
     mesh,
-    body,
-    dispose: () => {
-      geometry.dispose();
-      material.dispose();
-    },
+    // collider,
+    // body,
   };
 
   return floor;

@@ -2,10 +2,10 @@ import { World } from '@dimforge/rapier3d';
 
 /**
  * A reference to a physics World instance.
- * The return object exposes a number of functions for interacting with
- * the World, but this provides a direct reference to the World instance.
+ * The return object exposes an update function, but
+ * this is a direct reference to the World instance.
  */
-let physicsHandle: World;
+let physicsWorld: World;
 
 
   // TODO: tune physics props
@@ -15,34 +15,15 @@ let physicsHandle: World;
 
 const createPhysics = () => {
   const gravity = { x: 0.0, y: -9.81, z: 0.0 };
-  const physicsWorld = new World(gravity);
-  const dynamicBodies: IDynamicBody[] = [];
+  physicsWorld = new World(gravity);
+
 
   function update(delta: number) {
     physicsWorld.timestep = Math.min(delta, 0.01);
     physicsWorld.step();
-
-    dynamicBodies.forEach(({ mesh, body }) => {
-      mesh.position.copy(body.translation());
-      mesh.quaternion.copy(body.rotation());
-    });
   }
 
-  function add(item: any) {
-    const { mesh, body } = item;
-    dynamicBodies.push({ mesh, body });
-  }
-
-  function remove(item: any) {
-    console.log("Removed ", item);
-  }
-
-  // NOTE: this may be a bit weird. We use the physicsHandle/phsyicsWorld in
-  // the hook, but return `add`,`remove`, and `update` functions here.
-  // TBD
-  physicsHandle = physicsWorld;
-
-  return { add, remove, update };
+  return { update };
 }
 
 
@@ -54,11 +35,11 @@ const createPhysics = () => {
  * @returns World
  */
 function usePhysics() {
-  if (!physicsHandle) {
+  if (!physicsWorld) {
     throw new Error('[usePhysics]: createPhysics has not been called!');
   }
 
-  return physicsHandle;
+  return physicsWorld;
 }
 
 

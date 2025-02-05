@@ -12,20 +12,15 @@ interface TimelineProps {
 
 function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
   const clock = new Clock();
-  const timelineItems: IUpdatable[] = [];
+  let timelineItems: IUpdatable[] = [];
 
-  function update(delta: number) {
-    timelineItems.forEach((item) => {
-      item.update?.(delta)
-    });
-  }
 
   function start() {
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
 
-      update(delta);         // update visual (3d mesh)
-      physics.update(delta); // update physics models
+      timelineItems.forEach((item) => item.update?.(delta));
+      physics.update(delta);
       renderer.render(scene, camera);
     });
   }
@@ -43,7 +38,8 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
   }
 
   function remove(item: IUpdatable) {
-    // timelineItems = timelineItems.filter((i) => i === item);
+    // TODO won't work; filter by id or uuid
+    timelineItems = timelineItems.filter((i) => i !== item);
   }
 
   return { start, stop, add, remove };
