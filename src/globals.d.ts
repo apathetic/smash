@@ -30,6 +30,6 @@ interface IWorldEntity extends IDynamicBody, IUpdatable {
   // mesh: Mesh;       // skin
   // body?: RigidBody; // skeleton
   // update?: (delta: number) => void;
-  destroy: () => void;
+  dispose: () => void;
   // setup?: (world: any) => IDynamicBody;
 }

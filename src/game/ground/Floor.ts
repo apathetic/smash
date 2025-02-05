@@ -26,7 +26,10 @@ export function Floor() {
     collider,
     mesh,
     body,
-    destroy: () => { /* TBD */ },
+    dispose: () => {
+      geometry.dispose();
+      material.dispose();
+    },
   };
 
   return floor;

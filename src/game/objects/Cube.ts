@@ -28,8 +28,9 @@ export function Cube() {
     mesh.rotation.y += rotateBy * delta;
   };
 
-  const destroy = () => {
-
+  const dispose = () => {
+    geometry.dispose();
+    material.dispose();
   };
 
   const cube: IWorldEntity = {
@@ -38,7 +39,7 @@ export function Cube() {
     mesh,
     body,
     update,
-    destroy,
+    dispose,
   };
 
   return cube;
