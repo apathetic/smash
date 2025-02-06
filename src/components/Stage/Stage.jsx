@@ -1,4 +1,4 @@
-import { onMount } from "solid-js";
+import { onMount, onCleanup } from "solid-js";
 import { useWorld } from "~/system/world";
 
 
@@ -22,6 +22,11 @@ const Stage = () => {
     add(floor);
     add(cube);
     start();
+  });
+
+  onCleanup(() => {
+    const { stop } = useWorld();
+    stop();
   });
 
   return (

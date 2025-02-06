@@ -1,11 +1,4 @@
-import {
-  Scene,
-  WebGLRenderer,
-  PerspectiveCamera,
-  DirectionalLight,
-  HemisphereLight,
-  // Color,
-} from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera, DirectionalLight, HemisphereLight } from 'three';
 
 
 function createRenderer(canvas: HTMLCanvasElement) {
@@ -44,18 +37,17 @@ function createLights() {
   return { light, ambientLight };
 };
 
-function createScene() {
+
+function createScene(canvas: HTMLCanvasElement) {
   const scene = new Scene();
+  const camera = createCamera();
+  const renderer = createRenderer(canvas);
 
-  // scene.background = new Color('papayawhip');
-
-  return scene;
-};
+  return { scene, camera, renderer };
+}
 
 
 export {
   createScene,
-  createRenderer,
-  createCamera,
   createLights,
 };

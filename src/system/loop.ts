@@ -16,6 +16,7 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
 
 
   function start() {
+    clock.start();
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
 
@@ -27,6 +28,7 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
 
   function stop() {
     renderer.setAnimationLoop(null);
+    clock.stop();
   }
 
   function reset() {

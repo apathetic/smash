@@ -1,4 +1,5 @@
-import { createCamera, createRenderer, createLights, createScene } from './scene';
+// import { createCamera, createRenderer, createLights, createScene } from './scene';
+import { createScene, createLights } from './scene';
 import { createResizer } from './resizer';
 import { createTimeline } from './loop';
 import { createControls } from './controls';
@@ -13,16 +14,21 @@ import { createPhysics } from './physics';
 let worldHandle: ReturnType<typeof createWorld>;
 
 
+/**
+ * Creates a new World, which contains visual elements (ThreeJS) and
+ * physical rules (Rapier). Also creates a loop for managing the time-
+ * evolution of these items and controls for interactivity.
+ * @param canvas
+ * @returns ...
+ */
 function createWorld(canvas: HTMLCanvasElement) {
-     const scene = createScene(); // or graphicsWorld ?
-    const camera = createCamera();
-   const physics = createPhysics(); // physicsWorld ?
-  const renderer = createRenderer(canvas);
+  const { scene, camera, renderer } = createScene(canvas); // or graphicsWorld
+  const { ambientLight, light }     = createLights();
+  const physics  = createPhysics();                     // physicsWorld ?
   const controls = createControls(camera, canvas);
   const timeline = createTimeline({ camera, scene, renderer, physics });
-  const xxremove = createResizer({ camera, renderer });
-  const { ambientLight, light } = createLights();
 
+  createResizer({ camera, renderer });
   scene.add(light, ambientLight);
   timeline.add(controls as any);
 
@@ -45,7 +51,6 @@ function createWorld(canvas: HTMLCanvasElement) {
   }
 
   return { ...timeline, add, remove };
-  // return { add, remove, start, stop, reset };
 };
 
 
