@@ -6,11 +6,11 @@ interface TimelineProps {
   camera: PerspectiveCamera;
   scene: Scene;
   renderer: WebGLRenderer;
-  physics: any;
+  update: (delta: number) => void; // name... updatePhysics, or ...?
 }
 
 
-function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
+function createTimeline({ camera, scene, renderer, update }: TimelineProps) {
   const clock = new Clock();
   let timelineItems: IUpdatable[] = [];
 
@@ -20,8 +20,8 @@ function createTimeline({ camera, scene, renderer, physics }: TimelineProps) {
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
 
-      timelineItems.forEach((item) => item.update?.(delta));
-      physics.update(delta);
+      update(delta); // does order matter? ie. update physics _World_ before physics in each entity
+      timelineItems.forEach((item) => item.update(delta));
       renderer.render(scene, camera);
     });
   }

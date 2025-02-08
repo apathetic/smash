@@ -1,7 +1,6 @@
-// import { createCamera, createRenderer, createLights, createScene } from './scene';
 import { createScene, createLights } from './scene';
 import { createResizer } from './resizer';
-import { createTimeline } from './loop';
+import { createTimeline } from './timeline';
 import { createControls } from './controls';
 import { createPhysics } from './physics';
 
@@ -22,11 +21,11 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const { scene, camera, renderer } = createScene(canvas); // or graphicsWorld
-  const { ambientLight, light }     = createLights();
-  const physics  = createPhysics();                     // physicsWorld ?
+  const { scene, camera, renderer } = createScene(canvas); // or name... graphicsWorld?
+  const { ambientLight, light } = createLights();
+  const { physics, update } = createPhysics();     // name... physicsWorld ?
   const controls = createControls(camera, canvas);
-  const timeline = createTimeline({ camera, scene, renderer, physics });
+  const timeline = createTimeline({ camera, scene, renderer, update });
 
   createResizer({ camera, renderer });
   scene.add(light, ambientLight);
@@ -34,20 +33,13 @@ function createWorld(canvas: HTMLCanvasElement) {
 
 
   function add(item: IWorldEntity) {
-    // timeline.add(item.update);
     timeline.add(item);
-    scene.add(item.mesh);
+    item.setup(scene, physics);
   }
 
   function remove(item: IWorldEntity) {
     timeline.remove(item);
-    scene.remove(item.mesh);
-
-    // or, would we want to keep item around? For example, if the user removes
-    // it from the scene, but then later re-adds it, and have it retain the
-    // same properties, position, etc..
-    // item.mesh.geometry.dispose();
-    // item.mesh.material.dispose();
+    item.destroy();
   }
 
   return { ...timeline, add, remove };

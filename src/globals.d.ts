@@ -17,12 +17,11 @@ interface IDynamicBody {
 }
 
 interface IUpdatable {
-  update?: (delta: number) => void;
+  update: (delta: number) => void;
 }
 
-interface IWorldEntity extends IDynamicBody, IUpdatable {
-  id: string;
-  collider?: Collider;
-  body?: RigidBody; // make this optional
-  dispose: () => void;
+interface IWorldEntity extends /* IDynamicBody, */ IUpdatable {
+  setup: (scene, physics) => void;
+  update: (delta: number) => void;
+  destroy: () => void;
 }

@@ -15,12 +15,20 @@ const Stage = () => {
     const { add, start } = useWorld(canvas);
 
     // const ground = Ground();
-    const floor = Floor();
-    const cube = Cube();
+    const floor = new Floor();
+    const cube = new Cube();
     // const ragdoll = new RagDoll();
 
+    // OPTION 1
     add(floor);
     add(cube);
+
+
+    // OPTION 2
+    // requires using a useWorld hook in the class to get refs to: scene and physics
+    // floor.addToWorld();
+    // cube.addToWorld();
+
     start();
   });
 
