@@ -72,3 +72,7 @@ There are three "things" that comprise the world
 
 ...or, will there be other things? ie.
   pivot.rotation.y += 0.005;
+
+
+3. why is the floor "off".  the falling cube comes to rest just above of it.
+  setting the floor's mesh.position or rigidBody.translation doesnt seem to have an effect
