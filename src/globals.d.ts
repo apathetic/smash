@@ -1,5 +1,7 @@
 /// <reference types="@solidjs/start/env" />
 
+// import type { World } from '@dimforge/rapier3d';
+// import type { Scene } from 'three';
 
 
 
@@ -17,11 +19,12 @@ interface IDynamicBody {
 }
 
 interface IUpdatable {
+  dynamicBodies: IDynamicBody[];
   update: (delta: number) => void;
 }
 
-interface IWorldEntity extends /* IDynamicBody, */ IUpdatable {
-  setup: (scene, physics) => void;
+interface IWorldEntity extends IUpdatable {
+  setup: (scene, physics) => void; // TODO type w/ three, rapier
   update: (delta: number) => void;
   destroy: () => void;
 }

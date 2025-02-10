@@ -3,7 +3,8 @@ import type { Scene } from 'three';
 
 
 /**
- * Base game object.
+ * Base game entity.
+ * @returns IWorldEntity
  */
 export class Base implements IWorldEntity {
   public dynamicBodies: IDynamicBody[] = [];
@@ -12,15 +13,10 @@ export class Base implements IWorldEntity {
     //
   }
 
-  // because some of things things are complex (objects, multiple rigid bodies)
-  // and cannot be represented in a single `mesh` or `body` in the returned obj.
-  //
-  setup(scene: Scene, physics: World) { // or `addToWorld` or `add`
+  setup(scene: Scene, physics: World) {
     // to be extended
   }
 
-  //  this is in the base class, so is inherited by all the things. unless overridden
-  //
   // also required here (and not in physics) b/c there be other things? ie.  pivot.rotation.y += 0.005;  etc
   update(delta: number) {
     this.dynamicBodies.forEach(({ mesh, body }) => {

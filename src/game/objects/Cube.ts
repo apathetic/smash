@@ -1,7 +1,6 @@
 import { Mesh, BoxGeometry, MeshNormalMaterial } from 'three';
 import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
 import { Base } from './Base';
-// import { usePhysics } from '~/system/physics';
 import type { World } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
 
@@ -11,7 +10,6 @@ import type { Scene } from 'three';
  * @returns IWorldEntity
  */
 export class Cube extends Base {
-   // re: name?  `addToWorld` or `add` or ...?
   setup (scene: Scene, physics: World) {
       // const { physics, scene } = useWorld();  // whether this fn is called from `world` or anywhere
     const geometry = new BoxGeometry(0.2, 0.2, 0.2);

@@ -3,6 +3,7 @@ import { useWorld } from "~/system/world";
 
 
 
+import { Terrain } from '~/game/ground/Terrain';
 import { Floor } from '~/game/ground/Floor';
 import { Cube } from '~/game/objects/Cube';
 // import { RagDoll } from '~/game/ragdoll';
@@ -14,13 +15,16 @@ const Stage = () => {
   onMount(() => {
     const { add, start } = useWorld(canvas);
 
+
+    const terrain = new Terrain();
     // const ground = Ground();
     const floor = new Floor();
     const cube = new Cube();
     // const ragdoll = new RagDoll();
 
     // OPTION 1
-    add(floor);
+    // add(floor);
+    add(terrain);
     add(cube);
 
 

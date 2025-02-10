@@ -54,6 +54,30 @@ There are three "things" that comprise the world
   - how things move/behave when the interact (crash) into one another
   - hitting a wall, the floor, etc.
 
+
+## World Entities
+
+"Entities" in the world, as defined above, will need considerations for each of: visual, physical, and collision
+
+Because some entities are complex, comprised of multiple meshes, rigid bodies, colliders, etc, they cannot be represented in a single `mesh` or `body`.
+The `ragdoll`, for example.
+
+To set up an `Entity's` visual, physical and collision bits, we call its `setup` method.
+This ensures that these bits are all instantiated together.
+Note: previously, when we created a new (world) entity (e.g. new Cube()), it set up its own physics, adding itself into the (physics) world; however, it didn't do the same for the (three/visual) world.
+This was a little problematic.
+So, we can solve that using a `setup` fn where everything is managed together, consistently
+
+```setup```: Instantiate the WorldEntity, getting its visual (ThreeJS) bits aadded, its rigidBody(s) setup, and any colliders setup.
+
+```update```
+
+```remove```
+
+
+
+
+
 ## Open Questions
 
 
