@@ -6,7 +6,7 @@ import { useWorld } from "~/system/world";
 import { Terrain } from '~/game/ground/Terrain';
 import { Floor } from '~/game/ground/Floor';
 import { Cube } from '~/game/objects/Cube';
-// import { RagDoll } from '~/game/ragdoll';
+import { RagDoll } from '~/game/objects/Ragdoll';
 
 
 const Stage = () => {
@@ -20,11 +20,12 @@ const Stage = () => {
     // const ground = Ground();
     const floor = new Floor();
     const cube = new Cube();
-    // const ragdoll = new RagDoll();
+    const ragdoll = new RagDoll();
 
     // OPTION 1
-    // add(floor);
-    add(terrain);
+    // add(terrain);
+    add(ragdoll);
+    add(floor);
     add(cube);
 
 
