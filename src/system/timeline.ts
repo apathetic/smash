@@ -3,15 +3,21 @@ import type { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 
 interface TimelineProps {
-  camera: PerspectiveCamera;
-  scene: Scene;
-  renderer: WebGLRenderer;
-  update: (delta: number) => void; // name... updatePhysics, or ...?
+  graphics: {
+    camera: PerspectiveCamera;
+    scene: Scene;
+    renderer: WebGLRenderer;
+  };
+  physics: {
+    world: any;
+    update: (delta: number) => void;
+  }
 }
 
 
-function createTimeline({ camera, scene, renderer, update }: TimelineProps) {
+function createTimeline({ graphics, physics }: TimelineProps) {
   const clock = new Clock();
+  const { camera, scene, renderer } = graphics;
   let timelineItems: IUpdatable[] = [];
 
 
@@ -20,7 +26,10 @@ function createTimeline({ camera, scene, renderer, update }: TimelineProps) {
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
 
-      update(delta); // does order matter? ie. update physics _World_ before physics in each entity
+
+
+
+      physics.update(delta); // does order matter? ie. update physics _World_ before physics in each entity
       timelineItems.forEach((item) => item.update(delta));
       renderer.render(scene, camera);
     });

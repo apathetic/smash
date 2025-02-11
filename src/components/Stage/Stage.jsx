@@ -24,7 +24,7 @@ const Stage = () => {
 
     // OPTION 1
     // add(terrain);
-    add(ragdoll);
+    // add(ragdoll);
     add(floor);
     add(cube);
 

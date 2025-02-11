@@ -11,8 +11,9 @@ import type { Scene } from 'three';
  */
 export class Cube extends Base {
   setup (scene: Scene, physics: World) {
-      // const { physics, scene } = useWorld();  // whether this fn is called from `world` or anywhere
-    const geometry = new BoxGeometry(0.2, 0.2, 0.2);
+    const position: Position = [0, 3, 0];
+
+    const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshNormalMaterial();
     const mesh     = new Mesh(geometry, material);
 
@@ -23,12 +24,13 @@ export class Cube extends Base {
 
     const rigidBodyDesc = RigidBodyDesc
       .dynamic()
-      .setTranslation(0, 5, 0)
-      .setCanSleep(false);
+      .setTranslation(...position)
+      .setCanSleep(true);
 
     const body     = physics.createRigidBody(rigidBodyDesc);
     const collider = physics.createCollider(colliderDesc, body);
 
+    mesh.position.set(...position);
     scene.add(mesh);
     this.dynamicBodies.push({ mesh, body });
   };

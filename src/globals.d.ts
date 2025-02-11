@@ -13,6 +13,9 @@ When generating a game object, it requires 2 elements:
 */
 
 
+type Position = [number, number, number];
+
+
 interface IDynamicBody {
   mesh: Mesh;       // skin
   body: RigidBody;  // skeleton

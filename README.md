@@ -100,3 +100,11 @@ So, we can solve that using a `setup` fn where everything is managed together, c
 
 3. why is the floor "off".  the falling cube comes to rest just above of it.
   setting the floor's mesh.position or rigidBody.translation doesnt seem to have an effect
+
+4. ~~shouldn't geometry / collider / rigidbodies all be the same size...?~~
+  answered: Rapier’s collider sizes represent half-extents, while Three.js use full-extents
+            using half-extents is easier / more efficient for internal calculations, etc
+
+
+5. "units" of size?  how "large" is a cube?  1?
+should things be relative to... that?

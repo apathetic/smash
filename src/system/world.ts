@@ -21,20 +21,23 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const { scene, camera, renderer } = createScene(canvas); // or name... graphicsWorld?
-  const { ambientLight, light } = createLights();
-  const { physics, update } = createPhysics();     // name... physicsWorld ?
-  const controls = createControls(camera, canvas);
-  const timeline = createTimeline({ camera, scene, renderer, update });
+  const graphics = createScene(canvas); // graphics = { scene, camera, renderer }
+  const physics  = createPhysics();     // physics = { world, update, collisions }
+  const lights   = createLights();
+  const controls = createControls(graphics.camera, canvas);
+  const timeline = createTimeline({ graphics, physics });
 
-  createResizer({ camera, renderer });
-  scene.add(light, ambientLight);
+  createResizer(graphics);
+  graphics.scene.add(...lights);
   timeline.add(controls as any);
+
+
+
 
 
   function add(item: IWorldEntity) {
     timeline.add(item);
-    item.setup(scene, physics);
+    item.setup(graphics.scene, physics.world);
   }
 
   function remove(item: IWorldEntity) {

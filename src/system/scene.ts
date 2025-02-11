@@ -15,11 +15,11 @@ function createCamera() {
   const camera = new PerspectiveCamera(
     70,     // fov = Field Of View
     aspect, // aspect ratio
-    0.01,   // near clipping plane
-    10,     // far clipping plane
+    0.1,    // near clipping plane
+    100,    // far clipping plane
   );
 
-  camera.position.set(0, 0, 1);
+  camera.position.set(2, 4, 10);
 
   return camera;
 };
@@ -34,7 +34,7 @@ function createLights() {
 
   light.position.set(10, 10, 10);
 
-  return { light, ambientLight };
+  return [ light, ambientLight ];
 };
 
 
