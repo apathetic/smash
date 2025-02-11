@@ -18,7 +18,7 @@ export class Cube extends Base {
     const mesh     = new Mesh(geometry, material);
 
     const colliderDesc = ColliderDesc
-      .cuboid(0.2, 0.2, 0.2)
+      .cuboid(0.5, 0.5, 0.5)
       .setMass(1)
       .setRestitution(0.5);
 

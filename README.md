@@ -82,17 +82,13 @@ So, we can solve that using a `setup` fn where everything is managed together, c
 
 
 
-1. when setting up entity in physicWorld, will it always be:
-  const body = physics.createRigidBody(rigidBodyDesc);
-  const collider = physics.createCollider(colliderDesc, body);
-  ??
-  Or will an entity have multiple meshes, rigid bodies, etc.
-  OR or, to the point, can we represent a WorldEntity with a single mesh prop and (rigid) body prop?
+1. why is the floor "off"?  the falling cube comes to rest just above of it.
+  setting the floor's mesh.position or rigidBody.translation doesnt seem to have an effect
+
+2. what is going on in ragdoll branch? some weird invisible thing (collider?) that is eclipsing the meshes
 
 
-2. when updating entity, will it always be:
-  mesh.position.copy(body.translation());
-  mesh.quaternion.copy(body.rotation());
+3. can we make it so the camera doesn't go "below ground" / below the horizon?
 
 ...or, will there be other things? ie.
   pivot.rotation.y += 0.005;
