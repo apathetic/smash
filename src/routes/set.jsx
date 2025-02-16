@@ -1,24 +1,16 @@
 import { useNavigate } from "@solidjs/router";
-// import { createAsync } from "solid/router";
 import { onMount, onCleanup } from "solid-js";
 import { Nav } from "~/components/Nav";
 
-
-// import { onMount, onCleanup } from "solid-js";
 import { useWorld } from "~/system/world";
-import { Stage } from "~/components/Stage";
-
-import { RagDoll } from '~/game/objects/Ragdoll';
-import { Terrain } from '~/game/ground/Terrain';
-import { Floor } from '~/game/ground/Floor';
-import { Cube } from '~/game/objects/Cube';
+import { RagDoll } from "~/game/objects/Ragdoll";
+import { Terrain } from "~/game/ground/Terrain";
+import { Floor } from "~/game/ground/Floor";
+import { Cube } from "~/game/objects/Cube";
 
 
 
-
-
-function xxxx() {
-  console.log('set!!');
+function level() {
   const { add, start } = useWorld();
   const terrain = new Terrain();
   const floor = new Floor();
@@ -31,8 +23,8 @@ function xxxx() {
   add(cube);
 
 
-    // NOTE: this should not be in this file (likely smash.jsx), but is here for now
-    start();
+  // NOTE: this should not be in this file (likely smash.jsx), but is here for now
+  start();
 }
 
 
@@ -41,9 +33,10 @@ function xxxx() {
 
 export default function Set() {
   const navigate = useNavigate();
+  const nav = (route) => () => navigate(route);
 
   onMount(() => {
-    xxxx();
+    level();
   });
 
 
@@ -54,7 +47,6 @@ export default function Set() {
       navigate('/smash');
   }
 
-  const nav = (route) => () => navigate(route);
 
 
   return (
