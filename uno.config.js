@@ -15,7 +15,7 @@ export default defineConfig({
 
   ],
   shortcuts: {
-    'items':       'flex flex-wrap gap-1',
+    'nav-button':  'inline-block text-lg font-black p-4 z-100  relative rounded-full border',
     'container':   'max-w-3xl m-auto px-8',
     'bg-base':     'bg-white        dark:bg-[#1e1e20]',
     'color-base':  'text-[#181818]  dark:text-[#ddd]',

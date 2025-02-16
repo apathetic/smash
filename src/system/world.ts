@@ -32,9 +32,6 @@ function createWorld(canvas: HTMLCanvasElement) {
   timeline.add(controls as any);
 
 
-
-
-
   function add(item: IWorldEntity) {
     timeline.add(item);
     item.setup(graphics.scene, physics.world);
