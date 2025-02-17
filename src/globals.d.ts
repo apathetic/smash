@@ -1,8 +1,5 @@
 /// <reference types="@solidjs/start/env" />
 
-// import type { World } from '@dimforge/rapier3d';
-// import type { Scene } from 'three';
-
 
 
 /*
@@ -15,6 +12,18 @@ When generating a game object, it requires 2 elements:
 
 type Position = [number, number, number];
 
+interface IGraphics {
+  camera: import("three").PerspectiveCamera;
+  scene: import("three").Scene;
+  renderer: import("three").WebGLRenderer;
+}
+
+interface IPhysics {
+  world: import("@dimforge/rapier3d").World;
+  update: (delta: number) => void;
+}
+
+///
 
 interface IDynamicBody {
   mesh: Mesh;       // skin
@@ -27,7 +36,6 @@ interface IUpdatable {
 }
 
 interface IWorldEntity extends IUpdatable {
-  setup: (scene, physics) => void; // TODO type w/ three, rapier
-  update: (delta: number) => void;
+  setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
   destroy: () => void;
 }

@@ -21,24 +21,25 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const graphics = createScene(canvas); // graphics = { scene, camera, renderer }
-  const physics  = createPhysics();     // physics = { world, update, collisions }
+  const entities: IWorldEntity[] = [];
+  const graphics = createScene(canvas);
+  const physics  = createPhysics();
   const lights   = createLights();
-  const controls = createControls(graphics.camera, canvas);
-  const timeline = createTimeline({ graphics, physics });
+  const controls = createControls({ graphics, physics, entities });
+  const timeline = createTimeline({ graphics, physics, entities, controls });
 
   createResizer(graphics);
   graphics.scene.add(...lights);
-  timeline.add(controls as any);
 
 
   function add(item: IWorldEntity) {
-    timeline.add(item);
     item.setup(graphics.scene, physics.world);
+    entities.push(item);
   }
 
   function remove(item: IWorldEntity) {
-    timeline.remove(item);
+    // TODO won't work; filter by id or uuid
+    // entities = entities.filter((i) => i !== item);
     item.destroy();
   }
 

@@ -1,37 +1,42 @@
 import { Clock } from 'three';
-import type { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { useGameState } from "~/stores/gameState";
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
 interface TimelineProps {
-  graphics: {
-    camera: PerspectiveCamera;
-    scene: Scene;
-    renderer: WebGLRenderer;
-  };
-  physics: {
-    world: any;
-    update: (delta: number) => void;
-  }
+  graphics: IGraphics;
+  physics: IPhysics;
+  entities: IUpdatable[];
+  controls: OrbitControls;
 }
 
 
-function createTimeline({ graphics, physics }: TimelineProps) {
+function createTimeline({ graphics, physics, entities, controls }: TimelineProps) {
   const clock = new Clock();
   const { camera, scene, renderer } = graphics;
-  let timelineItems: IUpdatable[] = [];
+  const [game, setGameState] = useGameState();
+
+
+  function loop() {
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  function smash() {
+    const delta = clock.getDelta();
+    physics.update(delta); // does order matter? ie. update physics _World_ before physics in each entity
+    entities.forEach((item) => item.update(delta));
+  }
 
 
   function start() {
     clock.start();
+// console.log(game.isRunning);
     renderer.setAnimationLoop(() => {
-      const delta = clock.getDelta();
-
-
-
-
-      physics.update(delta); // does order matter? ie. update physics _World_ before physics in each entity
-      timelineItems.forEach((item) => item.update(delta));
-      renderer.render(scene, camera);
+      loop();
+      if (game.isRunning) {
+        smash(); // if smash is enabled, then run physics
+      }
     });
   }
 
@@ -44,16 +49,7 @@ function createTimeline({ graphics, physics }: TimelineProps) {
     //
   }
 
-  function add(item: IUpdatable) {
-    timelineItems.push(item);
-  }
-
-  function remove(item: IUpdatable) {
-    // TODO won't work; filter by id or uuid
-    timelineItems = timelineItems.filter((i) => i !== item);
-  }
-
-  return { start, stop, add, remove };
+  return { start, stop };
 };
 
 

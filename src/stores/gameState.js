@@ -2,15 +2,17 @@ import { createStore } from "solid-js/store";
 
 
 /**
- * GameSettings store
+ * GameStates store
  *
- * setGamesettings(key, (setting) => ...some calculation...)
+ * setGamestate(key, (setting) => ...some calculation...)
  *
- * e.g. setGamesettings('level', (currentLevel) => currentLevel + 1);
+ * e.g. setGamestate('level', (currentLevel) => currentLevel + 1);
  */
-const [gameSettings, setGamesettings] = createStore({
+const [gameState, setGamestate] = createStore({
+  isRunning: false,
+  // mode: EDIT / SMASH / REPLAY
   level: 0,
   difficulty: 0,
 });
 
-export const useGameSettings = () => [gameSettings, setGamesettings];
+export const useGameState = () => [gameState, setGamestate];

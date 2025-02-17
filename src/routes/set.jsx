@@ -1,8 +1,9 @@
 import { useNavigate } from "@solidjs/router";
-import { onMount, onCleanup } from "solid-js";
-import { Nav } from "~/components/Nav";
 
+import { Nav } from "~/components/Nav";
 import { useWorld } from "~/system/world";
+import { useGameState } from "~/stores/gameState";
+
 import { RagDoll } from "~/game/objects/Ragdoll";
 import { Terrain } from "~/game/ground/Terrain";
 import { Floor } from "~/game/ground/Floor";
@@ -11,7 +12,9 @@ import { Cube } from "~/game/objects/Cube";
 
 
 function level() {
-  const { add, start } = useWorld();
+  const { add, start, stop } = useWorld();
+  stop();
+
   const terrain = new Terrain();
   const floor = new Floor();
   const cube = new Cube();
@@ -23,7 +26,6 @@ function level() {
   add(cube);
 
 
-  // NOTE: this should not be in this file (likely smash.jsx), but is here for now
   start();
 }
 
@@ -33,15 +35,17 @@ function level() {
 
 export default function Set() {
   const navigate = useNavigate();
-  const nav = (route) => () => navigate(route);
+  const [game, setGameState] = useGameState();
 
-  onMount(() => {
-    level();
-  });
+  setGameState('isRunning', false);
 
 
+  // temp boilerplate for now:
+  level();
 
-  function smash() {
+
+
+  function goSmash() {
     // cool animation while holding button....
     // then...
       navigate('/smash');
@@ -55,7 +59,7 @@ export default function Set() {
 
       <button
         class="fixed bottom-0 right-0 nav-button"
-        onClick={nav('/smash')}
+        onClick={goSmash}
       >
         SMASH
       </button>
