@@ -8,12 +8,13 @@ import type { Scene } from 'three';
  */
 export class Base implements IWorldEntity {
   public dynamicBodies: IDynamicBody[] = [];
+  public position: any; // coords: any?
 
   constructor() {
     //
   }
 
-  setup(scene: Scene, physics: World) {
+  setup(scene: Scene, physics: World, /* position: Position */) {
     // to be extended
   }
 

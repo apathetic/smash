@@ -1,5 +1,6 @@
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { useGameState } from "~/stores/gameState";
 
 interface ControlProps {
   graphics: IGraphics;
@@ -10,6 +11,7 @@ interface ControlProps {
 
 // TODO optimize this whole monstrosity
 function createControls({ graphics, physics, entities }: ControlProps) {
+  const [game, setGameState] = useGameState();
   const { camera, scene, renderer } = graphics;
   const { world } = physics;
   const canvas = renderer.domElement;
@@ -80,7 +82,9 @@ function createControls({ graphics, physics, entities }: ControlProps) {
 
     if (raycaster.ray.intersectPlane(planeZ, newPosition)) {
       newPosition.sub(grabOffset);
-      grabbedBody.setTranslation(newPosition, true); // Directly set the position in Rapier
+      grabbedBody.setTranslation(newPosition, true); // Directly set the position
+
+      setGameState('entities', (x) => x[grabbedBody.uuid] = newPosition)
     }
   }
 

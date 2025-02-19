@@ -7,11 +7,9 @@ export default function Smash() {
 
   setGameState('isRunning', true); // isSmash.... game.mode...? ...
 
-
   return (
     <>
       <Nav back />
-      <div>edit to my smash!</div>;
     </>
   )
 }

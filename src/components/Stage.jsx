@@ -5,7 +5,10 @@ import { useWorld } from "~/system/world";
 const Stage = ({ children }) => {
   let canvas;
 
-  onMount(() => useWorld(canvas));
+  onMount(() => {
+    const { start } = useWorld(canvas);
+    // start();
+  });
 
   onCleanup(() => {
     const { stop } = useWorld();

@@ -14,7 +14,7 @@ interface TimelineProps {
 function createTimeline({ graphics, physics, entities, controls }: TimelineProps) {
   const clock = new Clock();
   const { camera, scene, renderer } = graphics;
-  const [game, setGameState] = useGameState();
+  const [game] = useGameState();
 
 
   function loop() {
@@ -31,11 +31,10 @@ function createTimeline({ graphics, physics, entities, controls }: TimelineProps
 
   function start() {
     clock.start();
-// console.log(game.isRunning);
     renderer.setAnimationLoop(() => {
       loop();
       if (game.isRunning) {
-        smash(); // if smash is enabled, then run physics
+        smash(); // if game.smash, then run physics
       }
     });
   }

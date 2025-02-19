@@ -4,12 +4,7 @@ import { defineConfig, presetUno, presetTypography } from 'unocss';
 export default defineConfig({
 
   rules: [
-
-    ['my-custom-width', {
-      'width': '27rem'
-    }],
-
-    ['another-ex', {
+    ['smash-svg', {
       'min-height': '20em'
     }],
 
