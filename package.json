@@ -21,13 +21,11 @@
     "three": "^0.172.0",
     "typescript": "^5.7.3",
     "unocss": "^0.65.1",
-    "vinxi": "^0.4.3"
+    "vinxi": "^0.4.3",
+    "vite-plugin-top-level-await": "^1.4.4",
+    "vite-plugin-wasm": "^3.4.1"
   },
   "overrides": {
     "vite": "5.4.10"
-  },
-  "devDependencies": {
-    "vite-plugin-top-level-await": "^1.4.4",
-    "vite-plugin-wasm": "^3.4.1"
   }
 }

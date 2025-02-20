@@ -1,6 +1,6 @@
 import { Nav } from "~/components/Nav";
 import { SmashButton } from "~/components/SmashButton";
-import { useGameState } from "~/stores/gameState";
+import { useGameState } from "~/game/store";
 
 import { useWorld } from "~/system/world";
 import { RagDoll } from "~/game/objects/Ragdoll";
@@ -33,7 +33,7 @@ function level() {
 
 
 export default function Set() {
-  const [game, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
 
   setGameState('isRunning', false);
 

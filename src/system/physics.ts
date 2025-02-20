@@ -1,6 +1,6 @@
 import { createEffect } from "solid-js"
-import { useGameState } from "~/stores/gameState";
 import { World, EventQueue, RigidBodyType } from '@dimforge/rapier3d';
+import { useGameState } from "~/game/store";
 
 
   // TODO: tune physics props

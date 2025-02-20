@@ -2,7 +2,11 @@ import { onMount, onCleanup } from "solid-js";
 import { useWorld } from "~/system/world";
 
 
-const Stage = ({ children }) => {
+/**
+ * The Stage component.
+ * @returns {JSX.Element}
+ */
+const Stage = () => {
   let canvas;
 
   onMount(() => {

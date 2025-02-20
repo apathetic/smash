@@ -5,6 +5,13 @@ interface ResizerProps {
   renderer: WebGLRenderer;
 }
 
+
+/**
+ * A function to resize the scene when the window is resized.
+ *
+ * @param {ResizerProps} props - The renderer to resize, the camera to update.
+ * @returns {Function} Unsubscribe function
+ */
 function createResizer({ camera, renderer }: ResizerProps) {
   const onResize = () => {
     const w = window.innerWidth;

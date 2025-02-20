@@ -1,4 +1,3 @@
-import { useNavigate } from "@solidjs/router";
 import { Page } from "~/components/Page";
 import { Nav } from "~/components/Nav";
 

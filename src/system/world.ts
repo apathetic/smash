@@ -25,7 +25,7 @@ function createWorld(canvas: HTMLCanvasElement) {
   const graphics = createScene(canvas);
   const physics  = createPhysics();
   const lights   = createLights();
-  const controls = createControls({ graphics, physics, entities });
+  const controls = createControls({ graphics, physics });
   const timeline = createTimeline({ graphics, physics, entities, controls });
 
   createResizer(graphics);

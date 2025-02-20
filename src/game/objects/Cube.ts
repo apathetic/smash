@@ -7,7 +7,7 @@ import type { Scene } from 'three';
 
 /**
  * Cube game object.
- * @returns IWorldEntity
+ * @returns {IWorldEntity}
  */
 export class Cube extends Base {
   setup (scene: Scene, physics: World) {

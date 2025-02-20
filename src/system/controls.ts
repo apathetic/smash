@@ -1,19 +1,19 @@
 import * as rapier from '@dimforge/rapier3d';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { useGameState } from "~/stores/gameState";
+import { useGameState } from "~/game/store";
 
 interface ControlProps {
   graphics: IGraphics;
   physics: IPhysics;
-  entities: IUpdatable[];
+  // entities: IUpdatable[];
 }
 
 
 // TODO optimize this whole monstrosity
-function createControls({ graphics, physics, entities }: ControlProps) {
-  const [game, setGameState] = useGameState();
-  const { camera, scene, renderer } = graphics;
+function createControls({ graphics, physics }: ControlProps) {
+  const [game] = useGameState();
+  const { camera, renderer } = graphics;
   const { world } = physics;
   const canvas = renderer.domElement;
   const controls = new OrbitControls(camera, canvas);
@@ -21,16 +21,14 @@ function createControls({ graphics, physics, entities }: ControlProps) {
   const raycaster = new Raycaster();
   const mouse = new Vector2();
   const planeZ = new Plane(new Vector3(0, 0, 1), 0);
+  let selectedBody: rapier.RigidBody | null = null;
+
 
   // controls.enableDamping = true;
   controls.minDistance = 0.1; // not smaller than the camera’s near clipping plane
   controls.maxDistance = 100; // not greater than far clipping
 
 
-
-  // let grabbedBody: any = null; // Store the grabbed object
-  let selectedBody: rapier.RigidBody | null = null;
-  let grabOffset = new Vector3(); // Offset for precise movement
 
 
   function raycast(event: MouseEvent) {
@@ -51,16 +49,8 @@ function createControls({ graphics, physics, entities }: ControlProps) {
     const hit = world.castRay(ray, maxDistance, true);
 
     if (hit) {
-      controls.enabled = false; // 🔥 Disable OrbitControls
-      const collider = hit.collider;
-      const body = collider.parent();
-
-      if (body) {
-        selectedBody = body;
-
-        // NOTE: we're doing this AUTOMATICALLY with solidjs!
-        // body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true); // Make it kinematic
-      }
+      controls.enabled = false;
+      selectedBody = hit.collider.parent();
     }
   }
 

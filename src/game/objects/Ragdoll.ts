@@ -1,5 +1,5 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
-import { RigidBodyDesc, ColliderDesc, JointData, Vector3, ActiveEvents } from '@dimforge/rapier3d';
+import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents } from '@dimforge/rapier3d';
 import { Base } from './Base';
 import type { World } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
@@ -179,21 +179,6 @@ export class RagDoll extends Base {
     });
 
 
-
-
-    //Head to Chest
-    // jointList.push(physics.createImpulseJoint(
-    //   headBody,
-    //   chestBody, {
-    //     new Vector3(0, -0.25, 0),
-    //     new Vector3(0, 0.3, 0),
-    //     new Vector3(0, 0.3, 0),
-    //     axisA: CANNON.Vec3.UNITY,
-    //     axisB: CANNON.Vec3.UNITY,
-    //     angle: Math.PI / 4,
-    //     twistAngle: Math.PI / 8
-    //   }
-    // ));
 
     const neckJoint = physics.createImpulseJoint(
       JointData.spherical(

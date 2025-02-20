@@ -1,9 +1,9 @@
-import { useGameState } from "~/stores/gameState";
+import { useGameState } from "~/game/store";
 import { Nav } from "~/components/Nav";
 
 
 export default function Smash() {
-  const [game, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
 
   setGameState('isRunning', true); // isSmash.... game.mode...? ...
 

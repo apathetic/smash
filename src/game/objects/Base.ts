@@ -30,6 +30,7 @@ export class Base implements IWorldEntity {
       mesh.geometry.dispose();
       mesh.material.dispose();
       // ...
+      console.log("destroy this?", body);
     });
   };
 
