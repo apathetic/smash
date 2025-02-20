@@ -1,3 +1,4 @@
+import * as rapier from '@dimforge/rapier3d';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/stores/gameState";
@@ -27,7 +28,8 @@ function createControls({ graphics, physics, entities }: ControlProps) {
 
 
 
-  let grabbedBody: any = null; // Store the grabbed object
+  // let grabbedBody: any = null; // Store the grabbed object
+  let selectedBody: rapier.RigidBody | null = null;
   let grabOffset = new Vector3(); // Offset for precise movement
 
 
@@ -37,60 +39,47 @@ function createControls({ graphics, physics, entities }: ControlProps) {
     raycaster.setFromCamera(mouse, camera);
   }
 
-
-  // Convert mouse event to Three.js normalized coordinates
   function onMouseDown(event: MouseEvent) {
-    // if world.isRunning() return; // cannot move while things running
+    if (game.isRunning) return;
 
     raycast(event);
 
+    const origin = raycaster.ray.origin;
+    const direction = raycaster.ray.direction;
+    const maxDistance = 100; // Set an appropriate max distance
+    const ray = new rapier.Ray(origin, direction);
+    const hit = world.castRay(ray, maxDistance, true);
 
-    // TODO move this out of here, make better way of calculation, make a signal, eg,
-    const interactableObjects: Map<IDynamicBody['mesh'], any> = entities
-      .filter(x => x.constructor.name != 'Terrain')
-      .reduce((objs, x) => {
-        x.dynamicBodies.forEach(({ mesh, body }) => objs.set(mesh, body));
-        return objs;
-      }, new Map());
-
-    const intersects = raycaster.intersectObjects(scene.children, true);         // Check all objects
-    // const intersects = raycaster.intersectObjects(interactableObjects.keys(), true); // check pre-defined objects.  These are 'mesh'es
-
-
-    if (intersects.length > 0) {
-      // Get the clicked object
-      // unless it's Terrain. the nevermind.
-      const mesh = intersects[0].object;
-
-      const body = interactableObjects.get(mesh); // Find corresponding Rapier body
+    if (hit) {
+      controls.enabled = false; // 🔥 Disable OrbitControls
+      const collider = hit.collider;
+      const body = collider.parent();
 
       if (body) {
-        controls.enabled = false; // 🔥 Disable OrbitControls
-        grabbedBody = body;
-        const hitPoint = intersects[0].point; // Exact hit position
-        grabOffset.subVectors(hitPoint, new Vector3(body.translation().x, body.translation().y, body.translation().z));
+        selectedBody = body;
+
+        // NOTE: we're doing this AUTOMATICALLY with solidjs!
+        // body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true); // Make it kinematic
       }
     }
   }
 
   function onMouseMove(event: MouseEvent) {
-    if (!grabbedBody) return;
+    if (!selectedBody) return;
+    if (game.isRunning) return;
 
     raycast(event);
 
-    const newPosition = new Vector3();
+    const worldPos = new Vector3();
+    raycaster.ray.intersectPlane(planeZ, worldPos);
 
-    if (raycaster.ray.intersectPlane(planeZ, newPosition)) {
-      newPosition.sub(grabOffset);
-      grabbedBody.setTranslation(newPosition, true); // Directly set the position
-
-      setGameState('entities', (x) => x[grabbedBody.uuid] = newPosition)
-    }
+    // Move object to world position
+    selectedBody.setTranslation(new rapier.Vector3(worldPos.x, worldPos.y, 0), true); // note: z=0 because don't want to move in z-axis, i guess?
   }
 
   function onMouseUp() {
     controls.enabled = true;
-    grabbedBody = null;
+    selectedBody = null;
   }
 
 

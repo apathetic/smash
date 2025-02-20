@@ -1,5 +1,4 @@
 import { Clock } from 'three';
-import { useGameState } from "~/stores/gameState";
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
@@ -11,31 +10,27 @@ interface TimelineProps {
 }
 
 
+/**
+ * Creates a timeline for managing the time-evolution of the world. It is
+ * responsible for updating physics, entities, and rendering the scene.
+ *
+ * @param {TimelineProps} props - All the items in the world that need updating.
+ * @returns {object} - A timeline handle with start and stop methods.
+ */
 function createTimeline({ graphics, physics, entities, controls }: TimelineProps) {
   const clock = new Clock();
   const { camera, scene, renderer } = graphics;
-  const [game] = useGameState();
-
-
-  function loop() {
-    controls.update();
-    renderer.render(scene, camera);
-  }
-
-  function smash() {
-    const delta = clock.getDelta();
-    physics.update(delta); // does order matter? ie. update physics _World_ before physics in each entity
-    entities.forEach((item) => item.update(delta));
-  }
 
 
   function start() {
     clock.start();
     renderer.setAnimationLoop(() => {
-      loop();
-      if (game.isRunning) {
-        smash(); // if game.smash, then run physics
-      }
+      const delta = clock.getDelta();
+
+      physics.update(delta);
+      entities.forEach((item) => item.update(delta));
+      controls.update();
+      renderer.render(scene, camera);
     });
   }
 

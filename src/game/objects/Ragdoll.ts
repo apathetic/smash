@@ -5,7 +5,7 @@ import type { World } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
 
 
-const createMesh = (x,y,z, color) => {
+const createMesh = (x: number, y: number, z: number, color: number) => {
   const geometry = new BoxGeometry(x, y, z);
   const material = new MeshPhongMaterial({ color });
   const mesh = new Mesh(geometry, material);
@@ -444,7 +444,7 @@ export class RagDoll extends Base {
 
     //////////////////////////////////////////////////////////////
   }
-  update(t) {
+  update(t: number) {
     // pivot.rotation.y += 0.005;
     super.update(t);
   }

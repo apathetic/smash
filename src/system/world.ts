@@ -1,8 +1,8 @@
-import { createScene, createLights } from './scene';
-import { createResizer } from './resizer';
-import { createTimeline } from './timeline';
-import { createControls } from './controls';
-import { createPhysics } from './physics';
+import { createScene, createLights } from "./scene";
+import { createResizer } from "./resizer";
+import { createTimeline } from "./timeline";
+import { createControls } from "./controls";
+import { createPhysics } from "./physics";
 
 
 /**

@@ -1,9 +1,13 @@
 import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 
-
+/**
+ * Placeholder to showcase an idea.
+ * TODO: refine, iterate, update.
+ */
 function SmashButton() {
   const [isConfirming, setConfirming] = createSignal(false);
+  const [isSmashing, setSmashing] = createSignal(false);
   const navigate = useNavigate();
   let timer;
 
@@ -23,15 +27,16 @@ function SmashButton() {
     // cool animation while holding button....
     // then...
     timer = setTimeout(() => {
-      navigate('/smash');
-    }, 2000 );
+      setSmashing(true);
+      setTimeout(() => navigate('/smash'), 400); // animation-exit
+    }, 1600 );
   }
 
 
 
   return (
     <button
-        class={`fixed bottom-5 right-5 block z-100 ${isConfirming() ? 'confirming': ''}`}
+        class={`fixed bottom-5 right-5 bg-transparent block z-100 ${isConfirming() ? 'confirming': ''} ${isSmashing() ? 'smash': ''}`}
         onMouseDown={goSmash}
         onMouseUp={reset}
         onMouseOut={reset}
@@ -40,6 +45,8 @@ function SmashButton() {
 {/* This is hack:  */}
 <style>
 {`
+  button { opacity: 1; transition: opacity 0.4s; }
+  g { transition: transform 0.4s; }
   svg { height: 2em; }
   path {
     stroke-dasharray: 100;
@@ -48,8 +55,14 @@ function SmashButton() {
     fill: white
   }
   .confirming path {
-    animation: draw 2s linear forwards;
+    animation: draw 1.6s linear forwards;
   }
+
+  .smash { opacity: 0; }
+  .smash g:nth-child(1) { transform: scale(2); } /* TODO randomize these vals */
+  .smash g:nth-child(2) { transform: scale(1.2); } /* TODO randomize these vals */
+  .smash g:nth-child(3) { transform: scale(0.3); }
+  .smash g:nth-child(5) { transform: scale(4); }
 
   @keyframes draw {
     to {

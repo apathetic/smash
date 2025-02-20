@@ -1,4 +1,5 @@
 import { createStore } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 
 
 interface GameState {
@@ -6,6 +7,8 @@ interface GameState {
   entities: Record<string, Position>; // TEMP. Will make this more verbose.
   level: number;
 }
+
+type gameHook = () => [GameState, SetStoreFunction<GameState>]; // not sure why this needs typing
 
 
 /**
@@ -27,4 +30,4 @@ const [gameState, setGameState] = createStore({
 
 // type XXX = [game: any; setGame: any];
 
-export const useGameState = () => [gameState, setGameState];
+export const useGameState: gameHook = () => [gameState, setGameState];
