@@ -20,6 +20,9 @@ body {
   flex-direction: column;
   min-width: 320px;
   min-height: 100vh;
+
+  /* no selecting text, buttons, etc */
+  user-select: none;
 }
 
 

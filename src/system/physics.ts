@@ -52,6 +52,9 @@ function createPhysics() {
 
 
 
+  let stepId = 0;
+
+
 
 
 
@@ -91,6 +94,9 @@ function createPhysics() {
 
   function update(delta: number) {
     world.step(eventQueue);
+    stepId += 1;
+
+    (world as any).stepId = stepId;
 
     // eventQueue.drainCollisionEvents((...        // if `ActiveEvents.COLLISION_EVENTS` is set in the collider
     eventQueue.drainContactForceEvents(collisions); // if `ActiveEvents.CONTACT_FORCE_EVENTS` is set in the collider

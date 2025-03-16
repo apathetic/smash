@@ -7,6 +7,7 @@ interface TimelineProps {
   physics: IPhysics;
   entities: IUpdatable[];
   controls: OrbitControls;
+  gui: any;
 }
 
 
@@ -17,20 +18,23 @@ interface TimelineProps {
  * @param {TimelineProps} props - All the items in the world that need updating.
  * @returns {object} - A timeline handle with start and stop methods.
  */
-function createTimeline({ graphics, physics, entities, controls }: TimelineProps) {
+function createTimeline({ graphics, physics, entities, controls, gui }: TimelineProps) {
   const clock = new Clock();
   const { camera, scene, renderer } = graphics;
-
 
   function start() {
     clock.start();
 
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
+
+      gui.update(delta);
+      gui.stats.begin();
       physics.update(delta);
       entities.forEach((item) => item.update(delta));
       controls.update();
       renderer.render(scene, camera);
+      gui.stats.end();
     });
   }
 

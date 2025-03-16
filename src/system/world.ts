@@ -3,6 +3,7 @@ import { createResizer } from "./resizer";
 import { createTimeline } from "./timeline";
 import { createControls } from "./controls";
 import { createPhysics } from "./physics";
+import { createGUI } from "./gui";
 
 
 /**
@@ -25,8 +26,9 @@ function createWorld(canvas: HTMLCanvasElement) {
   const graphics = createScene(canvas);
   const physics  = createPhysics();
   const lights   = createLights();
+  const gui      = createGUI({ graphics, physics });
   const controls = createControls({ graphics, physics });
-  const timeline = createTimeline({ graphics, physics, entities, controls });
+  const timeline = createTimeline({ graphics, physics, entities, controls, gui });
 
   createResizer(graphics);
   graphics.scene.add(...lights);

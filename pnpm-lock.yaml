@@ -14,18 +14,30 @@ dependencies:
   '@solidjs/start':
     specifier: ^1.0.11
     version: 1.0.11(solid-js@1.9.4)(vinxi@0.4.3)(vite@6.0.7)
+  '@types/stats.js':
+    specifier: ^0.17.0
+    version: 0.17.3
   '@types/three':
     specifier: ^0.172.0
     version: 0.172.0
   '@unocss/reset':
     specifier: ^0.62.4
     version: 0.62.4
+  lil-gui:
+    specifier: ^0.20.0
+    version: 0.20.0
   oxlint:
     specifier: ^0.15.7
     version: 0.15.7
+  seedrandom:
+    specifier: ^3.0.5
+    version: 3.0.5
   solid-js:
     specifier: ^1.9.3
     version: 1.9.4
+  stats.js:
+    specifier: ^0.17.0
+    version: 0.17.0
   three:
     specifier: ^0.172.0
     version: 0.172.0
@@ -3863,6 +3875,10 @@ packages:
       readable-stream: 2.3.8
     dev: false
 
+  /lil-gui@0.20.0:
+    resolution: {integrity: sha512-k7Ipr0ztqslMA2XvM5z5ZaWhxQtnEOwJBfI/hmSuRh6q4iMG9L0boqqrnZSzBR1jzyJ28OMl47l65ILzRe1TdA==}
+    dev: false
+
   /listhen@1.9.0:
     resolution: {integrity: sha512-I8oW2+QL5KJo8zXNWX046M134WchxsXC7SawLPvRQpogCbkyQIaFxPE89A2HiwR7vAK2Dm2ERBAmyjTYGYEpBg==}
     hasBin: true
@@ -4666,6 +4682,10 @@ packages:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
     dev: false
 
+  /seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
+    dev: false
+
   /semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
@@ -4844,6 +4864,10 @@ packages:
 
   /standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
+    dev: false
+
+  /stats.js@0.17.0:
+    resolution: {integrity: sha512-hNKz8phvYLPEcRkeG1rsGmV5ChMjKDAWU7/OJJdDErPBNChQXxCo3WZurGpnWc6gZhAzEPFad1aVgyOANH1sMw==}
     dev: false
 
   /statuses@2.0.1:
