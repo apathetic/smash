@@ -24,9 +24,9 @@ function createTimeline({ graphics, physics, entities, controls }: TimelineProps
 
   function start() {
     clock.start();
+
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
-
       physics.update(delta);
       entities.forEach((item) => item.update(delta));
       controls.update();
@@ -39,9 +39,6 @@ function createTimeline({ graphics, physics, entities, controls }: TimelineProps
     clock.stop();
   }
 
-  function reset() {
-    //
-  }
 
   return { start, stop };
 };

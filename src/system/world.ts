@@ -43,7 +43,15 @@ function createWorld(canvas: HTMLCanvasElement) {
     item.destroy();
   }
 
-  return { ...timeline, add, remove };
+  function clear() {
+    while (entities.length) {
+      // remove( entities.pop() );
+      let item = entities.pop();
+      item?.destroy();
+    }
+  }
+
+  return { ...timeline, add, remove, clear };
 };
 
 

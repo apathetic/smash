@@ -29,7 +29,7 @@ function SmashButton() {
     timer = setTimeout(() => {
       setSmashing(true);
       setTimeout(() => navigate('/smash'), 400); // animation-exit
-    }, 1600 );
+    }, 1000 );
   }
 
 
@@ -55,7 +55,7 @@ function SmashButton() {
     fill: white
   }
   .confirming path {
-    animation: draw 1.6s linear forwards;
+    animation: draw 1.0s linear forwards;
   }
 
   .smash { opacity: 0; }

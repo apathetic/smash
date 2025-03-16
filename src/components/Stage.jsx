@@ -1,5 +1,6 @@
 import { onMount, onCleanup } from "solid-js";
 import { useWorld } from "~/system/world";
+import { Terrain } from "~/game/ground/Terrain";
 
 
 /**
@@ -10,8 +11,9 @@ const Stage = () => {
   let canvas;
 
   onMount(() => {
+    // NOTE: useWorld must be init'd here, in hook, only after canvas is set
     const { start } = useWorld(canvas);
-    // start();
+    start();
   });
 
   onCleanup(() => {

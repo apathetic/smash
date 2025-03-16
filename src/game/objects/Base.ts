@@ -7,11 +7,14 @@ import type { Scene } from 'three';
  * @returns IWorldEntity
  */
 export class Base implements IWorldEntity {
+  public id: string;
   public dynamicBodies: IDynamicBody[] = [];
   public position: any; // coords: any?
 
-  constructor() {
-    //
+  constructor(id: string) {
+    this.id = id || Math.random().toString(36).substring(2, 9); // for reference
+    // this.uuid = Math.random().toString(36).substr(2, 9);     // for uniqueness
+    console.log("Creating entity:", this.constructor.name);
   }
 
   setup(scene: Scene, physics: World, /* position: Position */) {

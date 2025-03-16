@@ -1,9 +1,14 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
-import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents } from '@dimforge/rapier3d';
+import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,
+PrismaticImpulseJoint, SphericalImpulseJoint
+ } from '@dimforge/rapier3d';
 import { Base } from './Base';
-import type { World } from '@dimforge/rapier3d';
+import type { World, RigidBody } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
 
+
+const STIFFNESS = 5.0;
+const DAMPING = 0.8;
 
 const createMesh = (x: number, y: number, z: number, color: number) => {
   const geometry = new BoxGeometry(x, y, z);
@@ -13,10 +18,10 @@ const createMesh = (x: number, y: number, z: number, color: number) => {
   return mesh;
 };
 
-const createBoxBody = (physics: World) => ({
-  size =     [0, 0, 0],
+const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) => ({
+  size =     [0, 0, 0] as Tuple,
   position = [0, 0, 0] as Position,
-  offset = null,
+  mass = 100,
   color = 0xffffff
 }) => {
   const [ x, y, z ] = size;
@@ -24,17 +29,21 @@ const createBoxBody = (physics: World) => ({
   const geometry = new BoxGeometry(x, y, z); // full-extents
   const material = new MeshPhongMaterial({ color });
   const mesh = new Mesh(geometry, material);
-  // const mesh = createMesh(x,y,z,color);
+  // const mesh = createMesh(...size, color);
+  // const mesh = createMesh(x, y, z, color);
 
   const rigidBodyDesc = RigidBodyDesc
     .dynamic()
     .setTranslation(...position)
+    .setLinearDamping(0.5)     // Add linear damping to reduce oscillations
+    .setAngularDamping(0.5)    // Add angular damping to reduce rotational jitter
     .setCanSleep(true);
 
   const colliderDesc = ColliderDesc
-    .cuboid(x/2, y/2, z/2) // half-extents
-    .setMass(1)
-    .setRestitution(0.5) // elasticity
+    .cuboid(x/2, y/2, z/2)     // half-extents
+    .setMass(mass)
+    .setRestitution(0.1)       // Lower restitution to reduce bouncing. "elasticity"
+    .setFriction(0.9)          // Higher friction to help parts "stick" to the ground, and to reduce jitter
     // .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
     .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS);
 
@@ -46,6 +55,9 @@ const createBoxBody = (physics: World) => ({
   // mesh.position.y += offset.y;
   // mesh.position.z += offset.z;
   // mesh.position.copy(body.translation());  // is already setTranslation
+
+  meshList.push(mesh);
+  bodyList.push(body);
 
   return [ mesh, body ] as any;
 };
@@ -72,12 +84,12 @@ const clothingColors = [
  */
 export class RagDoll extends Base {
   setup (scene: Scene, physics: World) {
-    const createEntity = createBoxBody(physics);
-    // const offset = { x: 0, y: 0, z: 0 }
 
-    const meshList = [];
-    const bodyList = [];
-    const jointList = [];
+    const meshList: Mesh[] = [];
+    const bodyList: RigidBody[] = [];
+    // const jointList = [];
+    const createEntity = createBoxBody(physics, meshList, bodyList);
+
 
     let skin  =     skinColors[Math.floor(Math.random() * skinColors.length)];
     let shirt = clothingColors[Math.floor(Math.random() * clothingColors.length)];
@@ -89,291 +101,267 @@ export class RagDoll extends Base {
 
     const [head, headBody] = createEntity({
       size:     [0.5, 0.5,  0.5],
-      position: [0,   2.18, 0],
+      position: [0.0, 2.18, 0.0],
+      mass: 200,
       color: skin
     });
 
     const [chest, chestBody] = createEntity({
       size:     [0.6, 0.6,  0.3],
-      position: [0,   1.61, 0],
+      position: [0.0, 1.61, 0.0],
+      mass: 300,
       color: shirt
     });
 
     const [hips, hipsBody] = createEntity({
-      size: [0.6,0.3,0.3],
-      position: [0,1.14,0],
+      size:     [0.6, 0.3,  0.3],
+      position: [0.0, 1.14, 0.0],
       color: shirt
     });
 
-    const [upperShoulderL, upperShoulderLBody] = createEntity({
-      size: [0.4,0.2,0.2],
-      position: [0.51,1.8,0],
+    const [upperArmL, upperArmLBody] = createEntity({
+      size:     [0.4,  0.2, 0.2],
+      position: [0.51, 1.8, 0.0],
       color: shirt
     });
 
-    const [lowerShoulderL, lowerShoulderLBody] = createEntity({
-      size:     [ 0.4,  0.2, 0.2],
-      position: [ 0.92, 1.8, 0],
+    const [foreArmL, foreArmLBody] = createEntity({
+      size:     [0.4,  0.2, 0.2],
+      position: [0.92, 1.8, 0.0],
       color: skin
     });
 
     const [handL, handLBody] = createEntity({
-      size:     [ 0.2,  0.2, 0.2],
-      position: [ 1.23, 1.8, 0],
+      size:     [0.2,  0.2, 0.2],
+      position: [1.23, 1.8, 0.0],
       color: skin
     });
 
-    const [upperShoulderR, upperShoulderRBody] = createEntity({
-      size:     [ 0.4,   0.2, 0.2],
-      position: [ -0.51, 1.8, 0],
+    const [upperArmR, upperArmRBody] = createEntity({
+      size:     [ 0.4,  0.2, 0.2],
+      position: [-0.51, 1.8, 0.0],
       color: shirt
     });
 
-    const [lowerShoulderR, lowerShoulderRBody] = createEntity({
-      size:     [ 0.4,   0.2, 0.2],
-      position: [ -0.92, 1.8, 0],
+    const [foreArmR, foreArmRBody] = createEntity({
+      size:     [ 0.4,  0.2, 0.2],
+      position: [-0.92, 1.8, 0.0],
       color: skin
     });
 
     const [handR, handRBody] = createEntity({
-      size:     [ 0.2,   0.2, 0.2],
-      position: [ -1.23, 1.8, 0],
+      size:     [ 0.2,  0.2, 0.2],
+      position: [-1.23, 1.8, 0.0],
       color: skin
     });
 
     const [upperLegL, upperLegLBody] = createEntity({
-      size:     [ 0.2, 0.4,  0.2],
-      position: [ 0.2, 0.78, 0],
+      size:     [0.2, 0.4,  0.2],
+      position: [0.2, 0.78, 0.0],
       color: pants
     });
 
     const [lowerLegL, lowerLegLBody] = createEntity({
-      size:     [ 0.2, 0.4,  0.2],
-      position: [ 0.2, 0.36, 0],
+      size:     [0.2, 0.4,  0.2],
+      position: [0.2, 0.36, 0.0],
       color: skin
     });
 
-    // const footLBody = createBody(0.1, 0.06, 0.1525); // <== NOTE: foot z is different, in original
     const [footL, footLBody] = createEntity({
-      size:     [ 0.2, 0.12, 0.35],
-      position: [ 0.2, 0.08, 0.05],
+      size:     [0.2, 0.12, 0.35],
+      position: [0.2, 0.08, 0.05],
       color: foot
     });
 
     const [upperLegR, upperLegRBody] = createEntity({
-      size:     [ 0.2,  0.4,  0.2],
-      position: [ -0.2, 0.78, 0],
+      size:     [ 0.2, 0.4,  0.2],
+      position: [-0.2, 0.78, 0.0],
       color: pants
     });
 
     const [lowerLegR, lowerLegRBody] = createEntity({
-      size:     [ 0.2,  0.4,  0.2],
-      position: [ -0.2, 0.36, 0],
+      size:     [ 0.2, 0.4,  0.2],
+      position: [-0.2, 0.36, 0.0],
       color: skin
     });
 
     const [footR, footRBody] = createEntity({
-      size:     [ 0.2,  0.12, 0.35],
-      position: [ -0.2, 0.08, 0.05],
+      size:     [ 0.2, 0.12, 0.35],
+      position: [-0.2, 0.08, 0.05],
       color: foot
     });
 
 
+    //////////
 
-    const neckJoint = physics.createImpulseJoint(
-      JointData.spherical(
-        { x: 0, y: -0.25, z: 0 }, // Point where the joint is attached on the first rigid-body affected by this joint. Expressed in the local-space of the rigid-body.
-        { x: 0, y: 0.3, z: 0 }),  // Point where the joint is attached on the second rigid-body affected by this joint. Expressed in the local-space of the rigid-body.
-      headBody,
-      chestBody,
-      true
+
+    const neckJointData =  JointData.revolute(
+      { x: 0, y: -0.25, z: 0 },  // Point where the joint is attached on the first rigid-body
+      { x: 0, y: 0.3, z: 0 },    // Point where the joint is attached on the second rigid-body
+      { x: Math.PI/8, y: Math.PI/8, z: 0 }       // Different axis (front-to-back movement)
     );
+    // Modify the joint properties to make it looser
+    neckJointData.stiffness = STIFFNESS;
+    neckJointData.damping = DAMPING;
+    const neckJoint = physics.createImpulseJoint(neckJointData, headBody, chestBody, true);
+    neckJoint.setContactsEnabled(false);
 
-/** * /
 
-    const waistJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: 0, y: -0.3, z: 0 }, { x: 0, y: 0.075, z: 0 }),
-      chestBody,
-      hipsBody,
-      true,
+    const waistData = JointData.revolute(
+      { x: 0, y: -0.3, z: 0 },
+      { x: 0, y: 0.075, z: 0 },
+      { x: 1, y: 0, z: 0 }          // Axis of rotation (x-axis = side-to-side bending)
     );
+    const limitAngle = Math.PI / 6; // 30 degrees rotation limit
+    waistData.stiffness = STIFFNESS;
+    waistData.damping = DAMPING;
+    waistData.limitsEnabled = true; // limits to restrict the joint rotation
+    waistData.limits = [limitAngle, limitAngle];
+    const waistJoint = physics.createImpulseJoint(waistData, chestBody, hipsBody, true);
+    // waistJoint.setContactsEnabled(false);
 
-    const shoulderLJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: 0.3, y: 0.25, z: 0 }, { x: -0.2, y: 0, z: 0 }),
-      chestBody,
-      upperShoulderLBody,
-      true,
+
+    const shoulderLData = JointData.spherical({ x: 0.3, y: 0.25, z: 0 }, { x: -0.2, y: 0, z: 0 });
+    shoulderLData.stiffness = STIFFNESS;
+    shoulderLData.damping = DAMPING;
+    const shoulderLJoint = physics.createImpulseJoint(shoulderLData, chestBody, upperArmLBody, true);
+
+
+    const elbowLData = JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.2, y: 0, z: 0 });
+    const elbowLJoint = physics.createImpulseJoint(elbowLData, upperArmLBody, foreArmLBody, true);
+
+
+    const wristLData = JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.1, y: 0, z: 0 });
+    const wristLJoint = physics.createImpulseJoint(wristLData, foreArmLBody, handLBody, true);
+
+
+    const shoulderRData = JointData.spherical({ x: -0.3, y: 0.25, z: 0 }, { x: 0.2, y: 0, z: 0 });
+    const shoulderRJoint = physics.createImpulseJoint(shoulderRData, chestBody, upperArmRBody, true);
+
+
+      // axisA: CANNON.Vec3.UNITX,
+      // axisB: CANNON.Vec3.UNITX,
+      // angle: Math.PI / 4,
+      // twistAngle: Math.PI / 8
+    const elbowRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.2, y: 0, z: 0 });
+    const elbowRJoint = physics.createImpulseJoint(elbowRData, upperArmRBody, foreArmRBody, true);
+
+
+    //foreArmR to HandR
+      // axisA: CANNON.Vec3.UNITX,
+      // axisB: CANNON.Vec3.UNITX,
+      // angle: Math.PI / 8,
+      // twistAngle: Math.PI / 8
+    const wristRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.1, y: 0, z: 0 });
+    physics.createImpulseJoint(wristRData, foreArmRBody, handRBody, true);
+
+
+    // axisA: CANNON.Vec3.UNITY,
+    // axisB: CANNON.Vec3.UNITY,
+    // angle: Math.PI / 4,
+    // twistAngle: Math.PI / 8
+    const hipLData = JointData.spherical(
+      { x: 0.2, y: -0.15, z: 0 },
+      { x: 0, y: 0.2, z: 0 }
     );
+    physics.createImpulseJoint(hipLData, hipsBody, upperLegLBody, true);
 
-    const elbowLJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.2, y: 0, z: 0 }),
-      upperShoulderLBody,
-      lowerShoulderLBody,
-      true,
+
+    // axisA: CANNON.Vec3.UNITX,
+    // axisB: CANNON.Vec3.UNITX,
+    // angle: Math.PI/4,
+    // twistAngle: Math.PI/8
+    const kneeLData = JointData.revolute(
+      { x: 0, y: -0.2, z: 0 },  // Anchor point on upper leg
+      { x: 0, y: 0.2, z: 0 },   // Anchor point on lower leg
+      { x: 1, y: 0, z: 0 }      // Axis of rotation (x-axis = side-to-side knee movement)
     );
+    physics.createImpulseJoint(kneeLData, upperLegLBody, lowerLegLBody, true);
 
-    const wristLJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.1, y: 0, z: 0 }),
-      lowerShoulderLBody,
-      handLBody,
-      true
+
+    // axisA: CANNON.Vec3.UNITY,
+    // axisB: CANNON.Vec3.UNITY,
+    // angle: Math.PI / 8,
+    // twistAngle: Math.PI / 8
+    const ankleLData = JointData.spherical(
+      { x: 0, y: -0.2, z: 0 },
+      { x: 0, y: 0.06, z: -0.04 },
     );
+    const ankleLJoint = physics.createImpulseJoint(ankleLData, lowerLegLBody, footLBody, true);
 
-    const shoulderRJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: -0.3, y: 0.25, z: 0 }, { x: 0.2, y: 0, z: 0 }),
-      chestBody,
-      upperShoulderRBody,
-      true,
+
+    // axisA: CANNON.Vec3.UNITY,
+    // axisB: CANNON.Vec3.UNITY,
+    // angle: Math.PI / 4,
+    // twistAngle: Math.PI / 8
+    const hipRData = JointData.spherical(
+      { x: -0.2, y: -0.15, z: 0 },
+      { x: 0,    y: 0.2,   z: 0 },
     );
+    const hipRJoint = physics.createImpulseJoint(hipRData, hipsBody, upperLegRBody, true);
 
-  /** /
 
-      //UpperShoulderR to LowerShoulderR
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: -0.2,y: 0, 0),
-{ x: 0.2,y: 0, 0),
-          // axisA: CANNON.Vec3.UNITX,
-          // axisB: CANNON.Vec3.UNITX,
-          // angle: Math.PI / 4,
-          // twistAngle: Math.PI / 8
-        ),
-      upperShoulderRBody,
-      lowerShoulderRBody
-      ));
-
-      //LowerShoulderR to HandR
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: -0.2,y: 0, 0),
-{ x: 0.1,y: 0, 0),
-          // axisA: CANNON.Vec3.UNITX,
-          // axisB: CANNON.Vec3.UNITX,
-          // angle: Math.PI / 8,
-          // twistAngle: Math.PI / 8
-        ),
-      lowerShoulderRBody,
-      handRBody
-      ));
-
-      //Hips to UpperLegL
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: 0.2,y: -0.15, 0),
-{ x: 0, y:0.2, 0),
-          // axisA: CANNON.Vec3.UNITY,
-          // axisB: CANNON.Vec3.UNITY,
-          // angle: Math.PI / 4,
-          // twistAngle: Math.PI / 8
-        ),
-      hipsBody,
-      upperLegLBody
-      ));
-
-      //UpperLegL to LowerLegL
-    jointList.push(physics.createImpulseJoint(
-        JointData.revolute(
-{ x: 0, y:-0.2, 0),
-{ x: 0, y:0.2, 0),
-
-{ x: 0, y:1, 0), // ///????
-
-          // axisA: CANNON.Vec3.UNITX,
-          // axisB: CANNON.Vec3.UNITX,
-          ////angle: Math.PI/4,
-          ////twistAngle: Math.PI/8
-        ),
-      upperLegLBody,
-      lowerLegLBody
-      ));
-
-      //LowerLegL to FootL
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: 0, y:-0.2, 0),
-{ x: 0, y:0.06, -0.04),
-          // axisA: CANNON.Vec3.UNITY,
-          // axisB: CANNON.Vec3.UNITY,
-          // angle: Math.PI / 8,
-          // twistAngle: Math.PI / 8
-        ),
-      lowerLegLBody,
-      footLBody
-      ));
-
-      //Hips to UpperLegR
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: -0.2,y: -0.15, 0),
-{ x: 0, y:0.2, 0),
-          // axisA: CANNON.Vec3.UNITY,
-          // axisB: CANNON.Vec3.UNITY,
-          // angle: Math.PI / 4,
-          // twistAngle: Math.PI / 8
-        ),
-      hipsBody,
-      upperLegRBody
-      ));
-
-      //UpperLegR to LowerLegR
-    jointList.push(physics.createImpulseJoint(
-        JointData.spherical(
-{ x: 0, y:-0.2, 0),
-{ x: 0, y:0.2, 0),
-          // axisA: CANNON.Vec3.UNITY,
-          // axisB: CANNON.Vec3.UNITY,
-          // angle: Math.PI / 4,
-          // twistAngle: Math.PI / 8
-        ),
-      upperLegRBody,
-      lowerLegRBody
-      ));
-
-  /**/
-
-    const ankleRJoint = physics.createImpulseJoint(
-      JointData.spherical({ x: 0, y: -0.2, z: 0 }, { x: 0, y: 0.06, z: -0.04 }),
-      lowerLegRBody,
-      footRBody,
-      true,
+    // axisA: CANNON.Vec3.UNITY,
+    // axisB: CANNON.Vec3.UNITY,
+    // angle: Math.PI / 4,
+    // twistAngle: Math.PI / 8
+    const kneeRData = JointData.revolute(
+      { x: 0, y: -0.2, z: 0 },  // Anchor point on upper leg
+      { x: 0, y: 0.2, z: 0 },   // Anchor point on lower leg
+      { x: 1, y: 0, z: 0 }      // Axis of rotation (x-axis = side-to-side knee movement)
     );
+    physics.createImpulseJoint(kneeRData, upperLegRBody, lowerLegRBody, true);
+
+
+    const ankleRData = JointData.revolute(
+      { x: 0, y: -0.2, z: 0 },     // Anchor point on lower leg
+      { x: 0, y: 0.06, z: -0.04 }, // Anchor point on foot
+      { x: 1, y: 0, z: 0 }         // Axis of rotation (side-to-side)
+    );
+    ankleRData.stiffness = 15.0;
+    ankleRData.damping = 0.7;
+    const ankleRJoint = physics.createImpulseJoint(ankleRData, lowerLegRBody, footRBody, true);
 
 
 
 
-    meshList.push(head);
-    meshList.push(chest);
-    meshList.push(hips);
-    meshList.push(upperShoulderL);
-    meshList.push(lowerShoulderL);
-    meshList.push(handL);
-    meshList.push(upperShoulderR);
-    meshList.push(lowerShoulderR);
-    meshList.push(handR);
-    meshList.push(upperLegL);
-    meshList.push(lowerLegL);
-    meshList.push(footL);
-    meshList.push(upperLegR);
-    meshList.push(lowerLegR);
-    meshList.push(footR);
+    // meshList.push(head);
+    // meshList.push(chest);
+    // meshList.push(hips);
+    // meshList.push(upperArmL);
+    // meshList.push(foreArmL);
+    // meshList.push(handL);
+    // meshList.push(upperArmR);
+    // meshList.push(foreArmR);
+    // meshList.push(handR);
+    // meshList.push(upperLegL);
+    // meshList.push(lowerLegL);
+    // meshList.push(footL);
+    // meshList.push(upperLegR);
+    // meshList.push(lowerLegR);
+    // meshList.push(footR);
 
-    bodyList.push(headBody);
-    bodyList.push(chestBody);
-    bodyList.push(hipsBody);
-    bodyList.push(upperShoulderLBody);
-    bodyList.push(lowerShoulderLBody);
-    bodyList.push(handLBody);
-    bodyList.push(upperShoulderRBody);
-    bodyList.push(lowerShoulderRBody);
-    bodyList.push(handRBody);
-    bodyList.push(upperLegLBody);
-    bodyList.push(lowerLegLBody);
-    bodyList.push(footLBody);
-    bodyList.push(upperLegRBody);
-    bodyList.push(lowerLegRBody);
-    bodyList.push(footRBody);
+    // bodyList.push(headBody);
+    // bodyList.push(chestBody);
+    // bodyList.push(hipsBody);
+    // bodyList.push(upperArmLBody);
+    // bodyList.push(foreArmLBody);
+    // bodyList.push(handLBody);
+    // bodyList.push(upperArmRBody);
+    // bodyList.push(foreArmRBody);
+    // bodyList.push(handRBody);
+    // bodyList.push(upperLegLBody);
+    // bodyList.push(lowerLegLBody);
+    // bodyList.push(footLBody);
+    // bodyList.push(upperLegRBody);
+    // bodyList.push(lowerLegRBody);
+    // bodyList.push(footRBody);
 
-    jointList.push(neckJoint);
+    // jointList.push(neckJoint);
+    // jointList.push(waistJoint);
+    // jointList.push(shoulderLJoint);
+    // jointList.push(elbowLJoint);
+    // jointList.push(wristLJoint);
 
 
       // const decorate(head) => {
@@ -410,25 +398,27 @@ export class RagDoll extends Base {
     scene.add(group);
 
     this.dynamicBodies.push(
-      { mesh: head, body: headBody },
+      { mesh: head,  body: headBody },
       { mesh: chest, body: chestBody },
-      { mesh: hips, body: hipsBody },
-      { mesh: upperShoulderL, body: upperShoulderLBody },
-      { mesh: lowerShoulderL, body: lowerShoulderLBody },
-      { mesh: handL, body: handLBody },
-      { mesh: upperShoulderR, body: upperShoulderRBody },
-      { mesh: lowerShoulderR, body: lowerShoulderRBody },
-      { mesh: handR, body: handRBody },
+      { mesh: hips,  body: hipsBody },
+      { mesh: upperArmL, body: upperArmLBody },
+      { mesh: foreArmL,  body: foreArmLBody },
+      { mesh: handL,     body: handLBody },
+      { mesh: upperArmR, body: upperArmRBody },
+      { mesh: foreArmR,  body: foreArmRBody },
+      { mesh: handR,     body: handRBody },
       { mesh: upperLegL, body: upperLegLBody },
       { mesh: lowerLegL, body: lowerLegLBody },
-      { mesh: footL, body: footLBody },
+      { mesh: footL,     body: footLBody },
       { mesh: upperLegR, body: upperLegRBody },
       { mesh: lowerLegR, body: lowerLegRBody },
-      { mesh: footR, body: footRBody },
+      { mesh: footR,     body: footRBody },
     );
 
-    //////////////////////////////////////////////////////////////
   }
+
+  //////////////////////////////////////////////////////////////
+
   update(t: number) {
     // pivot.rotation.y += 0.005;
     super.update(t);

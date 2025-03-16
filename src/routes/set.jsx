@@ -10,36 +10,20 @@ import { Cube } from "~/game/objects/Cube";
 
 
 
-function level() {
-  const { add, start, stop } = useWorld();
-  stop();
-
-  const terrain = new Terrain();
-  const floor = new Floor();
-  const cube = new Cube();
-  const ragdoll = new RagDoll();
-
-  add(terrain);
-  // add(floor);
-  add(ragdoll);
-  add(cube);
-
-
-  start();
-}
-
-
-
-
-
 export default function Set() {
-  const [_, setGameState] = useGameState();
+  const [game, setGameState] = useGameState();
 
-  setGameState('isRunning', false);
+  setGameState('mode', 'edit');
+  console.log('SETTTTTING ');
+
+  // reset(); // wipe canvas
+  // load();  // load from state
+
+  //          ... OR
+
+  // reset(); // reset positions only, from state
 
 
-  // temp boilerplate for now:
-  level();
 
 
   return (

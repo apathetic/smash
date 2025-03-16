@@ -11,6 +11,7 @@ When generating a game object, it requires 2 elements:
 
 
 type Position = [number, number, number];
+type Tuple = [number, number, number];
 
 interface IGraphics {
   camera: import("three").PerspectiveCamera;
@@ -36,6 +37,7 @@ interface IUpdatable {
 }
 
 interface IWorldEntity extends IUpdatable {
+  id?: string;
   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
   destroy: () => void;
 }
