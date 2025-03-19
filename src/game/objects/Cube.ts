@@ -21,6 +21,7 @@ export class Cube extends Base {
       .cuboid(0.5, 0.5, 0.5)
       .setMass(1)
       .setRestitution(0.5);
+      // .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
 
     const rigidBodyDesc = RigidBodyDesc
       .dynamic()

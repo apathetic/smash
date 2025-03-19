@@ -23,7 +23,7 @@ export interface DebugInfos {
 
 
 const params = {
-  numSolverIters: 4,
+  numSolverIters: 16,
   debugRender: false,
   debugInfos: false,
   running: false,

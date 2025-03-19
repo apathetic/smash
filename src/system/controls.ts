@@ -76,15 +76,18 @@ function createControls({ graphics, physics }: ControlProps) {
     const solid = true;
     const ray = new rapier.Ray(origin, direction);
 
-    const hit = world.castRay(ray, maxDistance, solid);
 
-
-    // let filterFlags = rapier.QueryFilterFlags.EXCLUDE_DYNAMIC;
-    // let filterGroups = 0x000b0001; /// https://rapier.rs/docs/user_guides/javascript/colliders/#collision-groups-and-solver-groups
+    // https://rapier.rs/javascript3d/enums/QueryFilterFlags.html
+    let filterFlags = rapier.QueryFilterFlags.ONLY_DYNAMIC;
+    // let filterGroups = 0x00010003;
     // let filterExcludeCollider;
     // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
     // let filterPredicate = (collider: rapier.Collider) => {}; // data.get(collider.handle) == 10.0;
+
     // const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups, filterExcludeCollider, filterExcludeRigidBody);
+    const hit = world.castRay(ray, maxDistance, solid, filterFlags);
+
+
 
 
     if (hit) {

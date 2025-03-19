@@ -107,25 +107,12 @@ export class Terrain extends Base {
       origin.z + TERRAIN_SIZE * 0.5
     );
 
-    // 0b0000_0000_0000_0001 = 0x0001 ==> is a member of GROUP 1.
-    // 0b0000_0000_0000_0011 = 0x0003 ==> may interact with GROUPS 1 and 2
-    /* export */ const COLLISION_GROUP_STATIC = 0x00010003;
-
-    /* export */ const COLLISION_GROUP_ENTITY = 0x00020003;
-
     const clDesc = ColliderDesc.heightfield(
       TERRAIN_SIZE,
       TERRAIN_SIZE,
       heightMap,
       new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
-    )
-    // ALL "static" elements (walls, floor, etc) are GROUP 1 (in binary)
-    // ALL "interactable" entities (ragdoll, cube, etc) are GROUP 2 (in binary)
-    // ALL GROUPS interact with one another. HOWEVER, we have these GROUPS so as
-    // to FILTER raycasts / clicks / interactions / etc. appropriately
-    // https://rapier.rs/docs/user_guides/javascript/colliders/#collision-groups-and-solver-groups
-    .setCollisionGroups(COLLISION_GROUP_STATIC);
-
+    );
 
     const body = physics.createRigidBody(rbDesc);
 
