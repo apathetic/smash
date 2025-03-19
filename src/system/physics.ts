@@ -21,7 +21,7 @@ function createPhysics() {
   world.integrationParameters.numSolverIterations = 20; // Default is usually 4
 
 
-  const toggleGravity = (enabled: boolean) => world.gravity.y = enabled ? -9.81 : 0;
+  const toggleGravity = (enabled: boolean) => world.gravity.y = enabled ? GRAVITY : 0;
 
 
 
@@ -92,7 +92,7 @@ function createPhysics() {
   }
 
 
-  function update(delta: number) {
+  function update(_delta: number) {
     world.step(eventQueue);
     stepId += 1;
 

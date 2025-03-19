@@ -1,13 +1,7 @@
 import { Nav } from "~/components/Nav";
 import { SmashButton } from "~/components/SmashButton";
 import { useGameState } from "~/game/store";
-
 import { useWorld } from "~/system/world";
-import { RagDoll } from "~/game/objects/Ragdoll";
-import { Terrain } from "~/game/ground/Terrain";
-import { Floor } from "~/game/ground/Floor";
-import { Cube } from "~/game/objects/Cube";
-
 
 
 export default function Set() {
@@ -22,8 +16,6 @@ export default function Set() {
   //          ... OR
 
   // reset(); // reset positions only, from state
-
-
 
 
   return (

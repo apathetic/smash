@@ -81,7 +81,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
 
   gui.add(params, "restoreSnapshot");
   params.restoreSnapshot = () => {
-    if (!!snap) {
+    if (snap) {
       world.free();
       // world = World.restoreSnapshot(snap);
       (world as any).stepId = snapStepId;
@@ -110,7 +110,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
 
 
   const setTiming = (timing: number) => {
-    if (!!timing) {
+    if (timing) {
       maxTimePanelValue = Math.max(maxTimePanelValue, timing);
       stepTimePanel.update(timing, maxTimePanelValue);
     }

@@ -1,0 +1,24 @@
+{
+
+  "boosts": {},
+
+  "entities": [
+    {
+      "type": "Cube",
+      "meta": {
+        "active": false,
+        "position": { "x": 0, "y": 0, "z": 0 }
+      }
+    }
+  ],
+
+  "environment": [
+    {
+      "type": "Terrain"
+    },
+    {
+      "type": "Wall",
+      "position": { "x": 0, "y": 0, "z": 0 }
+    }
+  ]
+}

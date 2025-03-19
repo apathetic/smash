@@ -1,6 +1,5 @@
 import { onMount, onCleanup } from "solid-js";
 import { useWorld } from "~/system/world";
-import { Terrain } from "~/game/ground/Terrain";
 
 
 /**

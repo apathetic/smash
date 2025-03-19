@@ -40,11 +40,11 @@ export class Base implements IWorldEntity {
     console.log("Creating entity:", this.constructor.name);
   }
 
-  setup(scene: Scene, physics: World, /* position: Position */) {
+  setup(_scene: Scene, _physics: World, /* position: Position */) {
     // to be extended
   }
 
-  update(delta: number) {
+  update(_delta: number) {
     this.dynamicBodies.forEach(({ mesh, body }) => {
       mesh.position.copy(body.translation());
       mesh.quaternion.copy(body.rotation());

@@ -8,38 +8,14 @@ import { Terrain } from "~/game/ground/Terrain";
 import { Cube } from "~/game/objects/Cube";
 
 
-
-/// TODO store/load as json:
-const levelData = {
-  objects: [
-    {
-      id: 'xxx',  // so that the user's saved data can be associated
-      type: 'Cube',
-      meta: {
-        active: false, // if added to the world, or not
-        position: { x: 0, y: 0, z: 0 }, // starting position. re-use
-      }
-    }
-  ],
-  terrain: {
-    id: 'bumpy',
-    type: 'Bumpy'
+async function getLevelData(lvl) {
+  try {
+    const levelModule = await import(`~/game/levels/${lvl}.json`);
+    const levelData = levelModule.default;
+    return levelData;
+  } catch (err) {
+    console.error('Could not load level ', lvl);
   }
-};
-
-
-function getLevelData(lvl) {
-  const ragdoll = {
-    id: 0,
-    type: 'Ragdoll',
-    meta: {
-      position: { x: 0, y: 0, z: 0 },
-      // ..
-    }
-  };
-
-  const level = levelData['objects'];
-  return [...level, ragdoll];
 }
 
 
@@ -53,53 +29,43 @@ function getLevelData(lvl) {
   // ie. where the entitiels have been positioned, etc.
 
 
-function loadLevel(lvl) {
+async function loadLevel(lvl) {
   const { add, clear } = useWorld();
   const [game, setGameState] = useGameState();
-  const levelData = getLevelData(lvl);
+  const levelData = await getLevelData(lvl);
+
 
   clear();
-  console.log(lvl);
 
 
   /////////////////
   // setGameState(..  .levelData);
   /////////////
-  levelData.forEach((entity) => {
+
+  levelData.entities.forEach((entity) => {
     switch(entity.type) {
       case "Cube":
         add(new Cube(entity.meta));
         break;
-      case "RagDoll":
-        add(new RagDoll(entity.meta));
+    }
+  });
+
+  levelData.environment.forEach((env) => {
+    switch(env.type) {
+      case "Terrain":
+        add(new Terrain(env.meta));
+        //  new Terrain({ id: "terrain" }); // assign a custom `id` to keep track of it, later retrieve it my its given id
+        break;
+      case "Floor":
+        add(new Floor());
+        break;
+      case "Wall":
         break;
     }
   });
 
-
-
-
-  // const terrain = new Terrain({ id: "terrain" }); // assign a custom `id` to keep track of it, later retrieve it my its given id
-  const terrain = new Terrain(); // vs. better to put it in the store / level?
-             // why not both?
-
-    add(terrain);
-
-  // const terrain = new Terrain();
-  // const floor = new Floor();
-  // const cube = new Cube();
   const ragdoll = new RagDoll();
-
-  // add(terrain);
-  // add(floor);
   add(ragdoll);
-
-
-
-
-
-
-
 }
 
 
@@ -125,8 +91,8 @@ export default function Overview() {
         high score, replays
 
         <ul>
-          <li><button onclick={() => loadLevel(1)}>level 1</button></li>
-          <li><button onclick={() => loadLevel(2)}>level 2</button></li>
+          <li><button onclick={() => loadLevel('1-discovery')}>level 1</button></li>
+          <li><button onclick={() => loadLevel('2-blocks')}>level 2</button></li>
           <li><button onclick={() => loadLevel(3)}>level 3</button></li>
         </ul>
 
