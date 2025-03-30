@@ -1,7 +1,5 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
-import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,
-PrismaticImpulseJoint, SphericalImpulseJoint
- } from '@dimforge/rapier3d';
+import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from '@dimforge/rapier3d';
 import { Base } from './Base';
 import type { World, RigidBody } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
@@ -97,7 +95,7 @@ export class RagDoll extends Base {
     let foot  = clothingColors[Math.floor(Math.random() * clothingColors.length)];
 
     const group = new Group();
-    group.position.set( 0, 0, 0 );
+    group.position.set( 0, 0, 0 ); // TODO: use this.position ?
 
     const [head, headBody] = createEntity({
       size:     [0.5, 0.5,  0.5],

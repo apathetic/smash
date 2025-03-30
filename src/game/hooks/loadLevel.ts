@@ -1,0 +1,94 @@
+import { useWorld } from "~/system/world";
+import { useGameState } from "~/game/store";
+
+import { Floor } from "~/game/environment/Floor";
+import { Terrain } from "~/game/environment/Terrain";
+import { RagDoll } from "~/game/entities/Ragdoll";
+import { Cube } from "~/game/entities/Cube";
+
+
+
+
+
+
+
+
+
+
+async function getLevelData(lvl: string) {
+  try {
+    const levelModule = await import(`~/game/levels/${lvl}.json`);
+    const levelData = levelModule.default;
+    return levelData;
+  } catch (err) {
+    console.error('Could not load level ', lvl);
+  }
+}
+
+
+
+
+
+
+  // load the levelData into state.
+  // only do this once
+  // subsequent loads of this page should use state data
+  // ie. where the entities have been positioned, etc.
+
+
+async function loadLevel(lvl: string) {
+  const { add, clear } = useWorld();
+  const [game, setGameState] = useGameState();
+  const levelData: Level = await getLevelData(lvl);
+
+
+  clear();
+
+
+  /////////////////
+  setGameState(
+    'environment',
+    levelData.environment.reduce((acc, env) => ({ ...acc, [env.type]: env.position }), {})
+  );
+
+  // i THINK this actually merges w/ current store entities
+  setGameState(
+    'entities',
+    levelData.entities.reduce((acc, ent) => ({ ...acc, [ent.type]: ent.position }), {})
+  );
+  /////////////
+
+  console.log('loaded state', game);
+
+
+  levelData.entities.forEach((entity) => {
+    switch(entity.type) {
+      case "Cube":
+        add(new Cube(entity));
+        // setGameState('entities', { 'cube': [0,0,0] }); // can position be a proxy that is shared by the class and by the store?
+        break;
+    }
+  });
+
+  levelData.environment.forEach((env) => {
+    switch(env.type) {
+      case "Terrain":
+        add(new Terrain(env));
+        //  new Terrain({ id: "terrain" }); // assign a custom `id` to keep track of it, later retrieve it my its given id
+        break;
+      case "Floor":
+        add(new Floor());
+        break;
+      case "Wall":
+        break;
+    }
+  });
+
+  const ragdoll = new RagDoll({ position: [0,0,0] });
+  add(ragdoll);
+}
+
+
+
+
+export { loadLevel };

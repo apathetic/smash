@@ -1,17 +1,28 @@
 import { createStore } from "solid-js/store";
+import { Vector3, Quaternion } from '@dimforge/rapier3d';
 import type { SetStoreFunction } from "solid-js/store";
+import type { Mesh } from 'three';
+import type { RigidBody } from '@dimforge/rapier3d';
 
+// Define types for entity data
+type EntityRotation = [number, number, number, number];
 
-interface GameState {
-  entities: Record<string, Position>; // TEMP. Will make this more verbose.
+type StoreEntity =  WorldEntity  &   {
+  id: string;
+  type: string; // e.g., 'cube', 'sphere', etc.
+  position: Position;
+  rotation: EntityRotation;
+};
 
+type GameState = {
+  entities: Record<StoreEntity['id'], StoreEntity>;
+  environment: Record<string, Position>;
   level: number;
   mode: 'edit' | 'smash' | 'replay';
-  terrain: 'tiles' | 'bumpy' | 'stairs';
   gravity: number;
 }
 
-type gameHook = () => [GameState, SetStoreFunction<GameState>]; // not sure why this needs typing
+type gameHook = () => [GameState, SetStoreFunction<GameState>];
 
 // Set store data via:
 //  * setGamestate(key, (setting) => ...some calculation...)
@@ -25,22 +36,69 @@ type gameHook = () => [GameState, SetStoreFunction<GameState>]; // not sure why 
  */
 const [gameState, setGameState] = createStore({
   mode: 'edit',
-  terrain: 'tiles',
+  environment: {
+    // 'floor': [0, 0, 0]
+  },
+  entities: {
+    // Will be populated with entity positions and rotations
+  },
   gravity: 0,
-  entities: {}, // keyed by uuid ...?
   level: 0,
+  // boosts: { /** which were used/applied? */}
 } as GameState);
 
 
 
-const [levelData, setLevelData] = createStore({
-  1: {
-    entities: { /**; positions n such */},
-    gravity: 0,
-    boosts: { /** which were used/applied? */}
+
+// Helper functions for entity management
+function generateEntityId(type: string, index: number): string {
+  return `${type}_${index}`;
+}
+
+/**
+ * Saves the current state of an entity to the store
+ */
+function saveEntityToStore(
+  id: string,
+  type: string,
+  position: Vector3,
+  rotation: Quaternion
+) {
+  setGameState('entities', id, {
+    id,
+    type,
+    position: [position.x, position.y, position.z],
+    rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
+  });
+}
+
+/**
+ * Updates an entity's position and rotation based on store data
+ */
+function updateEntityFromStore(
+  id: string,
+  body: RigidBody,
+  mesh: Mesh
+) {
+  const entityData = gameState.entities[id];
+  if (!entityData) return false;
+
+  // Apply position if available
+  if (entityData.position) {
+    const [x, y, z] = entityData.position;
+    body.setTranslation(new Vector3(x, y, z), true);
+    mesh.position.set(x, y, z);
   }
-});
 
+  // Apply rotation if available
+  if (entityData.rotation) {
+    const [x, y, z, w] = entityData.rotation;
+    body.setRotation(new Quaternion(x, y, z, w), true);
+    mesh.quaternion.set(x, y, z, w);
+  }
 
+  return true;
+}
 
 export const useGameState: gameHook = () => [gameState, setGameState];
+export { saveEntityToStore, updateEntityFromStore, generateEntityId };

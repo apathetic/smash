@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { saveLevel } from "~/game/hooks/saveLevel";
 
 /**
  * Placeholder to showcase an idea.
@@ -28,6 +29,7 @@ function SmashButton() {
     // then...
     timer = setTimeout(() => {
       setSmashing(true);
+      saveLevel();
       setTimeout(() => navigate('/smash'), 400); // animation-exit
     }, 1000 );
   }

@@ -22,7 +22,7 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const entities: IWorldEntity[] = [];
+  const entities: WorldEntity[] = [];
   const graphics = createScene(canvas);
   const physics  = createPhysics();
   const lights   = createLights();
@@ -34,23 +34,20 @@ function createWorld(canvas: HTMLCanvasElement) {
   graphics.scene.add(...lights);
 
 
-  function add(item: IWorldEntity) {
+  function add(item: WorldEntity) {
     item.setup(graphics.scene, physics.world);
     entities.push(item);
   }
 
-  function remove(item: IWorldEntity) {
+  function remove(item: WorldEntity) {
     // TODO won't work; filter by id or uuid
     // entities = entities.filter((i) => i !== item);
     item.destroy();
   }
 
   function clear() {
-    while (entities.length) {
-      // remove( entities.pop() );
-      let item = entities.pop();
-      item?.destroy();
-    }
+    entities.forEach((item) => item.destroy());
+    entities.length = 0;
   }
 
   return { ...timeline, add, remove, clear };

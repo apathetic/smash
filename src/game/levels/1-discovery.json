@@ -5,20 +5,19 @@
   "entities": [
     {
       "type": "Cube",
-      "meta": {
-        "active": false,
-        "position": { "x": 0, "y": 0, "z": 0 }
-      }
+      "position": [0, 4, 0],
+      "meta": { }
     }
   ],
 
   "environment": [
     {
-      "type": "Terrain"
+      "type": "Terrain",
+      "position": [0, -1, 0]
     },
     {
       "type": "Wall",
-      "position": { "x": 0, "y": 0, "z": 0 }
+      "position": [0, 0, 0]
     }
   ]
 }

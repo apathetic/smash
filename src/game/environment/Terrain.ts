@@ -7,8 +7,8 @@ import {
   Vector3
 } from 'three';
 import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
-import { Base } from '~/game/objects/Base';
-import { noise3 } from '~/lib/noise';
+import { Base } from '~/game/entities/Base';
+import { noise3 } from '~/game/utils/noise';
 import type { World } from '@dimforge/rapier3d';
 import type { Scene } from 'three';
 

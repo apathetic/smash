@@ -30,7 +30,7 @@ interface ControlProps {
  * @returns {Object} Control functions for interacting with the world
  */
 function createControls({ graphics, physics }: ControlProps) {
-  const [game] = useGameState();
+  const [game, setGameState] = useGameState();
   const { camera, renderer } = graphics;
   const { world } = physics;
   const canvas = renderer.domElement;
@@ -43,7 +43,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
   // controls.enableDamping = true;
-  controls.minDistance = 0.1; // not smaller than the camera’s near clipping plane
+  controls.minDistance = 0.1; // not smaller than the camera's near clipping plane
   controls.maxDistance = 100; // not greater than far clipping
   controls.maxPolarAngle = Math.PI / 2; // don't allow to look below the horizon
 
@@ -113,9 +113,12 @@ function createControls({ graphics, physics }: ControlProps) {
     raycast(event);
 
     const worldPos = new Vector3();
-
     raycaster.ray.intersectPlane(planeZ, worldPos);
-    selectedBody.setTranslation(new rapier.Vector3(worldPos.x, worldPos.y, 0), true); // note: z=0 because don't want to move in z-axis, i guess?
+
+    const position = new rapier.Vector3(worldPos.x, worldPos.y, 0);
+    selectedBody.setTranslation(position, true); // note: z=0 because don't want to move in z-axis, i guess?
+console.log(selectedBody,'s');
+    // setEntity/setGameState(position);
   }
 
   function onMouseUp() {
@@ -131,6 +134,22 @@ function createControls({ graphics, physics }: ControlProps) {
     // restore rigidBody to `Dynamic`
     const type = RigidBodyType.Dynamic;
     selectedBody.setBodyType(type, true);
+
+    // Save the current position of the entity to the game state
+    // const mesh = selectedBody.userData?.mesh;
+    const id = ''; // some entity id      //mesh?.userData?.id;
+    if (id) {
+      const position = selectedBody.translation();
+      const rotation = selectedBody.rotation();
+
+      setGameState('entities', (entities) => ({
+        ...entities,
+        [id]: {
+          position: [position.x, position.y, position.z],
+          rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
+        }
+      }));
+    }
 
     // destroy reference
     selectedBody = null;

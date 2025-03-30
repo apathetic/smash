@@ -1,0 +1,43 @@
+{
+
+  "boosts": {},
+
+  "entities": [
+    {
+      "type": "Cube",
+      "position": [0, 4, 0],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [4, 4, 0],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [0, 8, 0],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [4, 4, 4],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [0, 4, 4],
+      "meta": { }
+    }
+  ],
+
+  "environment": [
+    {
+      "type": "Terrain",
+      "position": [0, -1, 0]
+    },
+    {
+      "type": "Wall",
+      "position": [0, 0, 0]
+    }
+  ]
+}
