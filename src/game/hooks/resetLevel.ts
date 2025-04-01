@@ -1,4 +1,5 @@
 import { useGameState } from "~/game/store";
+import { registry } from "~/game/store/registry";
 
 /**
  * Resets entities to their saved positions from the game state.
@@ -10,8 +11,8 @@ function resetLevel() {
   console.log('Resetting level to saved state');
 
   // Iterate through all entities in the world
-  Object.values(gameState.entities).forEach((entity) => {
-    entity.reset();
+  registry.each((entity) => {
+    // entity.reset();
   });
 
   console.log('Level reset complete');

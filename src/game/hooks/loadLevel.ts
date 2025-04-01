@@ -35,10 +35,15 @@ async function getLevelData(lvl: string) {
   // subsequent loads of this page should use state data
   // ie. where the entities have been positioned, etc.
 
-
+/**
+ *
+ * @param lvl
+ Load json data; generate entities from it; insert into the game canvas
+ ///////// Load json data; extract initial data; initialize the store With this info
+ */
 async function loadLevel(lvl: string) {
   const { add, clear } = useWorld();
-  const [game, setGameState] = useGameState();
+  // const [game, setGameState] = useGameState();
   const levelData: Level = await getLevelData(lvl);
 
 
@@ -46,19 +51,19 @@ async function loadLevel(lvl: string) {
 
 
   /////////////////
-  setGameState(
-    'environment',
-    levelData.environment.reduce((acc, env) => ({ ...acc, [env.type]: env.position }), {})
-  );
+  // setGameState(
+  //   'environment',
+  //   levelData.environment.reduce((acc, env) => ({ ...acc, [env.type]: env.position }), {})
+  // );
 
-  // i THINK this actually merges w/ current store entities
-  setGameState(
-    'entities',
-    levelData.entities.reduce((acc, ent) => ({ ...acc, [ent.type]: ent.position }), {})
-  );
+  // // i THINK this actually merges w/ current store entities
+  // setGameState(
+  //   'entities',
+  //   levelData.entities.reduce((acc, ent) => ({ ...acc, [ent.type]: ent.position }), {})
+  // );
   /////////////
 
-  console.log('loaded state', game);
+  // console.log('loaded state', game);
 
 
   levelData.entities.forEach((entity) => {

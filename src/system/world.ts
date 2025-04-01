@@ -4,7 +4,7 @@ import { createTimeline } from "./timeline";
 import { createControls } from "./controls";
 import { createPhysics } from "./physics";
 import { createGUI } from "./gui";
-
+import { registry } from "~/game/store/registry";
 
 /**
  * A reference to a World instance.
@@ -22,32 +22,30 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const entities: WorldEntity[] = [];
   const graphics = createScene(canvas);
   const physics  = createPhysics();
   const lights   = createLights();
   const gui      = createGUI({ graphics, physics });
   const controls = createControls({ graphics, physics });
-  const timeline = createTimeline({ graphics, physics, entities, controls, gui });
+  const timeline = createTimeline({ graphics, physics, controls, gui });
 
   createResizer(graphics);
   graphics.scene.add(...lights);
 
 
-  function add(item: WorldEntity) {
-    item.setup(graphics.scene, physics.world);
-    entities.push(item);
+  function add(entity: WorldEntity) {
+    entity.setup(graphics.scene, physics.world);
+    registry.add(entity);
   }
 
-  function remove(item: WorldEntity) {
-    // TODO won't work; filter by id or uuid
-    // entities = entities.filter((i) => i !== item);
-    item.destroy();
+  function remove(entity: WorldEntity) {
+    entity.destroy();
+    registry.remove(entity);
   }
 
   function clear() {
-    entities.forEach((item) => item.destroy());
-    entities.length = 0;
+    registry.each((entity) => entity.destroy());
+    registry.clear();
   }
 
   return { ...timeline, add, remove, clear };

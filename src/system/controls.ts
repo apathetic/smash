@@ -10,7 +10,6 @@ import { RigidBodyType } from '@dimforge/rapier3d';
 interface ControlProps {
   graphics: IGraphics;
   physics: IPhysics;
-  // entities: IUpdatable[];
 }
 
 
@@ -30,7 +29,7 @@ interface ControlProps {
  * @returns {Object} Control functions for interacting with the world
  */
 function createControls({ graphics, physics }: ControlProps) {
-  const [game, setGameState] = useGameState();
+  const [gameState] = useGameState();
   const { camera, renderer } = graphics;
   const { world } = physics;
   const canvas = renderer.domElement;
@@ -66,7 +65,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
   function onMouseDown(event: MouseEvent) {
-    if (game.mode !== 'edit') return;
+    if (gameState.mode !== 'edit') return;
 
     raycast(event);
 
@@ -76,9 +75,8 @@ function createControls({ graphics, physics }: ControlProps) {
     const solid = true;
     const ray = new rapier.Ray(origin, direction);
 
-
     // https://rapier.rs/javascript3d/enums/QueryFilterFlags.html
-    let filterFlags = rapier.QueryFilterFlags.ONLY_DYNAMIC;
+    const filterFlags = rapier.QueryFilterFlags.ONLY_DYNAMIC;
     // let filterGroups = 0x00010003;
     // let filterExcludeCollider;
     // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
@@ -86,9 +84,6 @@ function createControls({ graphics, physics }: ControlProps) {
 
     // const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups, filterExcludeCollider, filterExcludeRigidBody);
     const hit = world.castRay(ray, maxDistance, solid, filterFlags);
-
-
-
 
     if (hit) {
       controls.enabled = false;
@@ -108,7 +103,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
   function onMouseMove(event: MouseEvent) {
     if (!selectedBody) return;
-    if (game.mode !== 'edit') return;
+    if (gameState.mode !== 'edit') return;
 
     raycast(event);
 
@@ -117,8 +112,6 @@ function createControls({ graphics, physics }: ControlProps) {
 
     const position = new rapier.Vector3(worldPos.x, worldPos.y, 0);
     selectedBody.setTranslation(position, true); // note: z=0 because don't want to move in z-axis, i guess?
-console.log(selectedBody,'s');
-    // setEntity/setGameState(position);
   }
 
   function onMouseUp() {
@@ -134,22 +127,6 @@ console.log(selectedBody,'s');
     // restore rigidBody to `Dynamic`
     const type = RigidBodyType.Dynamic;
     selectedBody.setBodyType(type, true);
-
-    // Save the current position of the entity to the game state
-    // const mesh = selectedBody.userData?.mesh;
-    const id = ''; // some entity id      //mesh?.userData?.id;
-    if (id) {
-      const position = selectedBody.translation();
-      const rotation = selectedBody.rotation();
-
-      setGameState('entities', (entities) => ({
-        ...entities,
-        [id]: {
-          position: [position.x, position.y, position.z],
-          rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
-        }
-      }));
-    }
 
     // destroy reference
     selectedBody = null;

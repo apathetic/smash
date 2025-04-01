@@ -5,7 +5,7 @@ import { useGameState } from "~/game/store";
 
 
 export default function Set() {
-  const [game, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
 
   resetLevel();
   setGameState('mode', 'edit');

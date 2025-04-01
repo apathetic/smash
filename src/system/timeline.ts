@@ -1,11 +1,11 @@
 import { Clock } from 'three';
+import { registry } from "~/game/store/registry";
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
 interface TimelineProps {
   graphics: IGraphics;
   physics: IPhysics;
-  entities: IUpdatable[];
   controls: OrbitControls;
   gui: any;
 }
@@ -18,7 +18,7 @@ interface TimelineProps {
  * @param {TimelineProps} props - All the items in the world that need updating.
  * @returns {object} - A timeline handle with start and stop methods.
  */
-function createTimeline({ graphics, physics, entities, controls, gui }: TimelineProps) {
+function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
   const clock = new Clock();
   const { camera, scene, renderer } = graphics;
 
@@ -31,7 +31,7 @@ function createTimeline({ graphics, physics, entities, controls, gui }: Timeline
       gui.update(delta);
       gui.stats.begin();
       physics.update(delta);
-      entities.forEach((item) => item.update(delta));
+      registry.each((entity) => entity.update(delta));
       controls.update();
       renderer.render(scene, camera);
       gui.stats.end();

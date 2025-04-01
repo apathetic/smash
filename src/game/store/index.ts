@@ -4,10 +4,10 @@ import type { SetStoreFunction } from "solid-js/store";
 import type { Mesh } from 'three';
 import type { RigidBody } from '@dimforge/rapier3d';
 
-// Define types for entity data
+
 type EntityRotation = [number, number, number, number];
 
-type StoreEntity =  WorldEntity  &   {
+type StoreEntity =  WorldEntity & {
   id: string;
   type: string; // e.g., 'cube', 'sphere', etc.
   position: Position;
@@ -32,8 +32,10 @@ type gameHook = () => [GameState, SetStoreFunction<GameState>];
 
 /**
  * GameState store
- *
+ * This stores all static information from the level, including
+ * data for each entity (position, rotation), ...
  */
+// const [levelData, setLevelData] = createStore({
 const [gameState, setGameState] = createStore({
   mode: 'edit',
   environment: {
@@ -100,5 +102,8 @@ function updateEntityFromStore(
   return true;
 }
 
-export const useGameState: gameHook = () => [gameState, setGameState];
-export { saveEntityToStore, updateEntityFromStore, generateEntityId };
+const useGameState: gameHook = () => [gameState, setGameState];
+
+export {
+  useGameState,
+  saveEntityToStore, updateEntityFromStore, generateEntityId };

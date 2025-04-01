@@ -26,28 +26,13 @@ interface IPhysics {
 
 ///
 
-// interface IDynamicBody {
-//   mesh: Mesh;       // skin
-//   body: RigidBody;  // skeleton
-// }
-
-// interface IUpdatable {
-//   dynamicBodies: IDynamicBody[];
-//   update: (delta: number) => void;
-// }
-
-// interface IWorldEntity extends IUpdatable {
-//   id?: string;
-//   position: Position;
-//   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
-//   destroy: () => void;
-// }
 
 
 
 
 
 
+type Entities = "Cube" | "Wall" | "Floor" | "Terrain";
 
 
 type DynamicBody = {
@@ -56,12 +41,12 @@ type DynamicBody = {
 }
 
 type Updatable = {
-  dynamicBodies: IDynamicBody[];
+  dynamicBodies: DynamicBody[];
   update: (delta: number) => void;
 }
 
-type WorldEntity = IUpdatable & {
-  id?: string;
+type WorldEntity = Updatable & {
+  id: string;
   position: Position;
   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
   destroy: () => void;
@@ -69,7 +54,31 @@ type WorldEntity = IUpdatable & {
 
 
 
-type Entities = "Cube" | "Wall" | "Floor" | "Terrain";
+
+/* // -------------------------
+
+
+JSON
+- each worldEntity in a serializable JSON
+
+ENTITIES
+- each _instantiated_ worldEntity object, in an array
+
+STORE
+- current details (position, rotation, meta) of each
+  _instantiated_ worldEntity object, duplicated and
+  available here
+
+
+ */
+
+// type StoreEntity =  WorldEntity  &   {
+//   id: string;
+//   type: string; // e.g., 'cube', 'sphere', etc.
+//   position: Position;
+//   rotation: EntityRotation;
+// };
+
 
 //// from the JSON:
 
