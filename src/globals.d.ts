@@ -61,10 +61,10 @@ type WorldEntity = Updatable & {
 JSON
 - each worldEntity in a serializable JSON
 
-ENTITIES
-- each _instantiated_ worldEntity object, in an array
+REGISTRY
+- each _instantiated_ worldEntity object, in a store
 
-STORE
+LEVEL STORE
 - current details (position, rotation, meta) of each
   _instantiated_ worldEntity object, duplicated and
   available here

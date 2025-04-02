@@ -1,5 +1,5 @@
 import { createEffect } from "solid-js"
-import { World, EventQueue, RigidBodyType } from '@dimforge/rapier3d';
+import { World, EventQueue, /* RigidBodyType */ } from '@dimforge/rapier3d';
 import { useGameState } from "~/game/store";
 
 
@@ -86,8 +86,8 @@ function createPhysics() {
 
 
   const collisions = (event: any) => { ///// meant to be overwitten;
-    let handle1 = event.collider1(); // Handle of the first collider involved in the event.
-    let handle2 = event.collider2(); // Handle of the second collider involved in the event.
+    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
+    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
     // console.log("Contact force:", handle1, event.totalForce());
   }
 

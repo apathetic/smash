@@ -29,7 +29,7 @@ export class Cube extends Base {
       .setCanSleep(true);
 
     const body     = physics.createRigidBody(rigidBodyDesc);
-    const collider = physics.createCollider(colliderDesc, body);
+    const _collider = physics.createCollider(colliderDesc, body);
 
     mesh.position.set(...position);
     scene.add(mesh);

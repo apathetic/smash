@@ -1,6 +1,6 @@
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
-import { version, World } from "@dimforge/rapier3d";
+import { version, /* World */ } from "@dimforge/rapier3d";
 import GUI from "lil-gui";
 
 
@@ -41,7 +41,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
 
   const gui = new GUI({ title: "SMASH" });
 
-  const rapierVersion = version();
+  const _rapierVersion = version();
   let maxTimePanelValue = 16.0;
   let snap: Uint8Array;
   let snapStepId = 0;

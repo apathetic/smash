@@ -78,9 +78,44 @@ So, we can solve that using a `setup` fn where everything is managed together, c
 
 
 
+
+## State
+
+
+There are three tiers of state within the application
+
+First, data that represents each level is serialized in a number of JSON files.
+
+When those files are loaded, a series of worldEntity objects are instantiated. These each contain a ThreeJS mesh and a Rapier Collider, and their own internal state. Any instantiated worldEntities are stored in a solid registry to make them available throughout the app.
+
+Lastly, we have the game state, which is the position, rotation, etc., of all worldEntities within the Scene. This is separate from the data that each entity object contains. It is used to reset the level or save the level state to local storage, etc.
+
+
+
+
+
+## Collision Groups
+
+All entities within the Scene have attached Rapier collliders. By default, they will all interact with one another. However, we can create specific groups of worldEntities. This is useful for clicking  (only select partincular things) and raytracing, but also can be efficient when rapier calculates things.
+
+- ALL "static" elements (walls, floor, etc) are GROUP 1 (in binary)
+- ALL "interactable" entities (ragdoll, cube, etc) are GROUP 2 (in binary)
+- ALL GROUPS interact with one another. HOWEVER, we have these GROUPS so as to FILTER raycasts / clicks / interactions / etc. appropriately
+// https://rapier.rs/docs/user_guides/javascript/colliders/#collision-groups-and-solver-groups
+
+```
+0b0000_0000_0000_0001 = 0x0001 ==> is a member of GROUP 1.
+0b0000_0000_0000_0011 = 0x0003 ==> may interact with GROUPS 1 and 2
+
+0x0001 (member of #1) + 0x0003 (interactable with 1, 2) = 0x00010003
+
+0x0002 (member of #2) + 0x0003 (interactable with 1, 2) = 0x00020003;
+
+
+
+
+
 ## Open Questions
-
-
 
 1. why is the floor "off"?  the falling cube comes to rest just above of it.
   setting the floor's mesh.position or rigidBody.translation doesnt seem to have an effect

@@ -1,5 +1,5 @@
 import { useWorld } from "~/system/world";
-import { useGameState } from "~/game/store";
+// import { useGameState } from "~/game/store";
 
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
@@ -21,7 +21,7 @@ async function getLevelData(lvl: string) {
     const levelData = levelModule.default;
     return levelData;
   } catch (err) {
-    console.error('Could not load level ', lvl);
+    console.error('Could not load level ', lvl, err);
   }
 }
 

@@ -22,7 +22,7 @@ export class Floor extends Base {
     const floorBody = RigidBodyDesc.fixed().setTranslation(...position);
     const floorShape = ColliderDesc.cuboid(50, 0.5, 50); // half-extents
     const body = physics.createRigidBody(floorBody);
-    const collider = physics.createCollider(floorShape, body);
+    const _collider = physics.createCollider(floorShape, body);
 
     mesh.receiveShadow = true;
     mesh.position.set(...position);

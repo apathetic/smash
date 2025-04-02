@@ -6,12 +6,13 @@ import { registry } from "~/game/store/registry";
  * This restores the level to the state it was in when saveLevel was called.
  */
 function resetLevel() {
-  const [gameState] = useGameState();
+  const [_gameState] = useGameState();
 
   console.log('Resetting level to saved state');
 
   // Iterate through all entities in the world
-  registry.each((entity) => {
+  registry.each((_entity) => {
+    // const data = gameState.entities.get
     // entity.reset();
   });
 
