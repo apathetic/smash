@@ -1,9 +1,10 @@
 import { Clock } from 'three';
 import { registry } from "~/game/store/registry";
+import { useGameState } from '~/game/store';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
-interface TimelineProps {
+type TimelineProps = {
   graphics: IGraphics;
   physics: IPhysics;
   controls: OrbitControls;
@@ -20,9 +21,11 @@ interface TimelineProps {
  */
 function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
   const clock = new Clock();
+  const [game] = useGameState();
   const { camera, scene, renderer } = graphics;
 
   function start() {
+    const ragdoll = registry.get('ragdoll');
     clock.start();
 
     renderer.setAnimationLoop(() => {
@@ -33,6 +36,9 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
       physics.update(delta);
       registry.each((entity) => entity.update(delta));
       controls.update();
+
+      ragdoll!.damage(game.impacts);
+
       renderer.render(scene, camera);
       gui.stats.end();
     });

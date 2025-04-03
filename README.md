@@ -113,6 +113,13 @@ All entities within the Scene have attached Rapier collliders. By default, they 
 
 
 
+## Code references
+
+- https://github.com/pmndrs/drei/blob/master/src/core/Environment.tsx
+- https://drei.docs.pmnd.rs/getting-started/introduction
+- https://javascriptgametutorials.com/tutorials/react-three-fiber/crossy-road/restricting-player-movement *****
+
+
 
 
 ## Open Questions

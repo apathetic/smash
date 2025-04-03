@@ -9,7 +9,9 @@ import {
 import { Vector3 } from "three";
 import { createEffect } from "solid-js";
 import { useGameState } from "~/game/store";
+import { registry } from "~/game/store/registry";
 import { GRAVITY } from "~/system/constants";
+
 
 
 /**
@@ -23,18 +25,20 @@ function createPhysics() {
   const gravity    = { x: 0.0, y: 0, z: 0.0 };
   const world      = new World(gravity);
   const eventQueue = new EventQueue(true); // 'true' to capture contact force events
-  const [game]     = useGameState();
+  // const [game]     = useGameState();
+  const [game, setGameState] = useGameState();
   let stepId       = 0;
+  let ragdoll: WorldEntity | undefined;
 
   // Increase solver iterations for more stable constraint solving
   world.integrationParameters.numSolverIterations = 20; // Default is ~4
 
 
-  function collisions(event: any) { //  meant to be overwitten;
-    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
-    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
-    // console.log("Contact force:", handle1, event.totalForce());
-  }
+  // function collisions(event: any) { //  meant to be overwitten;
+  //   let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
+  //   let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
+  //   // console.log("Contact force:", handle1, event.totalForce());
+  // }
 
   function update(_delta: number) {
     world.step(eventQueue);
@@ -85,7 +89,54 @@ function createPhysics() {
 
 
 
+  // Handle collision events and record impacts
+  function collisions(event: any) {
+    // const ragdoll = registry.get('ragdoll');
+    if (!ragdoll) return;
+
+    // RigidBody attached to the first collider
+    const collider1 = event.collider1();
+    const body1 = world.getRigidBody(collider1.parent());
+    const isBody1 = ragdoll.dynamicBodies.some(({ body }) => body === body1);
+
+    // RigidBody of the second collider involved in the event.
+    const collider2 = event.collider2();
+    const body2 = world.getRigidBody(collider2.parent());
+    const isBody2 = ragdoll.dynamicBodies.some(({ body }) => body === body2);
+
+    const ragdollBody = isBody1 ? body1 : isBody2 ? body2 : null;
+    if (!ragdollBody) { console.error('bad'); return }
+
+
+    // Calculate impact force (approximation based on the contact force)
+    const impactForce = event.totalForce();
+
+    // Only record significant impacts
+    // if (impactForce > 0.5) {
+      // Update the game state with impact data
+      setGameState('impacts', (impacts) => [
+        ...impacts,
+        {
+          id: Date.now(),
+          bodyPart: 'ragdoll', // ragdollBody
+          force: impactForce,
+          position: [ragdollBody.translation().x, ragdollBody.translation().y, ragdollBody.translation().z],
+          rigidBody: ragdollBody,
+          timestamp: Date.now()
+        }
+      ]);
+
+      // Update total damage
+      setGameState('totalDamage', (current) => current + impactForce);
+    // }
+  };
+
+
+  // React to game state changes
   createEffect(() => {
+    if (!ragdoll) {
+      ragdoll = registry.get('ragdoll');
+    }
 
     // Toggle gravity based on game state
     if (game.mode == 'smash') {

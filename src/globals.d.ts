@@ -46,11 +46,26 @@ type Updatable = {
   update: (delta: number) => void;
 }
 
-type WorldEntity = Updatable & {
+type Damageable = {
+  damage: any;
+}
+
+type WorldEntity = Updatable & Partial<Damageable> & {
   id: string;
   position: Position;
   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
   destroy: () => void;
+}
+
+
+
+type Impact = {
+  id: number;
+  bodyPart: string;
+  force: number;
+  position: [number, number, number];
+  // collidedWith: string;
+  timestamp: number;
 }
 
 

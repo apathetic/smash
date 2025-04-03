@@ -1,5 +1,5 @@
 import { useWorld } from "~/system/world";
-// import { useGameState } from "~/game/store";
+import { useGameState } from "~/game/store";
 
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
@@ -43,13 +43,18 @@ async function getLevelData(lvl: string) {
  */
 async function loadLevel(lvl: string) {
   const { add, clear } = useWorld();
-  // const [game, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
   const levelData: Level = await getLevelData(lvl);
 
   if (!levelData) {
     console.error(`Failed to load level: ${lvl}`);
     return;
   }
+
+  // Reset impact data when loading a new level
+  setGameState('impacts', []);
+  setGameState('totalDamage', 0);
+
 
   clear();
 

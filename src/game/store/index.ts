@@ -20,6 +20,8 @@ type GameState = {
   level: number;
   mode: 'edit' | 'smash' | 'replay';
   gravity: number;
+  impacts: Impact[];
+  totalDamage: number;
 }
 
 type gameHook = () => [GameState, SetStoreFunction<GameState>];
@@ -46,6 +48,8 @@ const [gameState, setGameState] = createStore({
   },
   gravity: 0,
   level: 0,
+  impacts: [],
+  totalDamage: 0,
   // boosts: { /** which were used/applied? */}
 } as GameState);
 

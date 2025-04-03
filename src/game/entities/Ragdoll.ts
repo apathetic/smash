@@ -68,7 +68,6 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
 };
 
 
-
 /**
  * Ragdoll
  * @returns WorldEntity
@@ -368,5 +367,55 @@ export class RagDoll extends Base {
   update(t: number) {
     // pivot.rotation.y += 0.005;
     super.update(t);
+  }
+
+  damage(impacts: any /* Impact[] */) {
+    if (!impacts || impacts.length === 0) return;
+
+    // Calculate damage per body part
+    const bodyPartDamage = impacts.reduce((acc: Record<string, number>, impact: any) => {
+      const part = impact.bodyPart;
+      if (!acc[part]) acc[part] = 0;
+      acc[part] += impact.force;
+      return acc;
+    }, {});
+
+    // Update appearance of each body part based on damage
+    Object.entries(bodyPartDamage).forEach(([partName, damage]) => {
+      // Find the mesh for this body part using the impacts that affected this part
+      const relevantImpact = impacts.find((impact: any) => impact.bodyPart === partName);
+      if (!relevantImpact) return;
+
+      // Get the mesh associated with this rigid body
+      const partMesh = this.dynamicBodies.find(
+        body => body.body === relevantImpact.rigidBody
+      )?.mesh;
+
+      if (partMesh) {
+        // Change color based on damage
+        const damageLevel = Math.min(1, (damage as number) / 20);
+
+        // Update the material color
+        if (partMesh.material) {
+          // If it's an array of materials
+          if (Array.isArray(partMesh.material)) {
+            partMesh.material.forEach((mat: any) => {
+              mat.color.setRGB(
+                1,                    // Red stays at max
+                1 - damageLevel * 0.8, // Green decreases with damage
+                1 - damageLevel       // Blue decreases with damage
+              );
+            });
+          } else {
+            // Single material
+            partMesh.material.color.setRGB(
+              1,                    // Red stays at max
+              1 - damageLevel * 0.8, // Green decreases with damage
+              1 - damageLevel       // Blue decreases with damage
+            );
+          }
+        }
+      }
+    });
   }
 }

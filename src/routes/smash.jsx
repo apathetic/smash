@@ -1,5 +1,6 @@
 import { useGameState } from "~/game/store";
 import { Nav } from "~/components/Nav";
+import { Damage } from "~/components/Damage";
 
 
 export default function Smash() {
@@ -9,6 +10,7 @@ export default function Smash() {
 
   return (
     <>
+      <Damage />
       <Nav back />
     </>
   )
