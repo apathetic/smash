@@ -1,0 +1,20 @@
+{
+  "tasks": {
+    "dev": "deno run -A --unstable-kv --unstable-worker-options npm:vite@4.5.0 --config app.config.deno.js",
+    "build": "pnpm build",
+    "preview": "deno run -A --allow-net --allow-read --allow-env deploy.ts"
+  },
+  "imports": {
+    "@hono/hono": "jsr:@hono/hono@^4.6.12",
+    "@dimforge/rapier3d": "npm:@dimforge/rapier3d@^0.14.0",
+    "@solidjs/router": "npm:@solidjs/router@^0.15.2",
+    "three": "npm:three@^0.172.0",
+    "solid-js": "npm:solid-js@^1.9.3",
+    "three/examples/jsm/controls/OrbitControls.js": "npm:three@^0.172.0/examples/jsm/controls/OrbitControls.js"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "solid-js",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"]
+  }
+}
