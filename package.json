@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start",
     "check": "tsc --noEmit",
     "lint": "oxlint src/ --fix -D correctness",
     "test": "vitest run"

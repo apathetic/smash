@@ -2,8 +2,6 @@
   "tasks": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "preview": "deno run -A --allow-net --allow-read --allow-env deploy.ts",
-
     "serve": {
       "command": "deno task dev:api",
       "description": "Run the build, and then start the API server",
@@ -15,5 +13,11 @@
     "jsxImportSource": "solid-js",
     "allowJs": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"]
+  },
+  "deploy": {
+    "project": "400d5704-7844-4a86-945a-ceec83159234",
+    "exclude": ["**/node_modules"],
+    "include": [".output/public/**", "server.ts"],
+    "entrypoint": "server.ts"
   }
 }
