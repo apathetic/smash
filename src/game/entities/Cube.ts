@@ -1,7 +1,7 @@
 import { Mesh, BoxGeometry, MeshNormalMaterial } from 'three';
-import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
+import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { Base } from './Base';
-import type { World } from '@dimforge/rapier3d';
+import type { World } from 'rapier';
 import type { Scene } from 'three';
 
 

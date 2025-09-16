@@ -8,28 +8,34 @@
     "build": "vinxi build",
     "start": "vinxi start",
     "check": "tsc --noEmit",
-    "lint": "oxlint src/ --fix -D correctness"
+    "lint": "oxlint src/ --fix -D correctness",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@dimforge/rapier3d": "^0.14.0",
-    "@solidjs/router": "^0.15.2",
-    "@solidjs/start": "^1.0.11",
-    "@types/stats.js": "^0.17.0",
+    "@dimforge/rapier3d": "^0.18.2",
+    "@dimforge/rapier3d-compat": "^0.18.2",
+    "@solidjs/router": "^0.15.3",
+    "@solidjs/start": "^1.1.7",
+    "@types/stats.js": "^0.17.4",
     "@types/three": "^0.172.0",
     "@unocss/reset": "^0.62.4",
     "lil-gui": "^0.20.0",
-    "oxlint": "^0.15.7",
+    "oxlint": "^0.15.15",
     "seedrandom": "^3.0.5",
-    "solid-js": "^1.9.3",
+    "solid-js": "^1.9.9",
     "stats.js": "^0.17.0",
     "three": "^0.172.0",
-    "typescript": "^5.7.3",
-    "unocss": "^0.65.1",
-    "vinxi": "^0.4.3",
-    "vite-plugin-top-level-await": "^1.4.4",
-    "vite-plugin-wasm": "^3.4.1"
+    "typescript": "^5.9.2",
+    "unocss": "^0.65.4",
+    "vinxi": "^0.5.8",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0",
+    "vitest": "^3.2.4"
   },
   "overrides": {
     "vite": "5.4.10"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
   }
 }

@@ -1,11 +1,9 @@
-import * as rapier from '@dimforge/rapier3d';
+import * as rapier from 'rapier';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
 
 
-import { ActiveCollisionTypes } from '@dimforge/rapier3d';
-import { RigidBodyType } from '@dimforge/rapier3d';
 
 interface ControlProps {
   graphics: IGraphics;
@@ -92,9 +90,9 @@ function createControls({ graphics, physics }: ControlProps) {
       // So that the collider will still interact with other non-dynamic colliders.
       // This is the case when this collider gets set to kinematic so that it may be dragged around.
       // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
-      hit.collider.setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT | ActiveCollisionTypes.KINEMATIC_FIXED);
+      hit.collider.setActiveCollisionTypes(rapier.ActiveCollisionTypes.DEFAULT | rapier.ActiveCollisionTypes.KINEMATIC_FIXED);
 
-      const type = RigidBodyType.KinematicPositionBased;
+      const type = rapier.RigidBodyType.KinematicPositionBased;
       selectedBody!.setBodyType(type, true);
 
 
@@ -125,7 +123,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
     // restore rigidBody to `Dynamic`
-    const type = RigidBodyType.Dynamic;
+    const type = rapier.RigidBodyType.Dynamic;
     selectedBody.setBodyType(type, true);
 
     // destroy reference

@@ -16,6 +16,8 @@
     "baseUrl": "./",
     "paths": {
       "~/*": ["./src/*"],
+      "controls": ["three/examples/jsm/controls/OrbitControls"],
+      "rapier": ["./node_modules/@dimforge/rapier3d"]
     },
     "types": [
       "three",

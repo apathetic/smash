@@ -1,7 +1,7 @@
-import type { World } from '@dimforge/rapier3d';
-import type { Scene } from 'three';
 import { generateEntityId } from "~/game/store";
 import { Vector3, Quaternion } from 'three';
+import type { World } from 'rapier';
+import type { Scene } from 'three';
 
 type BaseProps = Partial<LevelEntity>
 

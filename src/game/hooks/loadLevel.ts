@@ -38,7 +38,7 @@ async function getLevelData(lvl: string) {
 /**
  *
  * @param lvl
- Load json data; generate entities from it; insert into the game canvas
+  Load json data; generate entities from it; insert into the game canvas
  ///////// Load json data; extract initial data; initialize the store With this info
  */
 async function loadLevel(lvl: string) {
@@ -46,6 +46,10 @@ async function loadLevel(lvl: string) {
   // const [game, setGameState] = useGameState();
   const levelData: Level = await getLevelData(lvl);
 
+  if (!levelData) {
+    console.error(`Failed to load level: ${lvl}`);
+    return;
+  }
 
   clear();
 

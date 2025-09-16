@@ -1,8 +1,8 @@
 import { createStore } from "solid-js/store";
-import { Vector3, Quaternion } from '@dimforge/rapier3d';
+import { Vector3, Quaternion } from 'rapier';
 import type { SetStoreFunction } from "solid-js/store";
 import type { Mesh } from 'three';
-import type { RigidBody } from '@dimforge/rapier3d';
+import type { RigidBody } from 'rapier';
 
 
 type EntityRotation = [number, number, number, number];

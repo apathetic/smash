@@ -6,10 +6,10 @@ import {
   MeshStandardMaterial,
   Vector3
 } from 'three';
-import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
+import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { Base } from '~/game/entities/Base';
 import { noise3 } from '~/game/utils/noise';
-import type { World } from '@dimforge/rapier3d';
+import type { World } from 'rapier';
 import type { Scene } from 'three';
 
 

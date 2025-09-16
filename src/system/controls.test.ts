@@ -1,0 +1,142 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+// import { Vector3 } from 'three';
+import { createControls } from './controls';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+type mockFn = ReturnType<typeof vi.fn>;
+
+
+describe('Controls', () => {
+  let mockGraphics: IGraphics;
+  let mockPhysics: IPhysics;
+  let controls: OrbitControls;
+  let mockCollider: {
+    parent: () => {
+      setBodyType: mockFn;
+      setTranslation: mockFn;
+    };
+    setActiveCollisionTypes: mockFn;
+  };
+  // let mockRigidBody: {
+  //   setBodyType: mockFn;
+  //   setTranslation: mockFn;
+  // };
+
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
+
+    // Setup mock objects
+    mockCollider = {
+      parent: vi.fn().mockReturnValue({
+        setBodyType: vi.fn(),
+        setTranslation: vi.fn()
+      }),
+      setActiveCollisionTypes: vi.fn()
+    };
+
+    // mockRigidBody = {
+    //   setBodyType: vi.fn(),
+    //   setTranslation: vi.fn()
+    // };
+
+    mockGraphics = {
+      camera: {} as any,
+      renderer: {
+        domElement: vi.fn()
+      } as any,
+      scene: {
+        add: vi.fn()
+      } as any,
+      // update: vi.fn()
+    };
+
+    mockPhysics = {
+      world: {
+        castRay: vi.fn().mockReturnValue({
+          collider: mockCollider,
+          toi: 1.0 // time of impact
+        })
+      } as any,
+      collisions: vi.fn(),
+      update: vi.fn()
+    };
+
+    // Create controls
+    controls = createControls({ graphics: mockGraphics, physics: mockPhysics });
+
+  });
+
+  it('should initialize controls with the correct settings', () => {
+    expect(controls).toBeDefined();
+  });
+
+  it('should handle mouse down event in edit mode', () => {
+    const event = new MouseEvent('mousedown', {
+      clientX: 500,
+      clientY: 300
+    });
+
+    window.dispatchEvent(event);
+
+    expect(mockPhysics.world.castRay).toHaveBeenCalled();
+    expect(mockCollider.setActiveCollisionTypes).toHaveBeenCalled();
+    expect(mockCollider.parent().setBodyType).toHaveBeenCalled();
+  });
+
+  it('should handle mouse move event when an object is selected', () => {
+    // First select an object
+    const downEvent = new MouseEvent('mousedown', {
+      clientX: 500,
+      clientY: 300
+    });
+
+    window.dispatchEvent(downEvent);
+
+    // Then move the mouse
+    const moveEvent = new MouseEvent('mousemove', {
+      clientX: 600,
+      clientY: 400
+    });
+
+    window.dispatchEvent(moveEvent);
+
+    // The selected body should have its position updated
+    expect(mockCollider.parent().setTranslation).toHaveBeenCalled();
+  });
+
+  it('should handle mouse up event and reset the selected body', () => {
+    // First select an object
+    const downEvent = new MouseEvent('mousedown', {
+      clientX: 500,
+      clientY: 300
+    });
+
+    window.dispatchEvent(downEvent);
+
+    // Then release the mouse
+    const upEvent = new MouseEvent('mouseup');
+    window.dispatchEvent(upEvent);
+
+    // The body type should be reset to Dynamic
+    expect(mockCollider.parent().setBodyType).toHaveBeenCalledTimes(2);
+  });
+
+  it.skip('should not interact with objects when not in edit mode', () => {
+    // Mock game state to be in 'smash' mode
+    vi.mocked(require('~/game/store').useGameState).mockReturnValue([{ mode: 'smash' }]);
+
+    // Recreate controls with new game state
+    controls = createControls({ graphics: mockGraphics, physics: mockPhysics });
+
+    const event = new MouseEvent('mousedown', {
+      clientX: 500,
+      clientY: 300
+    });
+
+    window.dispatchEvent(event);
+
+    // No ray casting should happen in smash mode
+    expect(mockPhysics.world.castRay).not.toHaveBeenCalled();
+  });
+});

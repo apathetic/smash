@@ -1,6 +1,6 @@
+import { version, /* World */ } from "rapier";
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
-import { version, /* World */ } from "@dimforge/rapier3d";
 import GUI from "lil-gui";
 
 

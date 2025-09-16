@@ -20,7 +20,8 @@ interface IGraphics {
 }
 
 interface IPhysics {
-  world: import("@dimforge/rapier3d").World;
+  world: import("rapier").World;
+  collisions: (event: any) => void;
   update: (delta: number) => void;
 }
 

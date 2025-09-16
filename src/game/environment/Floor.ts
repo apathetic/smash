@@ -1,8 +1,8 @@
 import { Mesh, BoxGeometry, MeshPhongMaterial } from 'three';
-import { ColliderDesc, RigidBodyDesc } from '@dimforge/rapier3d';
+import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { Base } from '~/game/entities/Base';
 // import { usePhysics } from '~/system/physics';
-import type { World } from '@dimforge/rapier3d';
+import type { World } from 'rapier';
 import type { Scene } from 'three';
 
 

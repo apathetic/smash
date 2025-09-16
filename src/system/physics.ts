@@ -1,5 +1,5 @@
 import { createEffect } from "solid-js"
-import { World, EventQueue, /* RigidBodyType */ } from '@dimforge/rapier3d';
+import { World, EventQueue, /* RigidBodyType */ } from 'rapier';
 import { useGameState } from "~/game/store";
 
 

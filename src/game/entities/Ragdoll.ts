@@ -1,7 +1,7 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
-import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from '@dimforge/rapier3d';
+import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from 'rapier';
 import { Base } from './Base';
-import type { World, RigidBody } from '@dimforge/rapier3d';
+import type { World, RigidBody } from 'rapier';
 import type { Scene } from 'three';
 
 
