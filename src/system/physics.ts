@@ -21,13 +21,19 @@ function createPhysics() {
   world.integrationParameters.numSolverIterations = 20; // Default is usually 4
 
 
-  const toggleGravity = (enabled: boolean) => world.gravity.y = enabled ? GRAVITY : 0;
+  const toggleGravity = (enabled: boolean) => {
+    world.gravity.y = enabled ? GRAVITY : 0;
+    // Wake up all bodies when gravity is enabled to ensure they respond
+    if (enabled) {
+      world.forEachRigidBody((body) => body.wakeUp());
+    }
+  };
 
 
 
 
   // Function to make the ragdoll "posable" - stays where you put it
-  function setPosableMode(enabled: boolean) {
+  function setEditMode(enabled: boolean) {
     // ragdollBodies.forEach(body => {
     world.forEachRigidBody((body) => {
       if (enabled) {
@@ -64,10 +70,16 @@ function createPhysics() {
     // Toggle gravity based on game state
     if (game.mode == 'smash') {
       toggleGravity(true);
-      setPosableMode(false);
+      setEditMode(false);
+      // Ensure all bodies are Dynamic when entering smash mode
+      world.forEachRigidBody((body) => {
+        if (body.bodyType() !== RigidBodyType.Dynamic) {
+          body.setBodyType(RigidBodyType.Dynamic, true);
+        }
+      });
     } else {
       toggleGravity(false);
-      setPosableMode(true);
+      setEditMode(true);
     }
 
 
