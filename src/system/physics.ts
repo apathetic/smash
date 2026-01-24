@@ -1,5 +1,5 @@
 import { createEffect } from "solid-js"
-import { World, EventQueue, /* RigidBodyType */ } from 'rapier';
+import { World, EventQueue, RigidBodyType } from 'rapier';
 import { useGameState } from "~/game/store";
 
 
@@ -34,25 +34,33 @@ function createPhysics() {
 
   // Function to make the ragdoll "posable" - stays where you put it
   function setEditMode(enabled: boolean) {
-    // ragdollBodies.forEach(body => {
     world.forEachRigidBody((body) => {
-      if (enabled) {
-        // High damping to stop movement quickly
-        body.setLinearDamping(10.0);
-        body.setAngularDamping(10.0);
 
-        // Zero out velocities
+      // Always preserve Fixed bodies (terrain, floor, etc.) - never convert them
+      if (body.bodyType() === RigidBodyType.Fixed) {
+        return;
+      }
+
+      if (enabled) {
+        // Set to kinematic so bodies are fixed in place and don't interact with each other
+        body.setBodyType(RigidBodyType.KinematicPositionBased, true);
+
+        // Zero out velocities - no momentum
         body.setLinvel({ x: 0, y: 0, z: 0 }, true);
         body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-
-        // Wake up the body to ensure damping is applied
-        // body.wakeUp(); // true above does this
       } else {
+        // Restore to dynamic for normal physics
+        body.setBodyType(RigidBodyType.Dynamic, true);
+
         // Normal damping for physics simulation
         body.setLinearDamping(0.2);
         body.setAngularDamping(0.2);
       }
     });
+
+    // Note: Joints between KinematicPositionBased bodies automatically maintain
+    // their relative positions since kinematic bodies don't respond to forces.
+    // This effectively makes joints rigid in edit mode.
   }
 
 
@@ -71,12 +79,6 @@ function createPhysics() {
     if (game.mode == 'smash') {
       toggleGravity(true);
       setEditMode(false);
-      // Ensure all bodies are Dynamic when entering smash mode
-      world.forEachRigidBody((body) => {
-        if (body.bodyType() !== RigidBodyType.Dynamic) {
-          body.setBodyType(RigidBodyType.Dynamic, true);
-        }
-      });
     } else {
       toggleGravity(false);
       setEditMode(true);
