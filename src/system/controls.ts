@@ -43,6 +43,7 @@ function createControls({ graphics, physics }: ControlProps) {
   controls.minDistance = 0.1; // not smaller than the camera's near clipping plane
   controls.maxDistance = 100; // not greater than far clipping
   controls.maxPolarAngle = Math.PI / 2; // don't allow to look below the horizon
+  controls.enabled = true;
 
 
 
@@ -63,6 +64,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
   function onMouseDown(event: MouseEvent) {
+    // In smash mode, no entity interaction - only camera controls
     if (gameState.mode !== 'edit') return;
 
     raycast(event);
@@ -73,8 +75,9 @@ function createControls({ graphics, physics }: ControlProps) {
     const solid = true;
     const ray = new rapier.Ray(origin, direction);
 
+    // In edit mode, bodies are KinematicPositionBased, so we need to allow both dynamic and kinematic
     // https://rapier.rs/javascript3d/enums/QueryFilterFlags.html
-    const filterFlags = rapier.QueryFilterFlags.ONLY_DYNAMIC;
+    const filterFlags = rapier.QueryFilterFlags.EXCLUDE_SENSORS;
     // let filterGroups = 0x00010003;
     // let filterExcludeCollider;
     // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
@@ -84,18 +87,25 @@ function createControls({ graphics, physics }: ControlProps) {
     const hit = world.castRay(ray, maxDistance, solid, filterFlags);
 
     if (hit) {
+      const body = hit.collider.parent();
+
+      // Don't allow dragging Fixed bodies (terrain, floor, etc.)
+      if (body?.bodyType() === rapier.RigidBodyType.Fixed) {
+        return;
+      }
+
+      // Only disable OrbitControls when we actually hit an entity to drag
       controls.enabled = false;
-      selectedBody = hit.collider.parent();
+      selectedBody = body;
 
       // So that the collider will still interact with other non-dynamic colliders.
       // This is the case when this collider gets set to kinematic so that it may be dragged around.
       // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
       hit.collider.setActiveCollisionTypes(rapier.ActiveCollisionTypes.DEFAULT | rapier.ActiveCollisionTypes.KINEMATIC_FIXED);
 
-      const type = rapier.RigidBodyType.KinematicPositionBased;
-      selectedBody!.setBodyType(type, true);
-
-
+      // Body is already KinematicPositionBased from setEditMode() in edit mode
+      // const type = rapier.RigidBodyType.KinematicPositionBased;
+      // selectedBody!.setBodyType(type, true);
     }
   }
 
@@ -116,15 +126,11 @@ function createControls({ graphics, physics }: ControlProps) {
     controls.enabled = true;
     if (!selectedBody) return;
 
-
-
-    // does this need to get reset...?
-    // hit.collider.setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT | ActiveCollisionTypes.KINEMATIC_FIXED);
-
-
-    // restore rigidBody to `Dynamic`
-    const type = rapier.RigidBodyType.Dynamic;
-    selectedBody.setBodyType(type, true);
+    // Body is already KinematicPositionBased (set in onMouseDown)
+    // setEditMode() handles zeroing velocities for all bodies, but we ensure it here
+    // for immediate feedback when releasing
+    // selectedBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    // selectedBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
     // destroy reference
     selectedBody = null;

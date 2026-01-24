@@ -21,7 +21,7 @@ vi.mock('rapier', () => ({
   EventQueue: vi.fn().mockImplementation(() => ({
     drainContactForceEvents: vi.fn()
   })),
-  RigidBodyType: { KinematicPositionBased: 1, Dynamic: 2 },
+  RigidBodyType: { KinematicPositionBased: 1, Dynamic: 2, Fixed: 3 },
   Ray: vi.fn(),
   QueryFilterFlags: { ONLY_DYNAMIC: 1 },
   ActiveCollisionTypes: { DEFAULT: 1, KINEMATIC_FIXED: 2 },

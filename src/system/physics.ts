@@ -1,5 +1,5 @@
 import { createEffect } from "solid-js"
-import { World, EventQueue, /* RigidBodyType */ } from 'rapier';
+import { World, EventQueue, RigidBodyType } from 'rapier';
 import { useGameState } from "~/game/store";
 
 
@@ -21,32 +21,46 @@ function createPhysics() {
   world.integrationParameters.numSolverIterations = 20; // Default is usually 4
 
 
-  const toggleGravity = (enabled: boolean) => world.gravity.y = enabled ? GRAVITY : 0;
+  const toggleGravity = (enabled: boolean) => {
+    world.gravity.y = enabled ? GRAVITY : 0;
+    // Wake up all bodies when gravity is enabled to ensure they respond
+    if (enabled) {
+      world.forEachRigidBody((body) => body.wakeUp());
+    }
+  };
 
 
 
 
   // Function to make the ragdoll "posable" - stays where you put it
-  function setPosableMode(enabled: boolean) {
-    // ragdollBodies.forEach(body => {
+  function setEditMode(enabled: boolean) {
     world.forEachRigidBody((body) => {
-      if (enabled) {
-        // High damping to stop movement quickly
-        body.setLinearDamping(10.0);
-        body.setAngularDamping(10.0);
+      
+      // Always preserve Fixed bodies (terrain, floor, etc.) - never convert them
+      if (body.bodyType() === RigidBodyType.Fixed) {
+        return;
+      }
 
-        // Zero out velocities
+      if (enabled) {
+        // Set to kinematic so bodies are fixed in place and don't interact with each other
+        body.setBodyType(RigidBodyType.KinematicPositionBased, true);
+
+        // Zero out velocities - no momentum
         body.setLinvel({ x: 0, y: 0, z: 0 }, true);
         body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-
-        // Wake up the body to ensure damping is applied
-        // body.wakeUp(); // true above does this
       } else {
+        // Restore to dynamic for normal physics
+        body.setBodyType(RigidBodyType.Dynamic, true);
+
         // Normal damping for physics simulation
         body.setLinearDamping(0.2);
         body.setAngularDamping(0.2);
       }
     });
+
+    // Note: Joints between KinematicPositionBased bodies automatically maintain
+    // their relative positions since kinematic bodies don't respond to forces.
+    // This effectively makes joints rigid in edit mode.
   }
 
 
@@ -64,10 +78,10 @@ function createPhysics() {
     // Toggle gravity based on game state
     if (game.mode == 'smash') {
       toggleGravity(true);
-      setPosableMode(false);
+      setEditMode(false);
     } else {
       toggleGravity(false);
-      setPosableMode(true);
+      setEditMode(true);
     }
 
 
