@@ -1,8 +1,8 @@
 import * as rapier from 'rapier';
 import { Raycaster, Vector2, Vector3, Plane, Quaternion } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { COLLISION_GROUP_DRAGGED } from "~/system/physics";
 import { useGameState } from "~/game/store";
-import { Base } from "~/game/entities/Base";
 
 
 
@@ -44,13 +44,12 @@ function createControls({ graphics, physics }: ControlProps) {
   // Drag state
   let proxyBody: rapier.RigidBody | null = null;
   let dragJoint: rapier.ImpulseJoint | null = null;
-  let affectedBodies: rapier.RigidBody[] = [];
+  let draggedBodies: rapier.RigidBody[] = [];
   let storedBodyProps: Map<rapier.RigidBody, {
     type: rapier.RigidBodyType,
     damping: number,
     angularDamping: number,
-    // Continuous Collision Detection: prevents fast moving objects (like dragged ones) from tunneling through static geometry
-    ccd: boolean,
+    ccd: boolean, // Continuous Collision Detection: prevents fast moving objects (like dragged ones) from tunneling through static geometry
     colliderGroups: number[]
   }> = new Map();
 
@@ -75,6 +74,7 @@ function createControls({ graphics, physics }: ControlProps) {
     raycaster.setFromCamera(mouse, camera);
   }
 
+  // TODO don't do a full-body search each time;
   function getConnectedBodies(startBody: rapier.RigidBody): rapier.RigidBody[] {
     const connected = new Set<rapier.RigidBody>();
     const queue = [startBody];
@@ -121,6 +121,7 @@ function createControls({ graphics, physics }: ControlProps) {
     // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
     // let filterPredicate = (collider: rapier.Collider) => {}; // data.get(collider.handle) == 10.0;
 
+    // TODO cannot we use a COLLISION_GROUP to filter out non-draggable bodies?
     // const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups, filterExcludeCollider, filterExcludeRigidBody);
     const hit = world.castRay(ray, maxDistance, solid, filterFlags);
 
@@ -143,29 +144,29 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
       // 1. Identify all connected bodies
-      affectedBodies = getConnectedBodies(body);
+      draggedBodies = getConnectedBodies(body);
       storedBodyProps.clear();
 
       // 2. Prepare them for dragging: switch to Dynamic, high damping, no gravity
-      affectedBodies.forEach((b) => {
+      draggedBodies.forEach((b) => {
         const ccd = b.isCcdEnabled();
         storedBodyProps.set(b, {
           type: b.bodyType(),
           damping: b.linearDamping(),
           angularDamping: b.angularDamping(),
           ccd,
-          // Store collider groups
-          colliderGroups: []
+          colliderGroups: [] // Store collider groups
         });
 
         // Store and update collision groups for all colliders
-        const numColliders = b.numColliders();
-        for (let i = 0; i < numColliders; i++) {
+        // const numColliders = b.numColliders();
+        // console.log(numColliders);
+        // for (let i = 0; i < numColliders; i++) {
+          let i = 0;
           const collider = b.collider(i);
           storedBodyProps.get(b)!.colliderGroups.push(collider.collisionGroups());
-          collider.setCollisionGroups(Base.COLLISION_GROUP_DRAGGED);
-
-        }
+          collider.setCollisionGroups(COLLISION_GROUP_DRAGGED);
+        // }
 
         b.setBodyType(rapier.RigidBodyType.Dynamic, true);
         b.setLinearDamping(10.0);
@@ -231,7 +232,6 @@ function createControls({ graphics, physics }: ControlProps) {
     raycaster.ray.intersectPlane(dragPlane, worldPos);
 
     if (worldPos) {
-      // Move proxy to new mouse position
       proxyBody.setNextKinematicTranslation({ x: worldPos.x, y: worldPos.y, z: worldPos.z });
     }
   }
@@ -252,36 +252,32 @@ function createControls({ graphics, physics }: ControlProps) {
     }
 
     // Restore Body States
-    affectedBodies.forEach((b) => {
+    draggedBodies.forEach((b) => {
       const props = storedBodyProps.get(b);
       if (props) {
         b.setBodyType(props.type, true);
         b.setLinearDamping(props.damping);
         b.setAngularDamping(props.angularDamping);
         b.setGravityScale(1.0, true); // Restore gravity
-
-        // Restore CCD
-        b.enableCcd(props.ccd);
+        b.enableCcd(props.ccd);        // Restore CCD
+        b.lockRotations(false, true);
 
         // Restore collider groups
-        const numColliders = b.numColliders();
-        for (let i = 0; i < numColliders; i++) {
+        // const numColliders = b.numColliders();
+        // for (let i = 0; i < numColliders; i++) {
+        let i = 0;
           if (i < props.colliderGroups.length) {
             b.collider(i).setCollisionGroups(props.colliderGroups[i]);
           }
-        }
+        // }
 
         // Zero out velocities to stop any residual drift
         b.setLinvel({ x: 0, y: 0, z: 0 }, true);
         b.setAngvel({ x: 0, y: 0, z: 0 }, true);
-
-        // Unlock rotations (unless they were originally locked, but we assume default is unlocked for ragdolls)
-        // Ideally we should store the original lock state too, but for now we assume they should rotate freely.
-        b.lockRotations(false, true);
       }
     });
 
-    affectedBodies = [];
+    draggedBodies = [];
     storedBodyProps.clear();
   }
 

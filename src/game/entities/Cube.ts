@@ -1,9 +1,9 @@
 import { Mesh, BoxGeometry, MeshNormalMaterial } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
-import { Base } from './Base';
+import { COLLISION_GROUP_DYNAMIC } from '~/system/physics';
+import { Base } from '~/game/entities/Base';
 import type { World } from 'rapier';
 import type { Scene } from 'three';
-
 
 /**
  * Cube game object.
@@ -21,7 +21,7 @@ export class Cube extends Base {
       .cuboid(0.5, 0.5, 0.5)
       .setMass(1)
       .setRestitution(0.5)
-      .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
+      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
 
     const rigidBodyDesc = RigidBodyDesc
       .dynamic()

@@ -1,6 +1,7 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
 import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from 'rapier';
-import { Base } from './Base';
+import { COLLISION_GROUP_DYNAMIC } from '~/system/physics';
+import { Base } from '~/game/entities/Base';
 import type { World, RigidBody } from 'rapier';
 import type { Scene } from 'three';
 
@@ -54,7 +55,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
     .setFriction(0.9)          // Higher friction to help parts "stick" to the ground, and to reduce jitter
     // .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
     .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS)
-    .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
+    .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
 
   const body = physics.createRigidBody(rigidBodyDesc);
   const _collider = physics.createCollider(colliderDesc, body);

@@ -5,11 +5,35 @@ import { useGameState } from "~/game/store";
 
 const GRAVITY = -9.81;
 
-// TODO: tune physics props
-// - broadpass algorithms
-// - solver.iterations value
-// - allowSleep toggle
 
+// Collision Groups
+
+// Interaction groups are 32-bit integers.
+// high 16 bits = membership (what I am)
+// low 16 bits = filter (what I collide with)
+const GROUPS = {
+  STATIC: 0x00010000,
+  DYNAMIC: 0x00020000,
+  DRAGGED: 0x00040000,
+}
+
+// Static things collide with everything.
+// Filter 0x0007 = 0001 (Static) | 0010 (Dynamic) | 0100 (Dragged)
+const COLLISION_GROUP_STATIC = GROUPS.STATIC | 0x0007;
+
+// Dynamic things collide with Static and Dynamic (but NOT Dragged, effectively).
+// Filter 0x0003 = 0001 (Static) | 0010 (Dynamic)
+const COLLISION_GROUP_DYNAMIC = GROUPS.DYNAMIC | 0x0003;
+
+// Dragged things collide ONLY with Static.
+// Filter 0x0001 = 0001 (Static)
+const COLLISION_GROUP_DRAGGED = GROUPS.DRAGGED | 0x0001;
+
+
+/**
+ * Creates the physics world.
+ * @returns {World} The physics world.
+ */
 function createPhysics() {
   // const gravity = { x: 0.0, y: -9.81, z: 0.0 };
   const gravity = { x: 0.0, y: 0, z: 0.0 };
@@ -122,4 +146,7 @@ function createPhysics() {
 
 export {
   createPhysics,
+  COLLISION_GROUP_STATIC,
+  COLLISION_GROUP_DYNAMIC,
+  COLLISION_GROUP_DRAGGED,
 };

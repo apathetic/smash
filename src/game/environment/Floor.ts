@@ -1,7 +1,7 @@
 import { Mesh, BoxGeometry, MeshPhongMaterial } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
+import { COLLISION_GROUP_STATIC } from '~/system/physics';
 import { Base } from '~/game/entities/Base';
-// import { usePhysics } from '~/system/physics';
 import type { World } from 'rapier';
 import type { Scene } from 'three';
 
@@ -20,7 +20,7 @@ export class Floor extends Base {
     const mesh = new Mesh(geometry, material);
 
     const floorBody = RigidBodyDesc.fixed().setTranslation(...position);
-    const floorShape = ColliderDesc.cuboid(50, 0.5, 50).setCollisionGroups(Base.COLLISION_GROUP_STATIC); // half-extents
+    const floorShape = ColliderDesc.cuboid(50, 0.5, 50).setCollisionGroups(COLLISION_GROUP_STATIC); // half-extents
     const body = physics.createRigidBody(floorBody);
     const _collider = physics.createCollider(floorShape, body);
 

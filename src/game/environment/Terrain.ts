@@ -7,6 +7,7 @@ import {
   Vector3
 } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
+import { COLLISION_GROUP_STATIC } from '~/system/physics';
 import { Base } from '~/game/entities/Base';
 import { noise3 } from '~/game/utils/noise';
 import type { World } from 'rapier';
@@ -107,16 +108,12 @@ export class Terrain extends Base {
       origin.z + TERRAIN_SIZE * 0.5
     );
 
-    const clDesc = ColliderDesc
-      .heightfield(
-        TERRAIN_SIZE,
-        TERRAIN_SIZE,
-        heightMap,
-        new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
-      )
-      .setCollisionGroups(
-        Base.COLLISION_GROUP_STATIC
-      );
+    const clDesc = ColliderDesc.heightfield(
+      TERRAIN_SIZE,
+      TERRAIN_SIZE,
+      heightMap,
+      new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
+    ).setCollisionGroups(COLLISION_GROUP_STATIC);
 
     const body = physics.createRigidBody(rbDesc);
 
