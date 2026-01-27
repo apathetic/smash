@@ -17,8 +17,28 @@ export class Base implements WorldEntity {
   public type: string;
   static count: Record<string, number> = {}; // Track count per entity type
 
-  static COLLISION_GROUP_STATIC = 0x00010003;  // NOT USED
-  static COLLISION_GROUP_DYNAMIC = 0x00020003; // NOT USED
+  // Collision Groups
+  // Interaction groups are 32-bit integers.
+  // high 16 bits = membership (what I am)
+  // low 16 bits = filter (what I collide with)
+
+  static GROUPS = {
+    STATIC: 0x00010000,
+    DYNAMIC: 0x00020000,
+    DRAGGED: 0x00040000,
+  }
+
+  // Static things collide with everything.
+  // Filter 0x0007 = 0001 (Static) | 0010 (Dynamic) | 0100 (Dragged)
+  static COLLISION_GROUP_STATIC = Base.GROUPS.STATIC | 0x0007;
+
+  // Dynamic things collide with Static and Dynamic (but NOT Dragged, effectively).
+  // Filter 0x0003 = 0001 (Static) | 0010 (Dynamic)
+  static COLLISION_GROUP_DYNAMIC = Base.GROUPS.DYNAMIC | 0x0003;
+
+  // Dragged things collide ONLY with Static.
+  // Filter 0x0001 = 0001 (Static)
+  static COLLISION_GROUP_DRAGGED = Base.GROUPS.DRAGGED | 0x0001;
 
   constructor({ type, position, meta }: BaseProps = {}) {
 

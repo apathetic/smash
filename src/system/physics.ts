@@ -5,10 +5,10 @@ import { useGameState } from "~/game/store";
 
 const GRAVITY = -9.81;
 
-  // TODO: tune physics props
-  // - broadpass algorithms
-  // - solver.iterations value
-  // - allowSleep toggle
+// TODO: tune physics props
+// - broadpass algorithms
+// - solver.iterations value
+// - allowSleep toggle
 
 function createPhysics() {
   // const gravity = { x: 0.0, y: -9.81, z: 0.0 };

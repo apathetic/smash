@@ -11,8 +11,8 @@ import type { Scene } from 'three';
  * @returns IWorldEntity
  */
 export class Floor extends Base {
-  setup (scene: Scene, physics: World) {
-   // note: same position system, but different system for dimensions (below)
+  setup(scene: Scene, physics: World) {
+    // note: same position system, but different system for dimensions (below)
     const position: [number, number, number] = [0, -1, 0]; // floor is "1" high; this means its top will be at 0
 
     const geometry = new BoxGeometry(100, 1, 100); // full extents
@@ -20,7 +20,7 @@ export class Floor extends Base {
     const mesh = new Mesh(geometry, material);
 
     const floorBody = RigidBodyDesc.fixed().setTranslation(...position);
-    const floorShape = ColliderDesc.cuboid(50, 0.5, 50); // half-extents
+    const floorShape = ColliderDesc.cuboid(50, 0.5, 50).setCollisionGroups(Base.COLLISION_GROUP_STATIC); // half-extents
     const body = physics.createRigidBody(floorBody);
     const _collider = physics.createCollider(floorShape, body);
 

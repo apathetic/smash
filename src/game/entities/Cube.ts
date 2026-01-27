@@ -10,7 +10,7 @@ import type { Scene } from 'three';
  * @returns {IWorldEntity}
  */
 export class Cube extends Base {
-  setup (scene: Scene, physics: World) {
+  setup(scene: Scene, physics: World) {
     const position: Position = [0, 3, 0];
 
     const geometry = new BoxGeometry(1, 1, 1);
@@ -20,15 +20,15 @@ export class Cube extends Base {
     const colliderDesc = ColliderDesc
       .cuboid(0.5, 0.5, 0.5)
       .setMass(1)
-      .setRestitution(0.5);
-      // .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
+      .setRestitution(0.5)
+      .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
 
     const rigidBodyDesc = RigidBodyDesc
       .dynamic()
       .setTranslation(...position)
       .setCanSleep(true);
 
-    const body     = physics.createRigidBody(rigidBodyDesc);
+    const body      = physics.createRigidBody(rigidBodyDesc);
     const _collider = physics.createCollider(colliderDesc, body);
 
     mesh.position.set(...position);

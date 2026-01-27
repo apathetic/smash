@@ -13,8 +13,8 @@ import type { World } from 'rapier';
 import type { Scene } from 'three';
 
 
-  const TERRAIN_SIZE = 16;
-  const TERRAIN_STRIDE = TERRAIN_SIZE + 1;
+const TERRAIN_SIZE = 16;
+const TERRAIN_STRIDE = TERRAIN_SIZE + 1;
 
 
 /**
@@ -22,7 +22,7 @@ import type { Scene } from 'three';
  * @returns IWorldEntity
  */
 export class Terrain extends Base {
-  setup (scene: Scene, physics: World) {
+  setup(scene: Scene, physics: World) {
     for (let y = -32; y < 32; y += 16) {
       for (let x = -32; x < 32; x += 16) {
         const origin = new Vector3(x, 0, y);
@@ -107,12 +107,16 @@ export class Terrain extends Base {
       origin.z + TERRAIN_SIZE * 0.5
     );
 
-    const clDesc = ColliderDesc.heightfield(
-      TERRAIN_SIZE,
-      TERRAIN_SIZE,
-      heightMap,
-      new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
-    );
+    const clDesc = ColliderDesc
+      .heightfield(
+        TERRAIN_SIZE,
+        TERRAIN_SIZE,
+        heightMap,
+        new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
+      )
+      .setCollisionGroups(
+        Base.COLLISION_GROUP_STATIC
+      );
 
     const body = physics.createRigidBody(rbDesc);
 

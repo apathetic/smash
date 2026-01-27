@@ -37,7 +37,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
   mass = 100,
   color = 0xffffff
 }) => {
-  const [ x, y, z ] = size;
+  const [x, y, z] = size;
   const mesh = createMesh(x, y, z, color);
 
   const rigidBodyDesc = RigidBodyDesc
@@ -53,7 +53,8 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
     .setRestitution(0.1)       // Lower restitution to reduce bouncing. "elasticity"
     .setFriction(0.9)          // Higher friction to help parts "stick" to the ground, and to reduce jitter
     // .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
-    .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS);
+    .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS)
+    .setCollisionGroups(Base.COLLISION_GROUP_DYNAMIC);
 
   const body = physics.createRigidBody(rigidBodyDesc);
   const _collider = physics.createCollider(colliderDesc, body);
@@ -62,7 +63,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
   meshList.push(mesh);
   bodyList.push(body);
 
-  return [ mesh, body ] as any;
+  return [mesh, body] as any;
 };
 
 
@@ -72,7 +73,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
  * @returns WorldEntity
  */
 export class RagDoll extends Base {
-  setup (scene: Scene, physics: World) {
+  setup(scene: Scene, physics: World) {
 
     const meshList: Mesh[] = [];
     const bodyList: RigidBody[] = [];
@@ -84,7 +85,7 @@ export class RagDoll extends Base {
     const foot  = clothingColors[Math.floor(Math.random() * clothingColors.length)];
 
     const group = new Group();
-    group.position.set( 0, 0, 0 ); // TODO: use this.position ?
+    group.position.set(0, 0, 0); // TODO: use this.position ?
 
     const [head, headBody] = createMeshBody({
       size:     [0.5, 0.5,  0.5],
@@ -182,7 +183,7 @@ export class RagDoll extends Base {
     //////////
 
 
-    const neckJointData =  JointData.revolute(
+    const neckJointData = JointData.revolute(
       { x: 0, y: -0.25, z: 0 },  // Point where the joint is attached on the first rigid-body
       { x: 0, y: 0.3, z: 0 },    // Point where the joint is attached on the second rigid-body
       { x: Math.PI/8, y: Math.PI/8, z: 0 }       // Different axis (front-to-back movement)
@@ -226,18 +227,18 @@ export class RagDoll extends Base {
     const _shoulderRJoint = physics.createImpulseJoint(shoulderRData, chestBody, upperArmRBody, true);
 
 
-      // axisA: CANNON.Vec3.UNITX,
-      // axisB: CANNON.Vec3.UNITX,
-      // angle: Math.PI / 4,
-      // twistAngle: Math.PI / 8
+    // axisA: CANNON.Vec3.UNITX,
+    // axisB: CANNON.Vec3.UNITX,
+    // angle: Math.PI / 4,
+    // twistAngle: Math.PI / 8
     const elbowRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.2, y: 0, z: 0 });
     const _elbowRJoint = physics.createImpulseJoint(elbowRData, upperArmRBody, foreArmRBody, true);
 
 
-      // axisA: CANNON.Vec3.UNITX,
-      // axisB: CANNON.Vec3.UNITX,
-      // angle: Math.PI / 8,
-      // twistAngle: Math.PI / 8
+    // axisA: CANNON.Vec3.UNITX,
+    // axisB: CANNON.Vec3.UNITX,
+    // angle: Math.PI / 8,
+    // twistAngle: Math.PI / 8
     const wristRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.1, y: 0, z: 0 });
     physics.createImpulseJoint(wristRData, foreArmRBody, handRBody, true);
 
@@ -309,7 +310,7 @@ export class RagDoll extends Base {
     const _ankleRJoint = physics.createImpulseJoint(ankleRData, lowerLegRBody, footRBody, true);
 
 
-      // const decorate(head) => {
+    // const decorate(head) => {
     const eyeL = createMesh(0.04, 0.04, 0.04, 0x000000);
     eyeL.position.set(0.11, 0.09, 0.25);
     const eyeBrowL = createMesh(0.13, 0.05, 0.04, 0x000000);
