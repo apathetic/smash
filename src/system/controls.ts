@@ -53,6 +53,21 @@ function createControls({ graphics, physics }: ControlProps) {
     colliderGroups: number[]
   }> = new Map();
 
+  /**
+   * Continuous Collision Detection (CCD) vs ActiveCollisionTypes:
+   *
+   * CCD (Continuous Collision Detection):
+   * This is used to prevent "tunneling" where fast-moving objects pass through other objects
+   * between physics steps. When enabled, Rapier performs additional checks to ensure
+   * collisions are detected along the object's path.
+   *
+   * ActiveCollisionTypes:
+   * This determines which pairs of colliders are eligible for collision detection.
+   * By default, Static-Static or Kinematic-Kinematic pairs are often ignored to save CPU.
+   * If you want a Kinematic body (like one being dragged) to still hit Static geometry,
+   * you might need to enable KINEMATIC_FIXED in ActiveCollisionTypes.
+   */
+
   // controls.enableDamping = true;
   controls.minDistance = 0.1; // not smaller than the camera's near clipping plane
   controls.maxDistance = 100; // not greater than far clipping
@@ -115,7 +130,7 @@ function createControls({ graphics, physics }: ControlProps) {
     const ray = new rapier.Ray(origin, direction);
 
     // In edit mode (Kinematic), we want to hit the kinematic bodies.
-    const filterFlags = rapier.QueryFilterFlags.EXCLUDE_SENSORS;
+    const filterFlags = rapier.QueryFilterFlags.EXCLUDE_FIXED | rapier.QueryFilterFlags.EXCLUDE_SENSORS;
     // let filterGroups = 0x00010003;
     // let filterExcludeCollider;
     // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
@@ -127,11 +142,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
     if (hit) {
       const body = hit.collider.parent();
-
-      // Don't drag Fixed bodies
-      if (!body || body.bodyType() === rapier.RigidBodyType.Fixed) {
-        return;
-      }
+      if (!body) return;
 
       // Only disable OrbitControls when we actually hit an entity to drag
       controls.enabled = false;
@@ -149,24 +160,20 @@ function createControls({ graphics, physics }: ControlProps) {
 
       // 2. Prepare them for dragging: switch to Dynamic, high damping, no gravity
       draggedBodies.forEach((b) => {
-        const ccd = b.isCcdEnabled();
-        storedBodyProps.set(b, {
+        const props = {
           type: b.bodyType(),
           damping: b.linearDamping(),
           angularDamping: b.angularDamping(),
-          ccd,
-          colliderGroups: [] // Store collider groups
-        });
+          ccd: b.isCcdEnabled(),
+          colliderGroups: Array.from({ length: b.numColliders() }, (_, i) => {
+            const c = b.collider(i);
+            const g = c.collisionGroups();
+            c.setCollisionGroups(COLLISION_GROUP_DRAGGED);
+            return g;
+          })
+        };
 
-        // Store and update collision groups for all colliders
-        // const numColliders = b.numColliders();
-        // console.log(numColliders);
-        // for (let i = 0; i < numColliders; i++) {
-          let i = 0;
-          const collider = b.collider(i);
-          storedBodyProps.get(b)!.colliderGroups.push(collider.collisionGroups());
-          collider.setCollisionGroups(COLLISION_GROUP_DRAGGED);
-        // }
+        storedBodyProps.set(b, props);
 
         b.setBodyType(rapier.RigidBodyType.Dynamic, true);
         b.setLinearDamping(10.0);
@@ -178,16 +185,12 @@ function createControls({ graphics, physics }: ControlProps) {
       });
 
       // 3. Create Kinematic Proxy at hit point
-      const hitPoint = {
-        x: origin.x + direction.x * hit.timeOfImpact,
-        y: origin.y + direction.y * hit.timeOfImpact,
-        z: origin.z + direction.z * hit.timeOfImpact,
-      };
+      const hitPoint = new Vector3().copy(origin).addScaledVector(direction, hit.timeOfImpact);
 
       // Set up drag plane
       const normal = new Vector3();
       camera.getWorldDirection(normal);
-      dragPlane.setFromNormalAndCoplanarPoint(normal, new Vector3(hitPoint.x, hitPoint.y, hitPoint.z));
+      dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
 
       const proxyDesc = rapier.RigidBodyDesc.kinematicPositionBased().setTranslation(hitPoint.x, hitPoint.y, hitPoint.z);
       proxyBody = world.createRigidBody(proxyDesc);
@@ -197,27 +200,17 @@ function createControls({ graphics, physics }: ControlProps) {
       // Anchor on proxy is 0,0,0 (center of proxy is at hit point).
       // Anchor on body is local coordinate of hit point.
       const anchorOnProxy = { x: 0, y: 0, z: 0 };
-      const bodyTranslation = body.translation();
-      const bodyRotation = body.rotation();
-
-      // Transform world hit point to local body space is complex with raw math,
-      // but we can trust Rapier's joint creation to handle world-space anchoring if we use the right data,
-      // OR we calculate the local anchor manually.
-      // Rapier JS `JointData.spherical` takes local anchors.
-
-      // Let's calculate local anchor on the body.
+      // Calculate local anchor on the body.
       // q_inv * (point - origin)
-      const invRot = new Quaternion(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w).invert();
-      const diff = new Vector3(hitPoint.x - bodyTranslation.x, hitPoint.y - bodyTranslation.y, hitPoint.z - bodyTranslation.z);
-      diff.applyQuaternion(invRot);
+      const invRot = new Quaternion().copy(body.rotation() as any).invert();
+      const diff = new Vector3().copy(hitPoint)
+        .sub(body.translation() as any)
+        .applyQuaternion(invRot);
       const anchorOnBody = { x: diff.x, y: diff.y, z: diff.z };
 
       // Use a spherical joint (3 DOF rotation, 0 DOF translation)
       // Ideally we'd use a Fixed joint if we want to grab and twist, but Spherical is good for "grabbing a point".
       const jointParams = rapier.JointData.spherical(anchorOnProxy, anchorOnBody);
-      // jointParams.stiffness = 1.0e7; // If it was a spring, but this is a hard constraint joint usually?
-      // Actually ImpulseJoints are hard constraints by default.
-
       dragJoint = world.createImpulseJoint(jointParams, proxyBody, body, true);
     }
   }
@@ -263,13 +256,12 @@ function createControls({ graphics, physics }: ControlProps) {
         b.lockRotations(false, true);
 
         // Restore collider groups
-        // const numColliders = b.numColliders();
-        // for (let i = 0; i < numColliders; i++) {
-        let i = 0;
+        const numColliders = b.numColliders();
+        for (let i = 0; i < numColliders; i++) {
           if (i < props.colliderGroups.length) {
             b.collider(i).setCollisionGroups(props.colliderGroups[i]);
           }
-        // }
+        }
 
         // Zero out velocities to stop any residual drift
         b.setLinvel({ x: 0, y: 0, z: 0 }, true);
