@@ -1,33 +1,27 @@
+
+import {
+  World,
+  EventQueue,
+  RigidBodyType,
+  RigidBody,
+  Collider,
+  ImpulseJoint,
+  ImpulseJointHandle,
+  ActiveCollisionTypes,
+  RigidBodyDesc,
+  ColliderDesc,
+  JointData
+} from 'rapier';
+import { Quaternion, Vector3 } from 'three';
 import { createEffect } from "solid-js"
-import { World, EventQueue, RigidBodyType } from 'rapier';
 import { useGameState } from "~/game/store";
+import {
+  GRAVITY,
+  COLLISION_GROUP_DRAGGED,
+  COLLISION_GROUP_DRAG_PROXY
+} from "~/system/constants";
 
 
-const GRAVITY = -9.81;
-
-
-// Collision Groups
-
-// Interaction groups are 32-bit integers.
-// high 16 bits = membership (what I am)
-// low 16 bits = filter (what I collide with)
-const GROUPS = {
-  STATIC: 0x00010000,
-  DYNAMIC: 0x00020000,
-  DRAGGED: 0x00040000,
-}
-
-// Static things collide with everything.
-// Filter 0x0007 = 0001 (Static) | 0010 (Dynamic) | 0100 (Dragged)
-const COLLISION_GROUP_STATIC = GROUPS.STATIC | 0x0007;
-
-// Dynamic things collide with Static and Dynamic (but NOT Dragged, effectively).
-// Filter 0x0003 = 0001 (Static) | 0010 (Dynamic)
-const COLLISION_GROUP_DYNAMIC = GROUPS.DYNAMIC | 0x0003;
-
-// Dragged things collide ONLY with Static.
-// Filter 0x0001 = 0001 (Static)
-const COLLISION_GROUP_DRAGGED = GROUPS.DRAGGED | 0x0001;
 
 
 /**
@@ -144,9 +138,189 @@ function createPhysics() {
 }
 
 
+      // Use the new simplified dragger.
+      // Note: The dragger sets ActiveCollisionTypes so that the collider will still
+      // interact with other non-dynamic colliders (like the floor) when being dragged.
+      // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
+function createDragger(world: World) {
+  const characterController = world.createCharacterController(0.01);
+  characterController.setApplyImpulsesToDynamicBodies(false); // Don't push other dynamic bodies during drag
+  characterController.enableAutostep(0.5, 0.2, true); // Allow stepping over small obstacles
+  characterController.enableSnapToGround(0.2);
+
+  /**
+   * Continuous Collision Detection (CCD) vs ActiveCollisionTypes:
+   *
+   * CCD (Continuous Collision Detection):
+   * This is used to prevent "tunneling" where fast-moving objects pass through other objects
+   * between physics steps. When enabled, Rapier performs additional checks to ensure
+   * collisions are detected along the object's path.
+   *
+   * ActiveCollisionTypes:
+   * This determines which pairs of colliders are eligible for collision detection.
+   * By default, Static-Static or Kinematic-Kinematic pairs are often ignored to save CPU.
+   * If you want a Kinematic body (like one being dragged) to still hit Static geometry,
+   * you might need to enable KINEMATIC_FIXED in ActiveCollisionTypes.
+   */
+
+  let proxyBody: RigidBody | null = null;
+  let proxyCollider: Collider | null = null;
+  let dragJoint: ImpulseJoint | null = null;
+  let draggedBodies: RigidBody[] = [];
+  const storedBodyProps = new Map<RigidBody, {
+    type: RigidBodyType,
+    damping: number,
+    angularDamping: number,
+    ccd: boolean,
+    colliderGroups: number[]
+  }>();
+
+  // TODO optimize this. Don't do a full scan every time.
+  function getConnectedBodies(startBody: RigidBody): RigidBody[] {
+    const connected = new Set<RigidBody>();
+    const queue = [startBody];
+    connected.add(startBody);
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      world.impulseJoints.forEachJointHandleAttachedToRigidBody(current.handle, (jointHandle: ImpulseJointHandle) => {
+        const joint = world.impulseJoints.get(jointHandle);
+        if (joint) {
+          const b1 = joint.body1();
+          const b2 = joint.body2();
+          const neighbor = (b1.handle === current.handle) ? b2 : b1;
+          if (!connected.has(neighbor)) {
+            connected.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      });
+    }
+    return Array.from(connected);
+  }
+
+  return {
+    start(body: RigidBody, hitPoint: { x: number, y: number, z: number }) {
+      this.stop(); // Ensure cleanup
+
+      draggedBodies = getConnectedBodies(body);
+      storedBodyProps.clear();
+
+      draggedBodies.forEach((b) => {
+        storedBodyProps.set(b, {
+          type: b.bodyType(),
+          damping: b.linearDamping(),
+          angularDamping: b.angularDamping(),
+          ccd: b.isCcdEnabled(),
+          colliderGroups: Array.from({ length: b.numColliders() }, (_, i) => {
+            const c = b.collider(i);
+            const g = c.collisionGroups();
+            c.setCollisionGroups(COLLISION_GROUP_DRAGGED);
+
+            // So that the collider will still interact with other non-dynamic colliders.
+            // This is the case when this collider gets set to kinematic so that it may be dragged around.
+            // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
+            c.setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT | ActiveCollisionTypes.KINEMATIC_FIXED);
+
+            return g;
+          })
+        });
+
+        b.setBodyType(RigidBodyType.Dynamic, true);
+        b.setLinearDamping(10.0);
+        b.setAngularDamping(10.0);
+        b.setGravityScale(0.0, true);
+        b.lockRotations(true, true);
+        b.enableCcd(true);
+        b.wakeUp();
+      });
+
+      const proxyDesc = RigidBodyDesc.kinematicPositionBased().setTranslation(hitPoint.x, hitPoint.y, hitPoint.z);
+      proxyBody = world.createRigidBody(proxyDesc);
+
+      // Add a small ball collider to the proxy so it can be seen by character controllers
+      const proxyColliderDesc = ColliderDesc.ball(0.05)
+        .setCollisionGroups(COLLISION_GROUP_DRAG_PROXY)
+        .setSensor(false);
+      proxyCollider = world.createCollider(proxyColliderDesc, proxyBody);
+
+      const invRot = new Quaternion(
+        body.rotation().x,
+        body.rotation().y,
+        body.rotation().z,
+        body.rotation().w
+      ).invert();
+
+      const worldAnchor = new Vector3(hitPoint.x, hitPoint.y, hitPoint.z);
+      const bodyPos = body.translation();
+      const diff = worldAnchor.clone().sub(new Vector3(bodyPos.x, bodyPos.y, bodyPos.z)).applyQuaternion(invRot);
+
+      const anchorOnProxy = { x: 0, y: 0, z: 0 };
+      const anchorOnBody = { x: diff.x, y: diff.y, z: diff.z };
+
+      const jointParams = JointData.spherical(anchorOnProxy, anchorOnBody);
+      dragJoint = world.createImpulseJoint(jointParams, proxyBody, body, true);
+    },
+
+    move(targetPoint: { x: number, y: number, z: number }) {
+      if (proxyBody && proxyCollider) {
+        // Use CharacterController to move the proxy body
+        const currentPos = new Vector3().copy(proxyBody.translation() as any);
+        const movement = new Vector3().copy(targetPoint as any).sub(currentPos);
+
+        characterController.computeColliderMovement(proxyCollider, movement);
+        const computedMovement = characterController.computedMovement();
+
+        proxyBody.setNextKinematicTranslation({
+          x: currentPos.x + computedMovement.x,
+          y: currentPos.y + computedMovement.y,
+          z: currentPos.z + computedMovement.z
+        });
+      }
+    },
+
+    stop() {
+      if (dragJoint) {
+        world.removeImpulseJoint(dragJoint, true);
+        dragJoint = null;
+      }
+      if (proxyBody) {
+        if (proxyCollider) {
+          world.removeCollider(proxyCollider, false);
+          proxyCollider = null;
+        }
+        world.removeRigidBody(proxyBody);
+        proxyBody = null;
+      }
+
+      draggedBodies.forEach((b) => {
+        const props = storedBodyProps.get(b);
+        if (props) {
+          b.setBodyType(props.type, true);
+          b.setLinearDamping(props.damping);
+          b.setAngularDamping(props.angularDamping);
+          b.setGravityScale(1.0, true);
+          b.enableCcd(props.ccd);
+          b.lockRotations(false, true);
+          for (let i = 0; i < props.colliderGroups.length; i++) {
+            b.collider(i).setCollisionGroups(props.colliderGroups[i]);
+          }
+          b.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          b.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        }
+      });
+
+      draggedBodies = [];
+      storedBodyProps.clear();
+    },
+
+    isDragging() {
+      return !!proxyBody;
+    }
+  };
+}
+
 export {
   createPhysics,
-  COLLISION_GROUP_STATIC,
-  COLLISION_GROUP_DYNAMIC,
-  COLLISION_GROUP_DRAGGED,
+  createDragger,
 };

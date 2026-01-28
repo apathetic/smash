@@ -1,6 +1,6 @@
 import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
 import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from 'rapier';
-import { COLLISION_GROUP_DYNAMIC } from '~/system/physics';
+import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
 import type { World, RigidBody } from 'rapier';
 import type { Scene } from 'three';

@@ -1,6 +1,6 @@
 import { Mesh, BoxGeometry, MeshNormalMaterial } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
-import { COLLISION_GROUP_DYNAMIC } from '~/system/physics';
+import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
 import type { World } from 'rapier';
 import type { Scene } from 'three';
