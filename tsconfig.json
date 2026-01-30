@@ -20,6 +20,7 @@
       "rapier": ["./node_modules/@dimforge/rapier3d"]
     },
     "types": [
+      "node",
       "three",
       "stats.js",
       "vinxi/types/client"

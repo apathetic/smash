@@ -16,6 +16,7 @@
     "@dimforge/rapier3d-compat": "^0.18.2",
     "@solidjs/router": "^0.15.3",
     "@solidjs/start": "^1.1.7",
+    "@types/node": "^25.1.0",
     "@types/stats.js": "^0.17.4",
     "@types/three": "^0.172.0",
     "@unocss/reset": "^0.62.4",
@@ -34,8 +35,5 @@
   },
   "overrides": {
     "vite": "5.4.10"
-  },
-  "devDependencies": {
-    "jsdom": "^26.1.0"
   }
 }

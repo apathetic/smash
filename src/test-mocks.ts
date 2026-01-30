@@ -16,7 +16,14 @@ vi.mock('rapier', () => ({
         setActiveCollisionTypes: vi.fn()
       },
       toi: 1.0
-    })
+    }),
+    createCharacterController: vi.fn().mockImplementation(() => ({
+      setApplyImpulsesToDynamicBodies: vi.fn().mockReturnThis(),
+      enableAutostep: vi.fn().mockReturnThis(),
+      enableSnapToGround: vi.fn().mockReturnThis(),
+      computeColliderMovement: vi.fn(),
+      computedMovement: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 })
+    }))
   })),
   EventQueue: vi.fn().mockImplementation(() => ({
     drainContactForceEvents: vi.fn()
@@ -43,8 +50,20 @@ vi.mock('rapier', () => ({
 }));
 
 vi.mock('three', () => ({
-  Vector2: vi.fn().mockImplementation((x, y) => ({ x, y })),
-  Vector3: vi.fn().mockImplementation((x, y, z) => ({ x, y, z })),
+  Vector2: vi.fn().mockImplementation((x, y) => ({
+    x, y,
+    set: vi.fn().mockReturnThis()
+  })),
+  Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({
+    x, y, z,
+    set: vi.fn().mockReturnThis(),
+    copy: vi.fn().mockReturnThis(),
+    add: vi.fn().mockReturnThis(),
+    sub: vi.fn().mockReturnThis(),
+    multiplyScalar: vi.fn().mockReturnThis(),
+    addScaledVector: vi.fn().mockReturnThis(),
+    unproject: vi.fn().mockReturnThis()
+  })),
   Plane: vi.fn().mockImplementation(() => ({
     constant: 0,
     normal: { x: 0, y: 0, z: 1 }
