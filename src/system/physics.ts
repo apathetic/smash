@@ -1,4 +1,3 @@
-
 import {
   World,
   EventQueue,
@@ -11,8 +10,8 @@ import {
   RigidBodyDesc,
   ColliderDesc,
   JointData
-} from 'rapier';
-import { Quaternion, Vector3 } from 'three';
+} from "rapier";
+import { Quaternion, Vector3 } from "three";
 import { createEffect } from "solid-js"
 import { useGameState } from "~/game/store";
 import {
@@ -23,34 +22,41 @@ import {
 
 
 
-
 /**
  * Creates the physics world.
- * @returns {World} The physics world.
+ * @returns {object} An object containing the physics world, update and collisions functions.
+ * @returns {World} return.world - The physics world.
+ * @returns {function} return.update - The update function.
+ * @returns {function} return.collisions - A collisions function.
  */
 function createPhysics() {
-  // const gravity = { x: 0.0, y: -9.81, z: 0.0 };
-  const gravity = { x: 0.0, y: 0, z: 0.0 };
-  const world = new World(gravity);
+  const gravity    = { x: 0.0, y: 0, z: 0.0 }; // { x: 0.0, y: -9.81, z: 0.0 };
+  const world      = new World(gravity);
   const eventQueue = new EventQueue(true); // 'true' to capture contact force events
-  const [game] = useGameState();
+  const [game]     = useGameState();
+  let stepId       = 0;
 
   // Increase solver iterations for more stable constraint solving
-  world.integrationParameters.numSolverIterations = 20; // Default is usually 4
+  world.integrationParameters.numSolverIterations = 20; // Default is ~4
 
 
-  const toggleGravity = (enabled: boolean) => {
+  function update(_delta: number) {
+    world.step(eventQueue);
+    stepId += 1;
+
+    (world as any).stepId = stepId;
+
+    // eventQueue.drainCollisionEvents((...        // if `ActiveEvents.COLLISION_EVENTS` is set in the collider
+    eventQueue.drainContactForceEvents(collisions); // if `ActiveEvents.CONTACT_FORCE_EVENTS` is set in the collider
+  }
+
+  function toggleGravity (enabled: boolean) {
     world.gravity.y = enabled ? GRAVITY : 0;
-    // Wake up all bodies when gravity is enabled to ensure they respond
     if (enabled) {
       world.forEachRigidBody((body) => body.wakeUp());
     }
-  };
+  }
 
-
-
-
-  // Function to make the ragdoll "posable" - stays where you put it
   function setEditMode(enabled: boolean) {
     world.forEachRigidBody((body) => {
 
@@ -81,14 +87,11 @@ function createPhysics() {
     // This effectively makes joints rigid in edit mode.
   }
 
-
-
-
-  let stepId = 0;
-
-
-
-
+  function collisions(event: any) { //  meant to be overwitten;
+    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
+    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
+    // console.log("Contact force:", handle1, event.totalForce());
+  }
 
 
   createEffect(() => {
@@ -114,28 +117,11 @@ function createPhysics() {
     // onCleanup(() => ....
   });
 
-
-
-
-  const collisions = (event: any) => { ///// meant to be overwitten;
-    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
-    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
-    // console.log("Contact force:", handle1, event.totalForce());
-  }
-
-
-  function update(_delta: number) {
-    world.step(eventQueue);
-    stepId += 1;
-
-    (world as any).stepId = stepId;
-
-    // eventQueue.drainCollisionEvents((...        // if `ActiveEvents.COLLISION_EVENTS` is set in the collider
-    eventQueue.drainContactForceEvents(collisions); // if `ActiveEvents.CONTACT_FORCE_EVENTS` is set in the collider
-  }
-
   return { world, update, collisions };
 }
+
+
+
 
 
       // Use the new simplified dragger.
@@ -196,6 +182,7 @@ function createDragger(world: World) {
         }
       });
     }
+
     return Array.from(connected);
   }
 
