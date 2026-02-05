@@ -1,23 +1,24 @@
 {
   "tasks": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "serve": {
-      "command": "deno task dev:api",
-      "description": "Run the build, and then start the API server",
-      "dependencies": ["deno task build"]
+    "build": "vinxi build --preset deno_server",
+    "preview": "deno task --config .output/deno.json start",
+    "deploy": {
+      "command": "deployctl deploy",
+      "dependencies": ["build"]
     }
   },
+
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
-    "allowJs": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"]
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "strict": true
   },
+
   "deploy": {
     "project": "400d5704-7844-4a86-945a-ceec83159234",
     "exclude": ["**/node_modules"],
-    "include": [".output/public/**", "server.ts"],
-    "entrypoint": "server.ts"
+    "include": [".output/**"],
+    "entrypoint": ".output/server/index.mjs"
   }
 }
