@@ -40,6 +40,12 @@ function createPhysics() {
   world.integrationParameters.numSolverIterations = 20; // Default is ~4
 
 
+  function collisions(event: any) { //  meant to be overwitten;
+    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
+    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
+    // console.log("Contact force:", handle1, event.totalForce());
+  }
+
   function update(_delta: number) {
     world.step(eventQueue);
     stepId += 1;
@@ -77,8 +83,8 @@ function createPhysics() {
         body.setBodyType(RigidBodyType.Dynamic, true);
 
         // Normal damping for physics simulation
-        body.setLinearDamping(0.2);
-        body.setAngularDamping(0.2);
+        // body.setLinearDamping(0.5);
+        // body.setAngularDamping(0.5);
       }
     });
 
@@ -87,11 +93,6 @@ function createPhysics() {
     // This effectively makes joints rigid in edit mode.
   }
 
-  function collisions(event: any) { //  meant to be overwitten;
-    let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
-    let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
-    // console.log("Contact force:", handle1, event.totalForce());
-  }
 
 
   createEffect(() => {
