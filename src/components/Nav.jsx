@@ -1,5 +1,5 @@
 import { useNavigate } from "@solidjs/router";
-
+import { Menu } from "./Menu";
 
 export const Nav = ({ back }) => {
   const setOrBack = back ? 'back' : 'set it';
@@ -8,7 +8,7 @@ export const Nav = ({ back }) => {
 
   return (
     <>
-      <button class="nav-button" onClick={nav('/overview')}>overview</button>
+      <Menu />
       <button class="nav-button" onClick={nav('/set')}>{setOrBack}</button>
     </>
   );
