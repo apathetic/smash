@@ -47,7 +47,7 @@ function createControls({ graphics, physics }: ControlProps) {
   // controls.enableDamping = true;
   controls.minDistance = 0.1; // not smaller than the camera's near clipping plane
   controls.maxDistance = 100; // not greater than far clipping
-  controls.maxPolarAngle = Math.PI / 2; // don't allow to look below the horizon
+  controls.maxPolarAngle = Math.PI / 2 - (10 * Math.PI / 180); // stop 10 degrees above the horizon
   controls.enabled = true;
 
 

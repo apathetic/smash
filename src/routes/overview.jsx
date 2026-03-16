@@ -1,25 +1,73 @@
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
 import { Nav } from "~/components/Nav";
+import { useNavigate } from "@solidjs/router";
+import { onMount, onCleanup } from "solid-js";
 
 export default function Overview() {
+  const navigate = useNavigate();
+
+  const handleClose = () => {
+    // Navigate back to the previous screen (e.g. the game)
+    // Fallback to start level if history is empty could be done, but -1 usually works.
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      // Default to picking a level if there's no history to go back to
+      loadLevel('1-discovery');
+    }
+  };
+
+  onMount(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
+  });
+
   return (
     <>
       <Nav />
-      behind text neato
-
       <Page>
-        how to play.<br />
-        stats. <br />
-        choose a level or something.<br />
-        high score, replays
+        <div class="text-white font-mono p-4 relative">
+          {/* Absolute positioned close button at top right inside modal */}
+          <button 
+            onClick={handleClose}
+            class="absolute top-0 right-0 z-50 p-2 text-white bg-transparent border-none cursor-pointer hover:text-fuchsia-400 transition-colors"
+            aria-label="Close overview"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          
+          <h1 class="text-3xl font-bold mb-4">HOW TO PLAY</h1>
+          <p class="mb-4">stats.</p>
+          <p class="mb-4">choose a level or something.</p>
+          <p class="mb-8">high score, replays</p>
 
-        <ul>
-          <li><button onclick={() => loadLevel('1-discovery')}>level 1</button></li>
-          <li><button onclick={() => loadLevel('2-blocks')}>level 2</button></li>
-          <li><button onclick={() => loadLevel(3)}>level 3</button></li>
-        </ul>
-
+          <ul class="flex flex-col gap-4 list-none m-0 p-0">
+            <li>
+              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel('1-discovery')}>
+                level 1
+              </button>
+            </li>
+            <li>
+              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel('2-blocks')}>
+                level 2
+              </button>
+            </li>
+            <li>
+              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel(3)}>
+                level 3
+              </button>
+            </li>
+          </ul>
+        </div>
       </Page>
     </>
   );
