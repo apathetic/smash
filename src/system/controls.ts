@@ -94,8 +94,8 @@ function createControls({ graphics, physics }: ControlProps) {
     const hit = world.castRay(ray, maxDistance, solid, filterFlags);
 
     if (hit) {
-      const body = hit.collider.parent();
-      if (!body) return;
+      // const body = hit.collider.parent();
+      // if (!body) return;
 
       controls.enabled = false; // Only disable OrbitControls when we actually hit an entity to drag
 
@@ -104,7 +104,7 @@ function createControls({ graphics, physics }: ControlProps) {
 
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
-      dragger.start(body, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
+      dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
     }
   }
 

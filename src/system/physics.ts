@@ -4,20 +4,15 @@ import {
   RigidBodyType,
   RigidBody,
   Collider,
-  ImpulseJoint,
   ImpulseJointHandle,
   ActiveCollisionTypes,
-  RigidBodyDesc,
-  ColliderDesc,
-  JointData
 } from "rapier";
-import { Quaternion, Vector3 } from "three";
+import { Vector3 } from "three";
 import { createEffect } from "solid-js"
 import { useGameState } from "~/game/store";
 import {
   GRAVITY,
-  COLLISION_GROUP_DRAGGED,
-  COLLISION_GROUP_DRAG_PROXY
+  COLLISION_GROUP_DRAGGED
 } from "~/system/constants";
 
 
@@ -132,8 +127,8 @@ function createPhysics() {
 function createDragger(world: World) {
   const characterController = world.createCharacterController(0.01);
   characterController.setApplyImpulsesToDynamicBodies(false); // Don't push other dynamic bodies during drag
-  characterController.enableAutostep(0.5, 0.2, true); // Allow stepping over small obstacles
-  characterController.enableSnapToGround(0.2);
+  // characterController.enableAutostep(0.5, 0.2, true); // Allow stepping over small obstacles
+  // characterController.enableSnapToGround(0.2);
 
   /**
    * Continuous Collision Detection (CCD) vs ActiveCollisionTypes:
@@ -150,10 +145,11 @@ function createDragger(world: World) {
    * you might need to enable KINEMATIC_FIXED in ActiveCollisionTypes.
    */
 
-  let proxyBody: RigidBody | null = null;
-  let proxyCollider: Collider | null = null;
-  let dragJoint: ImpulseJoint | null = null;
+  let grabbedCollider: Collider | null = null;
+  let grabbedBody: RigidBody | null = null;
   let draggedBodies: RigidBody[] = [];
+  let grabOffset: Vector3 | null = null;
+
   const storedBodyProps = new Map<RigidBody, {
     type: RigidBodyType,
     damping: number,
@@ -188,10 +184,14 @@ function createDragger(world: World) {
   }
 
   return {
-    start(body: RigidBody, hitPoint: { x: number, y: number, z: number }) {
+    start(collider: Collider, hitPoint: { x: number, y: number, z: number }) {
       this.stop(); // Ensure cleanup
 
-      draggedBodies = getConnectedBodies(body);
+      grabbedCollider = collider;
+      grabbedBody = collider.parent() as RigidBody;
+      if (!grabbedBody) return;
+
+      draggedBodies = getConnectedBodies(grabbedBody);
       storedBodyProps.clear();
 
       draggedBodies.forEach((b) => {
@@ -214,73 +214,47 @@ function createDragger(world: World) {
           })
         });
 
-        b.setBodyType(RigidBodyType.Dynamic, true);
-        b.setLinearDamping(10.0);
-        b.setAngularDamping(10.0);
-        b.setGravityScale(0.0, true);
-        b.lockRotations(true, true);
+        // Use KinematicPositionBased so the body stays exactly where we put it and joints stay rigid
+        b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+        b.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        b.setAngvel({ x: 0, y: 0, z: 0 }, true);
         b.enableCcd(true);
         b.wakeUp();
       });
 
-      const proxyDesc = RigidBodyDesc.kinematicPositionBased().setTranslation(hitPoint.x, hitPoint.y, hitPoint.z);
-      proxyBody = world.createRigidBody(proxyDesc);
-
-      // Add a small ball collider to the proxy so it can be seen by character controllers
-      const proxyColliderDesc = ColliderDesc.ball(0.05)
-        .setCollisionGroups(COLLISION_GROUP_DRAG_PROXY)
-        .setSensor(false);
-      proxyCollider = world.createCollider(proxyColliderDesc, proxyBody);
-
-      const invRot = new Quaternion(
-        body.rotation().x,
-        body.rotation().y,
-        body.rotation().z,
-        body.rotation().w
-      ).invert();
-
-      const worldAnchor = new Vector3(hitPoint.x, hitPoint.y, hitPoint.z);
-      const bodyPos = body.translation();
-      const diff = worldAnchor.clone().sub(new Vector3(bodyPos.x, bodyPos.y, bodyPos.z)).applyQuaternion(invRot);
-
-      const anchorOnProxy = { x: 0, y: 0, z: 0 };
-      const anchorOnBody = { x: diff.x, y: diff.y, z: diff.z };
-
-      const jointParams = JointData.spherical(anchorOnProxy, anchorOnBody);
-      dragJoint = world.createImpulseJoint(jointParams, proxyBody, body, true);
+      const bodyPos = grabbedBody.translation();
+      const posVec = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z);
+      const hitVec = new Vector3(hitPoint.x, hitPoint.y, hitPoint.z);
+      grabOffset = hitVec.clone().sub(posVec);
     },
 
     move(targetPoint: { x: number, y: number, z: number }) {
-      if (proxyBody && proxyCollider) {
-        // Use CharacterController to move the proxy body
-        const currentPos = new Vector3().copy(proxyBody.translation() as any);
-        const movement = new Vector3().copy(targetPoint as any).sub(currentPos);
+      if (!grabbedCollider || !grabbedBody || !grabOffset) return;
 
-        characterController.computeColliderMovement(proxyCollider, movement);
-        const computedMovement = characterController.computedMovement();
+      const targetVec = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z);
+      const targetBodyPos = targetVec.clone().sub(grabOffset);
 
-        proxyBody.setNextKinematicTranslation({
-          x: currentPos.x + computedMovement.x,
-          y: currentPos.y + computedMovement.y,
-          z: currentPos.z + computedMovement.z
+      const bodyPos = grabbedBody.translation();
+      const currentPos = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z);
+      const desiredMovement = targetBodyPos.clone().sub(currentPos);
+
+      // Compute movement to avoid obstacles
+      characterController.computeColliderMovement(grabbedCollider, desiredMovement);
+      const computedMovement = characterController.computedMovement();
+
+      // Apply the exact same translation to all connected constituent bodies
+      // so the whole object (e.g., RagDoll) moves rigidly without flopping or coming apart
+      draggedBodies.forEach((b) => {
+        const bPos = b.translation();
+        b.setNextKinematicTranslation({
+          x: bPos.x + computedMovement.x,
+          y: bPos.y + computedMovement.y,
+          z: bPos.z + computedMovement.z
         });
-      }
+      });
     },
 
     stop() {
-      if (dragJoint) {
-        world.removeImpulseJoint(dragJoint, true);
-        dragJoint = null;
-      }
-      if (proxyBody) {
-        if (proxyCollider) {
-          world.removeCollider(proxyCollider, false);
-          proxyCollider = null;
-        }
-        world.removeRigidBody(proxyBody);
-        proxyBody = null;
-      }
-
       draggedBodies.forEach((b) => {
         const props = storedBodyProps.get(b);
         if (props) {
@@ -289,21 +263,27 @@ function createDragger(world: World) {
           b.setAngularDamping(props.angularDamping);
           b.setGravityScale(1.0, true);
           b.enableCcd(props.ccd);
-          b.lockRotations(false, true);
           for (let i = 0; i < props.colliderGroups.length; i++) {
-            b.collider(i).setCollisionGroups(props.colliderGroups[i]);
+            const numColliders = b.numColliders();
+            if (i < numColliders) {
+              b.collider(i).setCollisionGroups(props.colliderGroups[i]);
+              b.collider(i).setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT);
+            }
           }
           b.setLinvel({ x: 0, y: 0, z: 0 }, true);
           b.setAngvel({ x: 0, y: 0, z: 0 }, true);
         }
       });
 
+      grabbedCollider = null;
+      grabbedBody = null;
+      grabOffset = null;
       draggedBodies = [];
       storedBodyProps.clear();
     },
 
     isDragging() {
-      return !!proxyBody;
+      return !!grabbedBody;
     }
   };
 }
