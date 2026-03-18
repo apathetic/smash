@@ -9,6 +9,7 @@ import {
 import { Vector3 } from "three";
 import { createEffect } from "solid-js";
 import { useGameState } from "~/game/store";
+import { registry } from "~/game/store/registry";
 import { GRAVITY } from "~/system/constants";
 import { createDamageHandler } from "~/system/damage";
 

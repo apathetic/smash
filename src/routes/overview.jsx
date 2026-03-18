@@ -1,8 +1,8 @@
+import { onMount, onCleanup } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
 import { Nav } from "~/components/Nav";
-import { useNavigate } from "@solidjs/router";
-import { onMount, onCleanup } from "solid-js";
 
 export default function Overview() {
   const navigate = useNavigate();
