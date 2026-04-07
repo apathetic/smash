@@ -73,8 +73,8 @@ function createPhysics() {
         body.setBodyType(RigidBodyType.Dynamic, true);
 
         // Normal damping for physics simulation
-        // body.setLinearDamping(0.5);
-        // body.setAngularDamping(0.5);
+        body.setLinearDamping(0);
+        body.setAngularDamping(0);
       }
     });
 
@@ -116,6 +116,7 @@ function createPhysics() {
 
 
 function createDragger(world: World) {
+  const [game] = useGameState();
   const characterController = world.createCharacterController(0.01);
   characterController.setApplyImpulsesToDynamicBodies(false);
 
@@ -224,8 +225,15 @@ function createDragger(world: World) {
       if (!grabbedBody) return;
 
       draggedBodies.forEach((b) => {
+        if (game.mode !== 'edit') {
+          // In smash mode, the global setEditMode(false) forces bodies to Dynamic and resets damping.
+          return;
+        }
+
         if (b === grabbedBody) {
           b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+          b.setLinearDamping(0);
+          b.setAngularDamping(0);
         } else {
           // Attached bodies stop normally, heavily damped
           b.setBodyType(RigidBodyType.Dynamic, true);
@@ -234,17 +242,26 @@ function createDragger(world: World) {
 
           const interval = setInterval(() => {
             try {
+              if (game.mode !== 'edit') {
+                 // Game switched to smash mode while settling! Global setEditMode handles cleanup.
+                 clearInterval(interval);
+                 settlingIntervals.delete(b);
+                 return;
+              }
+
               const lv = b.linvel();
               const av = b.angvel();
               const speedSq = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z;
               const angSq = av.x * av.x + av.y * av.y + av.z * av.z;
               if (speedSq < 0.005 && angSq < 0.005) {
                 b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+                b.setLinearDamping(0);
+                b.setAngularDamping(0);
                 clearInterval(interval);
                 settlingIntervals.delete(b);
               }
             } catch (_err) {
-              // Body was likely destroyed or physics world reset
+              // Body was likely destroyed
               clearInterval(interval);
               settlingIntervals.delete(b);
               console.error(_err);

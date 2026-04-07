@@ -1,6 +1,8 @@
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
 import { Nav } from "~/components/Nav";
+import { useNavigate } from "@solidjs/router";
+import { onMount, onCleanup } from "solid-js";
 
 export default function Overview() {
   const navigate = useNavigate();
@@ -50,23 +52,6 @@ export default function Overview() {
           <p class="mb-4">choose a level or something.</p>
           <p class="mb-8">high score, replays</p>
 
-          <ul class="flex flex-col gap-4 list-none m-0 p-0">
-            <li>
-              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel('1-discovery')}>
-                level 1
-              </button>
-            </li>
-            <li>
-              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel('2-blocks')}>
-                level 2
-              </button>
-            </li>
-            <li>
-              <button class="text-left bg-transparent border-none cursor-pointer uppercase tracking-widest font-bold hover:text-fuchsia-400 transition-colors" onClick={() => loadLevel(3)}>
-                level 3
-              </button>
-            </li>
-          </ul>
         </div>
       </Page>
     </>
