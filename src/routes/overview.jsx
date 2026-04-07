@@ -1,8 +1,6 @@
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
 import { Nav } from "~/components/Nav";
-import { useNavigate } from "@solidjs/router";
-import { onMount, onCleanup } from "solid-js";
 
 export default function Overview() {
   const navigate = useNavigate();
@@ -31,10 +29,12 @@ export default function Overview() {
   return (
     <>
       <Nav />
+      behind text neato
+
       <Page>
         <div class="text-white font-mono p-4 relative">
           {/* Absolute positioned close button at top right inside modal */}
-          <button 
+          <button
             onClick={handleClose}
             class="absolute top-0 right-0 z-50 p-2 text-white bg-transparent border-none cursor-pointer hover:text-fuchsia-400 transition-colors"
             aria-label="Close overview"
@@ -44,7 +44,7 @@ export default function Overview() {
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-          
+
           <h1 class="text-3xl font-bold mb-4">HOW TO PLAY</h1>
           <p class="mb-4">stats.</p>
           <p class="mb-4">choose a level or something.</p>

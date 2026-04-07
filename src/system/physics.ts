@@ -5,16 +5,11 @@ import {
   RigidBody,
   Collider,
   ImpulseJointHandle,
-  ActiveCollisionTypes,
 } from "rapier";
 import { Vector3 } from "three";
-import { createEffect } from "solid-js"
+import { createEffect } from "solid-js";
 import { useGameState } from "~/game/store";
-import {
-  GRAVITY,
-  COLLISION_GROUP_DRAGGED
-} from "~/system/constants";
-
+import { GRAVITY } from "~/system/constants";
 
 
 /**
@@ -25,7 +20,7 @@ import {
  * @returns {function} return.collisions - A collisions function.
  */
 function createPhysics() {
-  const gravity    = { x: 0.0, y: 0, z: 0.0 }; // { x: 0.0, y: -9.81, z: 0.0 };
+  const gravity    = { x: 0.0, y: 0, z: 0.0 };
   const world      = new World(gravity);
   const eventQueue = new EventQueue(true); // 'true' to capture contact force events
   const [game]     = useGameState();
@@ -120,46 +115,22 @@ function createPhysics() {
 
 
 
-      // Use the new simplified dragger.
-      // Note: The dragger sets ActiveCollisionTypes so that the collider will still
-      // interact with other non-dynamic colliders (like the floor) when being dragged.
-      // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
 function createDragger(world: World) {
   const characterController = world.createCharacterController(0.01);
-  characterController.setApplyImpulsesToDynamicBodies(false); // Don't push other dynamic bodies during drag
-  // characterController.enableAutostep(0.5, 0.2, true); // Allow stepping over small obstacles
-  // characterController.enableSnapToGround(0.2);
-
-  /**
-   * Continuous Collision Detection (CCD) vs ActiveCollisionTypes:
-   *
-   * CCD (Continuous Collision Detection):
-   * This is used to prevent "tunneling" where fast-moving objects pass through other objects
-   * between physics steps. When enabled, Rapier performs additional checks to ensure
-   * collisions are detected along the object's path.
-   *
-   * ActiveCollisionTypes:
-   * This determines which pairs of colliders are eligible for collision detection.
-   * By default, Static-Static or Kinematic-Kinematic pairs are often ignored to save CPU.
-   * If you want a Kinematic body (like one being dragged) to still hit Static geometry,
-   * you might need to enable KINEMATIC_FIXED in ActiveCollisionTypes.
-   */
+  characterController.setApplyImpulsesToDynamicBodies(false);
 
   let grabbedCollider: Collider | null = null;
   let grabbedBody: RigidBody | null = null;
   let draggedBodies: RigidBody[] = [];
   let grabOffset: Vector3 | null = null;
 
-  const storedBodyProps = new Map<RigidBody, {
-    type: RigidBodyType,
-    damping: number,
-    angularDamping: number,
-    ccd: boolean,
-    colliderGroups: number[]
-  }>();
+  const settlingIntervals = new Map<RigidBody, ReturnType<typeof setInterval>>();
+  const connectedBodiesCache = new Map<number, RigidBody[]>();
 
-  // TODO optimize this. Don't do a full scan every time.
   function getConnectedBodies(startBody: RigidBody): RigidBody[] {
+    if (connectedBodiesCache.has(startBody.handle)) {
+      return connectedBodiesCache.get(startBody.handle)!;
+    }
     const connected = new Set<RigidBody>();
     const queue = [startBody];
     connected.add(startBody);
@@ -179,8 +150,11 @@ function createDragger(world: World) {
         }
       });
     }
-
-    return Array.from(connected);
+    const arr = Array.from(connected);
+    arr.forEach(b => {
+      connectedBodiesCache.set(b.handle, arr);
+    });
+    return arr;
   }
 
   return {
@@ -191,87 +165,92 @@ function createDragger(world: World) {
       grabbedBody = collider.parent() as RigidBody;
       if (!grabbedBody) return;
 
+      const bodyPos = grabbedBody.translation();
+      grabOffset = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z).sub(new Vector3(hitPoint.x, hitPoint.y, hitPoint.z));
+
       draggedBodies = getConnectedBodies(grabbedBody);
-      storedBodyProps.clear();
 
       draggedBodies.forEach((b) => {
-        storedBodyProps.set(b, {
-          type: b.bodyType(),
-          damping: b.linearDamping(),
-          angularDamping: b.angularDamping(),
-          ccd: b.isCcdEnabled(),
-          colliderGroups: Array.from({ length: b.numColliders() }, (_, i) => {
-            const c = b.collider(i);
-            const g = c.collisionGroups();
-            c.setCollisionGroups(COLLISION_GROUP_DRAGGED);
+        if (settlingIntervals.has(b)) {
+          clearInterval(settlingIntervals.get(b));
+          settlingIntervals.delete(b);
+        }
 
-            // So that the collider will still interact with other non-dynamic colliders.
-            // This is the case when this collider gets set to kinematic so that it may be dragged around.
-            // https://rapier.rs/docs/user_guides/javascript/colliders/#active-collision-types
-            c.setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT | ActiveCollisionTypes.KINEMATIC_FIXED);
+        if (b === grabbedBody) {
+          b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+        } else {
+          b.setBodyType(RigidBodyType.Dynamic, true);
+          b.setLinearDamping(10.0);
+          b.setAngularDamping(10.0);
+        }
 
-            return g;
-          })
-        });
-
-        // Use KinematicPositionBased so the body stays exactly where we put it and joints stay rigid
-        b.setBodyType(RigidBodyType.KinematicPositionBased, true);
         b.setLinvel({ x: 0, y: 0, z: 0 }, true);
         b.setAngvel({ x: 0, y: 0, z: 0 }, true);
-        b.enableCcd(true);
         b.wakeUp();
       });
-
-      const bodyPos = grabbedBody.translation();
-      const posVec = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z);
-      const hitVec = new Vector3(hitPoint.x, hitPoint.y, hitPoint.z);
-      grabOffset = hitVec.clone().sub(posVec);
     },
 
     move(targetPoint: { x: number, y: number, z: number }) {
-      if (!grabbedCollider || !grabbedBody || !grabOffset) return;
+      if (!grabbedBody || !grabbedCollider || !grabOffset) return;
 
-      const targetVec = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z);
-      const targetBodyPos = targetVec.clone().sub(grabOffset);
+      const currentPos = new Vector3().copy(grabbedBody.translation() as any);
+      const desiredPos = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z).add(grabOffset);
+      const movement = new Vector3().subVectors(desiredPos, currentPos);
 
-      const bodyPos = grabbedBody.translation();
-      const currentPos = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z);
-      const desiredMovement = targetBodyPos.clone().sub(currentPos);
-
-      // Compute movement to avoid obstacles
-      characterController.computeColliderMovement(grabbedCollider, desiredMovement);
+      // Compute movement to avoid obstacles, ignore other bodies in this entity group
+      characterController.computeColliderMovement(
+        grabbedCollider,
+        movement,
+        undefined,
+        undefined,
+        (c) => {
+          const parent = c.parent();
+          if (parent) {
+             return !draggedBodies.includes(parent as RigidBody);
+          }
+          return true;
+        }
+      );
       const computedMovement = characterController.computedMovement();
 
-      // Apply the exact same translation to all connected constituent bodies
-      // so the whole object (e.g., RagDoll) moves rigidly without flopping or coming apart
-      draggedBodies.forEach((b) => {
-        const bPos = b.translation();
-        b.setNextKinematicTranslation({
-          x: bPos.x + computedMovement.x,
-          y: bPos.y + computedMovement.y,
-          z: bPos.z + computedMovement.z
-        });
+      grabbedBody.setNextKinematicTranslation({
+        x: currentPos.x + computedMovement.x,
+        y: currentPos.y + computedMovement.y,
+        z: currentPos.z + computedMovement.z
       });
     },
 
     stop() {
+      if (!grabbedBody) return;
+
       draggedBodies.forEach((b) => {
-        const props = storedBodyProps.get(b);
-        if (props) {
-          b.setBodyType(props.type, true);
-          b.setLinearDamping(props.damping);
-          b.setAngularDamping(props.angularDamping);
-          b.setGravityScale(1.0, true);
-          b.enableCcd(props.ccd);
-          for (let i = 0; i < props.colliderGroups.length; i++) {
-            const numColliders = b.numColliders();
-            if (i < numColliders) {
-              b.collider(i).setCollisionGroups(props.colliderGroups[i]);
-              b.collider(i).setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT);
+        if (b === grabbedBody) {
+          b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+        } else {
+          // Attached bodies stop normally, heavily damped
+          b.setBodyType(RigidBodyType.Dynamic, true);
+          b.setLinearDamping(10.0);
+          b.setAngularDamping(10.0);
+
+          const interval = setInterval(() => {
+            try {
+              const lv = b.linvel();
+              const av = b.angvel();
+              const speedSq = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z;
+              const angSq = av.x * av.x + av.y * av.y + av.z * av.z;
+              if (speedSq < 0.005 && angSq < 0.005) {
+                b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+                clearInterval(interval);
+                settlingIntervals.delete(b);
+              }
+            } catch (_err) {
+              // Body was likely destroyed or physics world reset
+              clearInterval(interval);
+              settlingIntervals.delete(b);
+              console.error(_err);
             }
-          }
-          b.setLinvel({ x: 0, y: 0, z: 0 }, true);
-          b.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          }, 100);
+          settlingIntervals.set(b, interval);
         }
       });
 
@@ -279,7 +258,6 @@ function createDragger(world: World) {
       grabbedBody = null;
       grabOffset = null;
       draggedBodies = [];
-      storedBodyProps.clear();
     },
 
     isDragging() {
