@@ -73,6 +73,13 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
  * @returns WorldEntity
  */
 export class RagDoll extends Base {
+  private lastImpactCount = 0;
+
+  constructor(props: any = {}) {
+    super(props);
+    this.id = 'ragdoll';
+  }
+
   setup(scene: Scene, physics: World) {
 
     const meshList: Mesh[] = [];
@@ -343,21 +350,21 @@ export class RagDoll extends Base {
     scene.add(group);
 
     this.dynamicBodies.push(
-      { mesh: head,      body: headBody },
-      { mesh: chest,     body: chestBody },
-      { mesh: hips,      body: hipsBody },
-      { mesh: upperArmL, body: upperArmLBody },
-      { mesh: foreArmL,  body: foreArmLBody },
-      { mesh: handL,     body: handLBody },
-      { mesh: upperArmR, body: upperArmRBody },
-      { mesh: foreArmR,  body: foreArmRBody },
-      { mesh: handR,     body: handRBody },
-      { mesh: upperLegL, body: upperLegLBody },
-      { mesh: lowerLegL, body: lowerLegLBody },
-      { mesh: footL,     body: footLBody },
-      { mesh: upperLegR, body: upperLegRBody },
-      { mesh: lowerLegR, body: lowerLegRBody },
-      { mesh: footR,     body: footRBody },
+      { name: 'head',      mesh: head,      body: headBody },
+      { name: 'chest',     mesh: chest,     body: chestBody },
+      { name: 'hips',      mesh: hips,      body: hipsBody },
+      { name: 'upperArmL', mesh: upperArmL, body: upperArmLBody },
+      { name: 'foreArmL',  mesh: foreArmL,  body: foreArmLBody },
+      { name: 'handL',     mesh: handL,     body: handLBody },
+      { name: 'upperArmR', mesh: upperArmR, body: upperArmRBody },
+      { name: 'foreArmR',  mesh: foreArmR,  body: foreArmRBody },
+      { name: 'handR',     mesh: handR,     body: handRBody },
+      { name: 'upperLegL', mesh: upperLegL, body: upperLegLBody },
+      { name: 'lowerLegL', mesh: lowerLegL, body: lowerLegLBody },
+      { name: 'footL',     mesh: footL,     body: footLBody },
+      { name: 'upperLegR', mesh: upperLegR, body: upperLegRBody },
+      { name: 'lowerLegR', mesh: lowerLegR, body: lowerLegRBody },
+      { name: 'footR',     mesh: footR,     body: footRBody },
     );
 
   }
@@ -370,7 +377,8 @@ export class RagDoll extends Base {
   }
 
   damage(impacts: any /* Impact[] */) {
-    if (!impacts || impacts.length === 0) return;
+    if (!impacts || impacts.length === 0 || impacts.length === this.lastImpactCount) return;
+    this.lastImpactCount = impacts.length;
 
     // Calculate damage per body part
     const bodyPartDamage = impacts.reduce((acc: Record<string, number>, impact: any) => {

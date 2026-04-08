@@ -11,8 +11,7 @@ const Stage = () => {
 
   onMount(() => {
     // NOTE: useWorld must be init'd here, in hook, only after canvas is set
-    const { start } = useWorld(canvas);
-    start();
+    useWorld(canvas);
   });
 
   onCleanup(() => {

@@ -37,6 +37,7 @@ type Entities = "Cube" | "Wall" | "Floor" | "Terrain";
 
 
 type DynamicBody = {
+  name?: string;
   mesh: Mesh;       // skin
   body: RigidBody;  // skeleton
 }

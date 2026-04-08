@@ -42,8 +42,11 @@ async function getLevelData(lvl: string) {
  ///////// Load json data; extract initial data; initialize the store With this info
  */
 async function loadLevel(lvl: string) {
-  const { add, clear } = useWorld();
+  const { add, clear, start, stop } = useWorld();
   const [_, setGameState] = useGameState();
+
+  stop();
+
   const levelData: Level = await getLevelData(lvl);
 
   if (!levelData) {
@@ -100,6 +103,8 @@ async function loadLevel(lvl: string) {
 
   const ragdoll = new RagDoll({ position: [0,0,0] });
   add(ragdoll);
+
+  start();
 }
 
 

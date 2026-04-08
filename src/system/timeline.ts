@@ -25,7 +25,7 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
   const { camera, scene, renderer } = graphics;
 
   function start() {
-    const ragdoll = registry.get('ragdoll');
+    const ragdoll = registry.get('ragdoll') as any;
     clock.start();
 
     renderer.setAnimationLoop(() => {
@@ -36,9 +36,7 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
       physics.update(delta);
       registry.each((entity) => entity.update(delta));
       controls.update();
-
-      ragdoll!.damage(game.impacts);
-
+      ragdoll.damage(game.impacts);
       renderer.render(scene, camera);
       gui.stats.end();
     });

@@ -91,34 +91,67 @@ function createPhysics() {
 
   // Handle collision events and record impacts
   function collisions(event: any) {
-    // const ragdoll = registry.get('ragdoll');
     if (!ragdoll) return;
+    if (game.mode !== 'smash') return;
 
     // RigidBody attached to the first collider
     const collider1 = event.collider1();
     const body1 = world.getRigidBody(collider1.parent());
-    const isBody1 = ragdoll.dynamicBodies.some(({ body }) => body === body1);
+    const part1 = ragdoll.dynamicBodies.find(({ body }) => body === body1);
 
     // RigidBody of the second collider involved in the event.
     const collider2 = event.collider2();
     const body2 = world.getRigidBody(collider2.parent());
-    const isBody2 = ragdoll.dynamicBodies.some(({ body }) => body === body2);
+    const part2 = ragdoll.dynamicBodies.find(({ body }) => body === body2);
 
-    const ragdollBody = isBody1 ? body1 : isBody2 ? body2 : null;
-    if (!ragdollBody) { console.error('bad'); return }
+    const ragdollPart = part1 || part2;
+    if (!ragdollPart) return;
 
+    const ragdollBody = ragdollPart.body;
+    const bodyPartName = ragdollPart.name || 'ragdoll';
 
     // Calculate impact force (approximation based on the contact force)
-    const impactForce = event.totalForce();
+    const rawForce = event.totalForce();
 
-    // Only record significant impacts
-    // if (impactForce > 0.5) {
+    let multiplier = 1.0;
+    switch (bodyPartName) {
+      case 'head':
+        multiplier = 3.0; // counts for the most
+        break;
+      case 'chest':
+      case 'hips':
+        multiplier = 1.5;
+        break;
+      case 'upperArmL':
+      case 'upperArmR':
+      case 'upperLegL':
+      case 'upperLegR':
+        multiplier = 1.0;
+        break;
+      case 'foreArmL':
+      case 'foreArmR':
+      case 'lowerLegL':
+      case 'lowerLegR':
+        multiplier = 0.5;
+        break;
+      case 'handL':
+      case 'handR':
+      case 'footL':
+      case 'footR':
+        multiplier = 0.2; // lowest for extremities
+        break;
+    }
+
+    const impactForce = rawForce * multiplier;
+
+    // Only record positive impacts
+    if (impactForce > 0) {
       // Update the game state with impact data
       setGameState('impacts', (impacts) => [
         ...impacts,
         {
-          id: Date.now(),
-          bodyPart: 'ragdoll', // ragdollBody
+          id: Date.now() + Math.random(),
+          bodyPart: bodyPartName,
           force: impactForce,
           position: [ragdollBody.translation().x, ragdollBody.translation().y, ragdollBody.translation().z],
           rigidBody: ragdollBody,
@@ -128,7 +161,7 @@ function createPhysics() {
 
       // Update total damage
       setGameState('totalDamage', (current) => current + impactForce);
-    // }
+    }
   };
 
 
