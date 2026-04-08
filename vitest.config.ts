@@ -11,6 +11,6 @@ export default defineConfig({
   },
   test: {
     setupFiles: ['./src/test-mocks.ts'],
-    environment: 'jsdom'
+    environment: 'happy-dom'
   },
 });

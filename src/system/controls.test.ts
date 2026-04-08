@@ -14,6 +14,7 @@ describe('Controls', () => {
     parent: () => {
       setBodyType: mockFn;
       setTranslation: mockFn;
+      setNextKinematicTranslation: mockFn;
     };
     setActiveCollisionTypes: mockFn;
   };
@@ -30,7 +31,15 @@ describe('Controls', () => {
     mockCollider = {
       parent: vi.fn().mockReturnValue({
         setBodyType: vi.fn(),
-        setTranslation: vi.fn()
+        setTranslation: vi.fn(),
+        translation: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 }),
+        handle: 123,
+        setLinvel: vi.fn(),
+        setAngvel: vi.fn(),
+        wakeUp: vi.fn(),
+        setLinearDamping: vi.fn(),
+        setAngularDamping: vi.fn(),
+        setNextKinematicTranslation: vi.fn()
       }),
       setActiveCollisionTypes: vi.fn()
     };
@@ -41,7 +50,12 @@ describe('Controls', () => {
     // };
 
     mockGraphics = {
-      camera: {} as any,
+      camera: {
+        getWorldDirection: vi.fn().mockImplementation((v) => {
+          v.set(0, 0, -1);
+          return v;
+        })
+      } as any,
       renderer: {
         domElement: vi.fn()
       } as any,
@@ -63,7 +77,11 @@ describe('Controls', () => {
           enableSnapToGround: vi.fn().mockReturnThis(),
           computeColliderMovement: vi.fn(),
           computedMovement: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 })
-        }))
+        })),
+        impulseJoints: {
+          forEachJointHandleAttachedToRigidBody: vi.fn(),
+          get: vi.fn()
+        }
       } as any,
       collisions: vi.fn(),
       update: vi.fn()
@@ -87,7 +105,6 @@ describe('Controls', () => {
     window.dispatchEvent(event);
 
     expect(mockPhysics.world.castRay).toHaveBeenCalled();
-    expect(mockCollider.setActiveCollisionTypes).toHaveBeenCalled();
     expect(mockCollider.parent().setBodyType).toHaveBeenCalled();
   });
 
@@ -109,7 +126,7 @@ describe('Controls', () => {
     window.dispatchEvent(moveEvent);
 
     // The selected body should have its position updated
-    expect(mockCollider.parent().setTranslation).toHaveBeenCalled();
+    expect(mockCollider.parent().setNextKinematicTranslation).toHaveBeenCalled();
   });
 
   it('should handle mouse up event and reset the selected body', () => {

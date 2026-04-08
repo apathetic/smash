@@ -19,6 +19,7 @@
     "@types/stats.js": "^0.17.4",
     "@types/three": "^0.172.0",
     "@unocss/reset": "^0.62.4",
+    "happy-dom": "^20.8.9",
     "lil-gui": "^0.20.0",
     "oxlint": "^0.15.15",
     "seedrandom": "^3.0.5",

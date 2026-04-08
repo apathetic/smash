@@ -62,11 +62,13 @@ vi.mock('three', () => ({
     sub: vi.fn().mockReturnThis(),
     multiplyScalar: vi.fn().mockReturnThis(),
     addScaledVector: vi.fn().mockReturnThis(),
+    subVectors: vi.fn().mockReturnThis(),
     unproject: vi.fn().mockReturnThis()
   })),
   Plane: vi.fn().mockImplementation(() => ({
     constant: 0,
-    normal: { x: 0, y: 0, z: 1 }
+    normal: { x: 0, y: 0, z: 1 },
+    setFromNormalAndCoplanarPoint: vi.fn().mockReturnThis()
   })),
   Raycaster: vi.fn().mockImplementation(() => ({
     setFromCamera: vi.fn(),

@@ -5,7 +5,7 @@ import { loadLevel } from './loadLevel';
 const add = vi.fn();
 const clear = vi.fn();
 vi.mock('~/system/world', () => ({
-  useWorld: () => ({ add, clear })
+  useWorld: () => ({ add, clear, start: vi.fn(), stop: vi.fn() })
 }));
 
 const mockGameData = {
