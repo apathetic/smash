@@ -13,19 +13,15 @@ export class Base implements WorldEntity {
   public id: string;
   public dynamicBodies: DynamicBody[];
   public position: Position; // coords: any?
-
   public type: string;
   static count: Record<string, number> = {}; // Track count per entity type
 
 
   constructor({ type, position, meta }: BaseProps = {}) {
-
     type ??= 'Cube'; // TBD
     Base.count[type] ??= 0;
     this.type = type;
     this.id = generateEntityId(type, Base.count[type]++);
-
-
     this.dynamicBodies = [];
     this.position = position || [0, 0, 0];
 
@@ -49,7 +45,7 @@ export class Base implements WorldEntity {
       const pos = position || this.position;
 
       // Set the physics body position
-      body.setTranslation(...pos, true);
+      body.setTranslation({ x: pos[0], y: pos[1], z: pos[2] }, true);
 
       // Reset rotation to identity if not specified
       // We could also store and restore rotation from this.rotation if needed

@@ -30,16 +30,8 @@ function saveLevel() {
       const position = body.translation();
       const rotation = body.rotation();
 
-      // Update the entity's position in the store
-      // setGameState('entities', entity.id, 'position',
-      //   [body.translation().x, body.translation().y, body.translation().z]);
-
-      // Update the entity's rotation in the store
-      // setGameState('entities', entity.id, 'rotation',
-      //   [body.rotation().x, body.rotation().y, body.rotation().z, body.rotation().w]);
-
-      setGameState('entities', entity.id, 'position', position);
-      setGameState('entities', entity.id, 'rotation', rotation);
+      setGameState('entities', entity.id, 'position', [position.x, position.y, position.z]);
+      setGameState('entities', entity.id, 'rotation', [rotation.x, rotation.y, rotation.z, rotation.w]);
     }
   });
 

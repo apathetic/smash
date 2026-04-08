@@ -32,17 +32,25 @@ function createWorld(canvas: HTMLCanvasElement) {
   createResizer(graphics);
   graphics.scene.add(...lights);
 
-
+  /**
+   * Adds an entity to the world.
+   */
   function add(entity: WorldEntity) {
     entity.setup(graphics.scene, physics.world);
     registry.add(entity);
   }
 
+  /**
+   * Removes a single entity from the world.
+   */
   function remove(entity: WorldEntity) {
     entity.destroy();
     registry.remove(entity);
   }
 
+  /**
+   * Clears the world of all entities.
+   */
   function clear() {
     registry.each((entity) => entity.destroy());
     registry.clear();

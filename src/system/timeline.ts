@@ -24,6 +24,9 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
   const [game] = useGameState();
   const { camera, scene, renderer } = graphics;
 
+  /**
+   * Starts the animation loop.
+   */
   function start() {
     const ragdoll = registry.get('ragdoll') as any;
     clock.start();
@@ -42,6 +45,9 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
     });
   }
 
+  /**
+   * Stops the animation loop.
+   */
   function stop() {
     renderer.setAnimationLoop(null);
     clock.stop();

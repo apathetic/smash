@@ -1,17 +1,7 @@
 /// <reference types="@solidjs/start/env" />
 
-
-
-/*
-// PSEUDO
-When generating a game object, it requires 2 elements:
-1. Visual (3D Mesh)
-2. Model (Physics Collider)
-*/
-
-
-type Position = [number, number, number];
 type Tuple = [number, number, number];
+type Position = Tuple;
 
 interface IGraphics {
   camera: import("three").PerspectiveCamera;
@@ -25,26 +15,18 @@ interface IPhysics {
   update: (delta: number) => void;
 }
 
-///
-
-
-
-
-
-
-
-type Entities = "Cube" | "Wall" | "Floor" | "Terrain";
-
+type Entities = "Cube" | "Wall" | "Floor" | "Terrain" | "Sphere" | "Ragdoll";
 
 type DynamicBody = {
   name?: string;
-  mesh: Mesh;       // skin
-  body: RigidBody;  // skeleton
+  mesh: import("three").Mesh | any; // Visual representation (skin)
+  body: import("rapier").RigidBody; // Physics collider (skeleton)
 }
 
 type Updatable = {
   dynamicBodies: DynamicBody[];
   update: (delta: number) => void;
+  reset?: (position?: Position) => void;
 }
 
 type Damageable = {
@@ -53,19 +35,17 @@ type Damageable = {
 
 type WorldEntity = Updatable & Partial<Damageable> & {
   id: string;
+  type?: string;
   position: Position;
   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
   destroy: () => void;
 }
 
-
-
 type Impact = {
   id: number;
   bodyPart: string;
   force: number;
-  position: [number, number, number];
-  // collidedWith: string;
+  position: Position;
   timestamp: number;
 }
 
@@ -110,4 +90,3 @@ type Level = {
   environment: LevelEntity[];
   entities: LevelEntity[];
 }
-
