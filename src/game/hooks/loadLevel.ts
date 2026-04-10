@@ -57,6 +57,7 @@ async function loadLevel(lvl: string) {
   // Reset impact data when loading a new level
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
+  setGameState('targetDamage', levelData.targetDamage || 1000);
 
 
   clear();

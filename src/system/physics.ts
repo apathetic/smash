@@ -12,6 +12,7 @@ import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
 import { GRAVITY } from "~/system/constants";
 
+const FORCE_SCALAR = 1000;
 
 
 /**
@@ -95,23 +96,29 @@ function createPhysics() {
     if (game.mode !== 'smash') return;
 
     // RigidBody attached to the first collider
-    const collider1 = event.collider1();
-    const body1 = world.getRigidBody(collider1.parent());
+    const handle1 = event.collider1();
+    const collider1 = world.getCollider(handle1);
+    const body1 = collider1 ? collider1.parent() : undefined;
     const part1 = ragdoll.dynamicBodies.find(({ body }) => body === body1);
 
     // RigidBody of the second collider involved in the event.
-    const collider2 = event.collider2();
-    const body2 = world.getRigidBody(collider2.parent());
+    const handle2 = event.collider2();
+    const collider2 = world.getCollider(handle2);
+    const body2 = collider2 ? collider2.parent() : undefined;
     const part2 = ragdoll.dynamicBodies.find(({ body }) => body === body2);
 
     const ragdollPart = part1 || part2;
     if (!ragdollPart) return;
 
     const ragdollBody = ragdollPart.body;
+
+    // Disregard if being positioned/dragged (kinematic)
+    if (ragdollBody.bodyType() !== RigidBodyType.Dynamic) return;
+
     const bodyPartName = ragdollPart.name || 'ragdoll';
 
-    // Calculate impact force (approximation based on the contact force)
-    const rawForce = event.totalForce();
+    // Calculate impact force
+    const rawForce = event.totalForceMagnitude();
 
     let multiplier = 1.0;
     switch (bodyPartName) {
@@ -142,17 +149,19 @@ function createPhysics() {
         break;
     }
 
-    const impactForce = rawForce * multiplier;
+    // Scale force down relative to our 1000 target level.
+    // E.g., 100,000 force / 200 = 500 damage.
+    const scaledForce = (rawForce / FORCE_SCALAR) * multiplier;
 
-    // Only record positive impacts
-    if (impactForce > 0) {
+    // Only record solid impacts
+    if (scaledForce > 0) {
       // Update the game state with impact data
       setGameState('impacts', (impacts) => [
         ...impacts,
         {
           id: Date.now() + Math.random(),
           bodyPart: bodyPartName,
-          force: impactForce,
+          force: scaledForce,
           position: [ragdollBody.translation().x, ragdollBody.translation().y, ragdollBody.translation().z],
           rigidBody: ragdollBody,
           timestamp: Date.now()
@@ -160,7 +169,7 @@ function createPhysics() {
       ]);
 
       // Update total damage
-      setGameState('totalDamage', (current) => current + impactForce);
+      setGameState('totalDamage', (current) => current + scaledForce);
     }
   };
 

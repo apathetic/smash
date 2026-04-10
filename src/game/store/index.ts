@@ -21,6 +21,7 @@ type GameState = {
   mode: 'edit' | 'smash' | 'replay';
   gravity: number;
   impacts: Impact[];
+  targetDamage: number;
   totalDamage: number;
 }
 
@@ -49,6 +50,7 @@ const [gameState, setGameState] = createStore({
   gravity: 0,
   level: 0,
   impacts: [],
+  targetDamage: 1000,
   totalDamage: 0,
   // boosts: { /** which were used/applied? */}
 } as GameState);

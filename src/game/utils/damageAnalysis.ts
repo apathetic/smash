@@ -50,14 +50,9 @@ export function analyzeDamage(impacts: Impact[]) {
 }
 
 /**
- * Returns a "health percentage" based on accumulated damage
+ * Returns a damage percentage based on accumulated damage vs target
  */
-export function calculateHealth(totalDamage: number) {
-  // Define a threshold where health would reach zero
-  const maxDamageThreshold = 100;
-
-  // Calculate health percentage
-  const healthPercentage = Math.max(0, 100 - (totalDamage / maxDamageThreshold * 100));
-
-  return healthPercentage;
+export function calculateDamagePercentage(totalDamage: number, targetDamage: number) {
+  if (!targetDamage || targetDamage <= 0) return 0;
+  return Math.min(100, (totalDamage / targetDamage) * 100);
 }

@@ -87,6 +87,7 @@ type LevelEntity = {
 
 type Level = {
   boosts: any;
+  targetDamage: number;
   environment: LevelEntity[];
   entities: LevelEntity[];
 }

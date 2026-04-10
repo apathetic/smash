@@ -1,5 +1,6 @@
 {
 
+  "targetDamage": 1000,
   "boosts": {},
 
   "entities": [

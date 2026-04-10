@@ -55,6 +55,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
     .setFriction(0.9)          // Higher friction to help parts "stick" to the ground, and to reduce jitter
     // .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
     .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS)
+    .setContactForceEventThreshold(50000) // the amount of force required to trigger a "damage" event
     .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
 
   const body = physics.createRigidBody(rigidBodyDesc);
@@ -372,7 +373,21 @@ export class RagDoll extends Base {
   //////////////////////////////////////////////////////////////
 
   update(t: number) {
-    // pivot.rotation.y += 0.005;
+    // Decay emissive colors for flashing effect
+    this.dynamicBodies.forEach(({ mesh }) => {
+      if (!mesh || !mesh.material) return;
+      const decayEmissive = (mat: any) => {
+        if (mat.emissive && (mat.emissive.r > 0 || mat.emissive.g > 0 || mat.emissive.b > 0)) {
+           mat.emissive.multiplyScalar(0.9);
+        }
+      };
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(decayEmissive);
+      } else {
+        decayEmissive(mesh.material);
+      }
+    });
+
     super.update(t);
   }
 
@@ -389,7 +404,7 @@ export class RagDoll extends Base {
     }, {});
 
     // Update appearance of each body part based on damage
-    Object.entries(bodyPartDamage).forEach(([partName, damage]) => {
+    Object.entries(bodyPartDamage).forEach(([partName, _damage]) => {
       // Find the mesh for this body part using the impacts that affected this part
       const relevantImpact = impacts.find((impact: any) => impact.bodyPart === partName);
       if (!relevantImpact) return;
@@ -400,27 +415,17 @@ export class RagDoll extends Base {
       )?.mesh;
 
       if (partMesh) {
-        // Change color based on damage
-        const damageLevel = Math.min(1, (damage as number) / 20);
-
-        // Update the material color
+        // Flash red by setting emissive hex color to max red
         if (partMesh.material) {
-          // If it's an array of materials
+          const setEmissive = (mat: any) => {
+             if (mat.emissive) {
+                mat.emissive.setHex(0xff0000);
+             }
+          };
           if (Array.isArray(partMesh.material)) {
-            partMesh.material.forEach((mat: any) => {
-              mat.color.setRGB(
-                1,                    // Red stays at max
-                1 - damageLevel * 0.8, // Green decreases with damage
-                1 - damageLevel       // Blue decreases with damage
-              );
-            });
+            partMesh.material.forEach(setEmissive);
           } else {
-            // Single material
-            partMesh.material.color.setRGB(
-              1,                    // Red stays at max
-              1 - damageLevel * 0.8, // Green decreases with damage
-              1 - damageLevel       // Blue decreases with damage
-            );
+            setEmissive(partMesh.material);
           }
         }
       }
