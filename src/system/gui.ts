@@ -2,7 +2,7 @@ import { version, /* World */ } from "rapier";
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
 import GUI from "lil-gui";
-
+import { useGameState } from "~/game/store";
 
 import { LineBasicMaterial, BufferGeometry, LineSegments, BufferAttribute } from 'three';
 
@@ -71,6 +71,17 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     .listen();
 
   gui.add(params, "step");
+
+  const [gameState] = useGameState();
+  const damageFolder = gui.addFolder("Damage Debug");
+  const damageStats = {
+    get total() { return gameState.totalDamage.toFixed(2); },
+    get target() { return gameState.targetDamage; },
+    get impacts() { return gameState.impacts.length; }
+  };
+  damageFolder.add(damageStats, 'total').name('Total Damage').listen();
+  damageFolder.add(damageStats, 'target').name('Target Damage').listen();
+  damageFolder.add(damageStats, 'impacts').name('Impact Count').listen();
 
   /** */
   gui.add(params, "takeSnapshot");

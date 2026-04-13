@@ -55,7 +55,7 @@ const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) 
     .setFriction(0.9)          // Higher friction to help parts "stick" to the ground, and to reduce jitter
     // .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
     .setActiveEvents(ActiveEvents.CONTACT_FORCE_EVENTS)
-    .setContactForceEventThreshold(50000) // the amount of force required to trigger a "damage" event
+    .setContactForceEventThreshold(10) // the amount of force required to trigger a "damage" event
     .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
 
   const body = physics.createRigidBody(rigidBodyDesc);
