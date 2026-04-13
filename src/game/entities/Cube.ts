@@ -19,7 +19,7 @@ export class Cube extends Base {
 
     const colliderDesc = ColliderDesc
       .cuboid(0.5, 0.5, 0.5)
-      .setMass(1)
+      .setMass(1000)
       .setRestitution(0.5)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
 

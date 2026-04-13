@@ -9,11 +9,8 @@ import {
 import { Vector3 } from "three";
 import { createEffect } from "solid-js";
 import { useGameState } from "~/game/store";
-import { registry } from "~/game/store/registry";
 import { GRAVITY } from "~/system/constants";
-
-const FORCE_SCALAR = 1000;
-const FORCE_THRESHOLD = 50; // We need to dial in what an actual "hit" is vs resting
+import { createDamageHandler } from "~/system/damage";
 
 
 /**
@@ -24,12 +21,12 @@ const FORCE_THRESHOLD = 50; // We need to dial in what an actual "hit" is vs res
  * @returns {function} return.collisions - A collisions function.
  */
 function createPhysics() {
-  const gravity    = { x: 0.0, y: 0, z: 0.0 };
-  const world      = new World(gravity);
-  const eventQueue = new EventQueue(true); // 'true' to capture contact force events
-  const [game, setGameState] = useGameState();
-  let stepId       = 0;
-  let ragdoll: WorldEntity | undefined;
+  const gravity       = { x: 0.0, y: 0, z: 0.0 };
+  const world         = new World(gravity);
+  const eventQueue    = new EventQueue(true); // 'true' to capture contact force events
+  const damageHandler = createDamageHandler(world);
+  const [game]        = useGameState();
+  let stepId          = 0;
 
   // Increase solver iterations for more stable constraint solving
   world.integrationParameters.numSolverIterations = 20; // Default is ~4
@@ -40,7 +37,7 @@ function createPhysics() {
     world.step(eventQueue);
     stepId += 1;
     (world as any).stepId = stepId;
-    eventQueue.drainContactForceEvents(collisions);
+    eventQueue.drainContactForceEvents(damageHandler);
   }
 
   function toggleGravity (enabled: boolean) {
@@ -87,121 +84,9 @@ function createPhysics() {
     // This effectively makes joints rigid in edit mode.
   }
 
-  // function collisions(event: any) { //  meant to be overwitten;
-  //   let _handle1 = event.collider1(); // Handle of the first collider involved in the event.
-  //   let _handle2 = event.collider2(); // Handle of the second collider involved in the event.
-  //   // console.log("Contact force:", handle1, event.totalForce());
-  // }
-
-
-  // Handle collision events and record impacts
-  function collisions(event: any) {
-    if (game.mode !== 'smash') return;
-
-    // RigidBody attached to the first collider
-    const handle1 = event.collider1();
-    const collider1 = world.getCollider(handle1);
-    const body1 = collider1 ? collider1.parent() : undefined;
-
-    // RigidBody of the second collider involved in the event.
-    const handle2 = event.collider2();
-    const collider2 = world.getCollider(handle2);
-    const body2 = collider2 ? collider2.parent() : undefined;
-
-    // Ignore self-collisions!
-    if (!ragdoll) return;
-    const part1 = ragdoll.dynamicBodies.find(({ body }) => body === body1);
-    const part2 = ragdoll.dynamicBodies.find(({ body }) => body === body2);
-    if (part1 && part2) return;
-
-    const ragdollPart = part1 || part2;
-    if (!ragdollPart) return;
-
-    const ragdollBody = ragdollPart.body;
-    const bodyPartName = ragdollPart.name || 'ragdoll';
-    const rawForce = event.totalForceMagnitude();
-
-    // 1. First, discard microscopic forces
-    if (rawForce < FORCE_THRESHOLD) return;
-
-    // 2. Next, demand at least ONE object have meaningful velocity
-    // (velSq < 0.5 means both objects are essentially at rest)
-    let maxVelSq = 0;
-
-    if (body1) {
-      const v1 = body1.linvel();
-      const v1Sq = v1.x * v1.x + v1.y * v1.y + v1.z * v1.z;
-      if (v1Sq > maxVelSq) maxVelSq = v1Sq;
-    }
-
-    if (body2) {
-      const v2 = body2.linvel();
-      const v2Sq = v2.x * v2.x + v2.y * v2.y + v2.z * v2.z;
-      if (v2Sq > maxVelSq) maxVelSq = v2Sq;
-    }
-
-    if (maxVelSq < 0.5) return;
-
-    // DEBUG: Let's see what a real hit looks like!
-    // console.log(`[Physics] Impact on ${bodyPartName}: rawForce = ${rawForce.toFixed(2)} | maxVelSq = ${maxVelSq.toFixed(2)}`);
-
-    let multiplier = 1.0;
-    switch (bodyPartName) {
-      case 'head':
-        multiplier = 3.0; // counts for the most
-        break;
-      case 'chest':
-      case 'hips':
-        multiplier = 1.5;
-        break;
-      case 'upperArmL':
-      case 'upperArmR':
-      case 'upperLegL':
-      case 'upperLegR':
-        multiplier = 1.0;
-        break;
-      case 'foreArmL':
-      case 'foreArmR':
-      case 'lowerLegL':
-      case 'lowerLegR':
-        multiplier = 0.5;
-        break;
-      case 'handL':
-      case 'handR':
-      case 'footL':
-      case 'footR':
-        multiplier = 0.2; // lowest for extremities
-        break;
-    }
-
-    // Scale force down relative to our 1000 target level.
-    const scaledForce = (rawForce / FORCE_SCALAR) * multiplier;
-
-    // Update the game state with impact data
-    setGameState('impacts', (impacts) => [
-      ...impacts,
-      {
-        id: Date.now() + Math.random(),
-        bodyPart: bodyPartName,
-        force: scaledForce,
-        position: [ragdollBody.translation().x, ragdollBody.translation().y, ragdollBody.translation().z],
-        rigidBody: ragdollBody,
-        timestamp: Date.now()
-      }
-    ]);
-
-    // Update total damage
-    setGameState('totalDamage', (current) => current + scaledForce);
-  };
-
 
   // React to game state changes
   createEffect(() => {
-    if (!ragdoll) {
-      ragdoll = registry.get('ragdoll');
-    }
-
-    // Toggle gravity based on game state
     if (game.mode == 'smash') {
       toggleGravity(true);
       setEditMode(false);
@@ -209,26 +94,19 @@ function createPhysics() {
       toggleGravity(false);
       setEditMode(true);
     }
-
-
-    // Toggle between dynamic and kinematic bodies when smashing or editing, respectively.
-    // This is a simple way to allow the user to interact with the scene without being
-    // at-odds with the physics engine.
-    // const type = game.mode === 'smash' ? RigidBodyType.Dynamic : RigidBodyType.KinematicPositionBased;
-    // world.forEachRigidBody((body) => body.setBodyType(type, true));
-
-    // collider.setActiveCollisionTypes(ActiveCollisionTypes.DEFAULT | ActiveCollisionTypes.KINEMATIC_FIXED);
-
-    // onCleanup(() => ....
   });
 
-  return { world, update, collisions };
+  return { world, update };
 }
 
 
 
 
-
+/**
+ * Creates a dragger for the physics world.
+ * @param world The physics world.
+ * @returns An object containing the dragger.
+ */
 function createDragger(world: World) {
   const [game] = useGameState();
   const characterController = world.createCharacterController(0.01);

@@ -1,6 +1,15 @@
 import { createMemo, Show } from 'solid-js';
 import { useGameState } from '~/game/store';
-import { calculateDamagePercentage } from '~/game/utils/damageAnalysis';
+
+/**
+ * Returns a damage percentage based on accumulated damage vs target
+ */
+function calculateDamagePercentage(totalDamage, targetDamage) {
+  if (!targetDamage || targetDamage <= 0) return 0;
+  return Math.min(100, (totalDamage / targetDamage) * 100);
+}
+
+
 
 /**
  * The Damage display.
