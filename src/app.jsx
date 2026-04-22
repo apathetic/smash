@@ -17,7 +17,7 @@ const Layout = ({ children }) => (
 export default function App() {
   return (
     <Router root={Layout}>
-      <Route path="/" component={() => <Navigate href="/overview" />} />
+      <Route path="/" component={() => <Navigate href="/set" />} />
       <Route path="*"><FileRoutes /></Route>
     </Router>
   );

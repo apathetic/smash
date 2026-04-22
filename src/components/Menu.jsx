@@ -19,6 +19,7 @@ export const Menu = () => {
   const handleLevel = (level) => {
     closeMenu();
     loadLevel(level);
+    navigate('/set');
   };
 
   onMount(() => {

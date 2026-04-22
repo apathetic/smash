@@ -38,7 +38,7 @@ type WorldEntity = Updatable & Partial<Damageable> & {
   type?: string;
   position: Position;
   setup: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
-  destroy: () => void;
+  destroy: (scene: IGraphics['scene'], physics: IPhysics['world']) => void;
 }
 
 type Impact = {

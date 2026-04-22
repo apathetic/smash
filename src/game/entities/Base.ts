@@ -61,13 +61,21 @@ export class Base implements WorldEntity {
     });
   }
 
-  destroy() {
+  /**
+   * Removes the entity's dynamic bodies. Extend this method to add other cleanup tasks.
+   */
+  destroy(scene: Scene, physics: World) {
     this.dynamicBodies.forEach(({ mesh, body }) => {
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-      // ...
-      console.log("destroy this?", body);
+      mesh?.removeFromParent();
+      mesh?.geometry?.dispose();
+
+      const materials = Array.isArray(mesh?.material) ? mesh.material : [mesh?.material];
+      materials.forEach((m: any) => m?.dispose());
+
+      if (body && physics) physics.removeRigidBody(body);
     });
+
+    this.dynamicBodies = [];
   };
 
 }

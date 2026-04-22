@@ -44,7 +44,7 @@ function createWorld(canvas: HTMLCanvasElement) {
    * Removes a single entity from the world.
    */
   function remove(entity: WorldEntity) {
-    entity.destroy();
+    entity.destroy(graphics.scene, physics.world);
     registry.remove(entity);
   }
 
@@ -52,7 +52,7 @@ function createWorld(canvas: HTMLCanvasElement) {
    * Clears the world of all entities.
    */
   function clear() {
-    registry.each((entity) => entity.destroy());
+    registry.each((entity) => entity.destroy(graphics.scene, physics.world));
     registry.clear();
   }
 

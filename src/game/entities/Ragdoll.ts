@@ -1,4 +1,4 @@
-import { BoxGeometry, MeshPhongMaterial, Mesh, Group } from 'three';
+import { BoxGeometry, MeshPhongMaterial, Mesh } from 'three';
 import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from 'rapier';
 import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
@@ -92,8 +92,6 @@ export class RagDoll extends Base {
     const pants = clothingColors[Math.floor(Math.random() * clothingColors.length)];
     const foot  = clothingColors[Math.floor(Math.random() * clothingColors.length)];
 
-    const group = new Group();
-    group.position.set(0, 0, 0); // TODO: use this.position ?
 
     const [head, headBody] = createMeshBody({
       size:     [0.5, 0.5,  0.5],
@@ -347,8 +345,7 @@ export class RagDoll extends Base {
 
     //////////////////////////////////////////////////////////////
 
-    meshList.forEach((mesh) => group.add(mesh));
-    scene.add(group);
+    meshList.forEach((mesh) => scene.add(mesh));
 
     this.dynamicBodies.push(
       { name: 'head',      mesh: head,      body: headBody },
@@ -389,6 +386,10 @@ export class RagDoll extends Base {
     });
 
     super.update(t);
+  }
+
+  destroy() {
+    super.destroy();
   }
 
   damage(impacts: any /* Impact[] */) {
