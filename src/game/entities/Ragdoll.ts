@@ -388,8 +388,8 @@ export class RagDoll extends Base {
     super.update(t);
   }
 
-  destroy() {
-    super.destroy();
+  destroy(scene: Scene, physics: World) {
+    super.destroy(scene, physics);
   }
 
   damage(impacts: any /* Impact[] */) {
