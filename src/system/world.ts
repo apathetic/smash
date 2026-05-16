@@ -56,7 +56,19 @@ function createWorld(canvas: HTMLCanvasElement) {
     registry.clear();
   }
 
-  return { ...timeline, add, remove, clear };
+  /**
+   * Destroys the world and all its associated resources.
+   */
+  function destroy() {
+    clear();
+    gui.destroy();
+    timeline.stop();
+    controls.destroy();
+    graphics.renderer.dispose();
+    graphics.scene.clear();
+  }
+
+  return { ...timeline, add, remove, clear, destroy };
 };
 
 

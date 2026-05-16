@@ -11,12 +11,9 @@ const Stage = () => {
 
   onMount(() => {
     // NOTE: useWorld must be init'd here, in hook, only after canvas is set
-    useWorld(canvas);
-  });
+    const { destroy } = useWorld(canvas);
 
-  onCleanup(() => {
-    const { stop } = useWorld();
-    stop();
+    onCleanup(() => destroy());
   });
 
   return <canvas ref={canvas} class="fixed inset-0 z-1"></canvas>;

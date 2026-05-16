@@ -35,10 +35,7 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "8.0.13"
-    },
-    "patchedDependencies": {
-      "vinxi@0.5.11": "patches/vinxi@0.5.11.patch"
+      "vite": "7.3.3"
     }
   }
 }

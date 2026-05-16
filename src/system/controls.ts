@@ -11,6 +11,10 @@ interface ControlProps {
   physics: IPhysics;
 }
 
+type Controls = OrbitControls & {
+  destroy: () => void;
+};
+
 
 // TODO optimize this whole monstrosity
 
@@ -66,9 +70,8 @@ function createControls({ graphics, physics }: ControlProps) {
   }
 
   /**
-   *
-   * @param event
-   * @returns
+   * Handles mouse down events for entity selection and dragging.
+   * @param {MouseEvent} event - The mouse event containing client coordinates
    */
   function onMouseDown(event: MouseEvent) {
     // In smash mode, no entity interaction - only camera controls
@@ -127,12 +130,24 @@ function createControls({ graphics, physics }: ControlProps) {
     dragger.stop();
   }
 
+  /**
+   * Destroys the controls and removes event listeners.
+   */
+  function destroy() {
+    window.removeEventListener("mousedown", onMouseDown);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+    controls.dispose();
+  }
+
 
   window.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mousemove", onMouseMove);
   window.addEventListener("mouseup", onMouseUp);
 
-  return controls;
+  (controls as any).destroy = destroy;
+
+  return controls as Controls
 }
 
 export { createControls };

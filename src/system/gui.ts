@@ -185,7 +185,10 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   };
 
 
-  // return { params };
+  function destroy() {
+    gui.destroy();
+    stats.dom.remove();
+  }
 
-  return { stats, update };
+  return { stats, update, destroy };
 };
