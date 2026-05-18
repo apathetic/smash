@@ -1,4 +1,6 @@
 import { useGameState } from "~/game/store";
+import { registry } from "~/game/store/registry";
+
 
 /**
  * Saves the current level state.
@@ -6,32 +8,35 @@ import { useGameState } from "~/game/store";
  * (boosts?), ...
  */
 function saveLevel() {
-  const [gameState, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
 
   console.log('Saving current level state');
 
   // Clear existing entities data
   setGameState('entities', {});
 
-  // Iterate through all entities in the game state
-  Object.values(gameState.entities).forEach((entity) => {
-    // Skip entities without an ID
+  // Iterate through all live entities in the registry
+  registry.each((entity) => {
     if (!entity.id) {
       console.warn('Found entity without ID', entity);
       return;
     }
 
-    // Update the entity's position and rotation in the store
-    // We're assuming each entity already has its current position/rotation
-    // reflected in its dynamicBodies
-    if (entity.dynamicBodies) {
-      const { body } = entity.dynamicBodies[0];
+    if (entity.dynamicBodies?.length > 0) {
+      const bodies = entity.dynamicBodies.map((dBody) => {
+        const position = dBody.body.translation();
+        const rotation = dBody.body.rotation();
+        return {
+          position: [position.x, position.y, position.z] as [number, number, number],
+          rotation: [rotation.x, rotation.y, rotation.z, rotation.w] as [number, number, number, number]
+        };
+      });
 
-      const position = body.translation();
-      const rotation = body.rotation();
-
-      setGameState('entities', entity.id, 'position', [position.x, position.y, position.z]);
-      setGameState('entities', entity.id, 'rotation', [rotation.x, rotation.y, rotation.z, rotation.w]);
+      setGameState('entities', entity.id, {
+        id: entity.id,
+        type: entity.id, // Or entity.type if available
+        bodies
+      });
     }
   });
 

@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { saveLevel } from "~/game/hooks/saveLevel";
-
+import { useGameState } from "~/game/store";
 /**
  * Placeholder to showcase an idea.
  * TODO: refine, iterate, update.
@@ -9,8 +9,20 @@ import { saveLevel } from "~/game/hooks/saveLevel";
 function SmashButton() {
   const [isConfirming, setConfirming] = createSignal(false);
   const [isSmashing, setSmashing] = createSignal(false);
+  const [gameState] = useGameState();
   const navigate = useNavigate();
   let timer;
+
+  const isSmashMode = () => gameState.mode === 'smash';
+  const isResetMode = () => gameState.mode === 'reset';
+  const isEditMode = () => gameState.mode === 'edit';
+
+  const ledColor = () => {
+    if (isEditMode()) return '#4488ff'; // blue
+    if (isSmashMode()) return '#ff3333'; // red
+    if (isResetMode()) return '#ffaa00'; // orange
+    return '#4488ff';
+  };
 
 
   function reset() {
@@ -21,6 +33,14 @@ function SmashButton() {
   function goSmash(e) {
     // e.preventDefault();
     e.stopPropagation();
+
+    if (isResetMode()) return;
+
+    if (isSmashMode()) {
+      navigate('/set');
+      return;
+    }
+
     reset();
 
     setConfirming(true);
@@ -30,7 +50,11 @@ function SmashButton() {
     timer = setTimeout(() => {
       setSmashing(true);
       saveLevel();
-      setTimeout(() => navigate('/smash'), 400); // animation-exit
+      setTimeout(() => {
+        setSmashing(false);
+        setConfirming(false);
+        navigate('/smash');
+      }, 400); // animation-exit
     }, 1000 );
   }
 
@@ -38,31 +62,52 @@ function SmashButton() {
 
   return (
     <button
-        class={`fixed bottom-5 right-5 bg-transparent block z-100 ${isConfirming() ? 'confirming': ''} ${isSmashing() ? 'smash': ''}`}
+        class={`fixed bottom-5 right-5 block z-100 flex items-center gap-3 ${isConfirming() && isEditMode() ? 'confirming': ''} ${isSmashing() ? 'smash': ''}`}
+        style={{ "background-color": "transparent" }}
         onMouseDown={goSmash}
         onMouseUp={reset}
         onMouseOut={reset}
       >
 
+      {/* LED Indicator */}
+      <div
+        style={{
+          width: '12px',
+          height: '12px',
+          "border-radius": '50%',
+          "background-color": ledColor(),
+          "box-shadow": `0 0 8px ${ledColor()}`,
+          transition: "background-color 0.3s, box-shadow 0.3s"
+        }}
+      />
+
 {/* This is hack:  */}
 <style>
 {`
-  button { opacity: 1; transition: opacity 0.4s; }
+  button { opacity: 1; transition: opacity 0.4s; cursor: pointer; border: none; }
   g { transition: transform 0.4s; }
   svg { height: 2em; }
   path {
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
     stroke: black;
-    fill: white
+    fill: white;
+  }
+  text {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    stroke: black;
+    stroke-width: 0.5px;
+    fill: white;
+    animation: draw 0.8s ease-out forwards;
   }
   .confirming path {
     animation: draw 1.0s linear forwards;
   }
 
-  .smash { opacity: 0; }
-  .smash g:nth-child(1) { transform: scale(2); } /* TODO randomize these vals */
-  .smash g:nth-child(2) { transform: scale(1.2); } /* TODO randomize these vals */
+  .smash { opacity: 0; pointer-events: none; }
+  .smash g:nth-child(1) { transform: scale(2); }
+  .smash g:nth-child(2) { transform: scale(1.2); }
   .smash g:nth-child(3) { transform: scale(0.3); }
   .smash g:nth-child(5) { transform: scale(4); }
 
@@ -74,7 +119,8 @@ function SmashButton() {
 `}
 </style>
 
-      <svg /* style={smash} */ viewBox="0 0 64 20" xmlns="http://www.w3.org/2000/svg">
+      {isEditMode() || isConfirming() ? (
+        <svg viewBox="0 0 64 20" xmlns="http://www.w3.org/2000/svg">
 
         {/* S */}
         <g transform="translate(0,1)">
@@ -101,7 +147,21 @@ function SmashButton() {
           <path d="M2 0V16H5V9.5H11V16H14V0H11V6.5H5V0H2Z" fill="#000000"/>
         </g>
 
-      </svg>
+        </svg>
+      ) : (
+        <svg viewBox="0 0 64 20" xmlns="http://www.w3.org/2000/svg" style={{ width: '64px' }}>
+          <text
+            x="32"
+            y="14"
+            text-anchor="middle"
+            font-family="monospace"
+            font-weight="bold"
+            font-size="14"
+          >
+            RESET
+          </text>
+        </svg>
+      )}
 
     </button>
   );

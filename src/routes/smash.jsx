@@ -1,7 +1,7 @@
 import { useGameState } from "~/game/store";
 import { Nav } from "~/components/Nav";
 import { Damage } from "~/components/Damage";
-
+import { SmashButton } from "~/components/SmashButton";
 
 export default function Smash() {
   const [_, setGameState] = useGameState();
@@ -12,6 +12,7 @@ export default function Smash() {
     <>
       <Damage />
       <Nav back />
+      <SmashButton />
     </>
   )
 }

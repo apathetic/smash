@@ -43,8 +43,10 @@ describe('Game State', () => {
     expect(setState).toHaveBeenCalledWith('entities', 'cube_1', {
       id: 'cube_1',
       type: 'cube',
-      position: [1, 2, 3],
-      rotation: [0, 0, 0, 1]
+      bodies: [{
+        position: [1, 2, 3],
+        rotation: [0, 0, 0, 1]
+      }]
     });
   });
 
@@ -57,8 +59,10 @@ describe('Game State', () => {
         'cube_1': {
           id: 'cube_1',
           type: 'cube',
-          position: [1, 2, 3],
-          rotation: [0, 0, 0, 1]
+          bodies: [{
+            position: [1, 2, 3],
+            rotation: [0, 0, 0, 1]
+          }]
         }
       }
     });

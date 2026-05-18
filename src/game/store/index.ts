@@ -10,15 +10,14 @@ type EntityRotation = [number, number, number, number];
 type StoreEntity =  WorldEntity & {
   id: string;
   type: string; // e.g., 'cube', 'sphere', etc.
-  position: Position;
-  rotation: EntityRotation;
+  bodies?: { position: Position; rotation: EntityRotation }[];
 };
 
 type GameState = {
   entities: Record<StoreEntity['id'], StoreEntity>;
   environment: Record<string, Position>;
   level: number;
-  mode: 'edit' | 'smash' | 'replay';
+  mode: 'edit' | 'smash' | 'replay' | 'reset';
   gravity: number;
   impacts: Impact[];
   targetDamage: number;
@@ -75,8 +74,10 @@ function saveEntityToStore(
   setGameState('entities', id, {
     id,
     type,
-    position: [position.x, position.y, position.z],
-    rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
+    bodies: [{
+      position: [position.x, position.y, position.z],
+      rotation: [rotation.x, rotation.y, rotation.z, rotation.w]
+    }]
   });
 }
 
@@ -89,18 +90,20 @@ function updateEntityFromStore(
   mesh: Mesh
 ) {
   const entityData = gameState.entities[id];
-  if (!entityData) return false;
+  if (!entityData?.bodies?.length) return false;
+
+  const bState = entityData.bodies[0];
 
   // Apply position if available
-  if (entityData.position) {
-    const [x, y, z] = entityData.position;
+  if (bState.position) {
+    const [x, y, z] = bState.position;
     body.setTranslation(new Vector3(x, y, z), true);
     mesh.position.set(x, y, z);
   }
 
   // Apply rotation if available
-  if (entityData.rotation) {
-    const [x, y, z, w] = entityData.rotation;
+  if (bState.rotation) {
+    const [x, y, z, w] = bState.rotation;
     body.setRotation(new Quaternion(x, y, z, w), true);
     mesh.quaternion.set(x, y, z, w);
   }
