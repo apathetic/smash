@@ -1,28 +1,29 @@
 const GRAVITY = -9.81;
 
 
-// Collision Groups
+// -----------------------------------------------------------------------------
+// COLLISION SYSTEM
+// In Rapier, a "Collision Group" is a 32-bit integer composed of two 16-bit halves:
+// [ 16-bit Membership (What I am) ] | [ 16-bit Filter (What I collide with) ]
+// -----------------------------------------------------------------------------
 
-// Interaction groups are 32-bit integers.
-// high 16 bits = membership (what I am)
-// low 16 bits = filter (what I collide with)
-const GROUPS = {
-  STATIC:  0x00010000,
-  DYNAMIC: 0x00020000,
-  DRAGGED: 0x00040000,
-}
+// 1. Memberships (What am I?)
+const MEMBERSHIP_STATIC  = 0x0001;
+const MEMBERSHIP_DYNAMIC = 0x0002;
+const MEMBERSHIP_ALL     = 0xFFFF; // Wildcard: matches everything
 
-// Static things collide with everything.
-// Filter 0x0007 = 0001 (Static) | 0010 (Dynamic) | 0100 (Dragged)
-const COLLISION_GROUP_STATIC = GROUPS.STATIC | 0x0007;
+// 2. Filters (What do I collide with?)
+const FILTER_ALL          = MEMBERSHIP_STATIC | MEMBERSHIP_DYNAMIC;
+const FILTER_ONLY_DYNAMIC = MEMBERSHIP_DYNAMIC;
 
-// Dynamic things collide with everything.
-// Filter 0x0007 = 0001 (Static) | 0010 (Dynamic) | 0100 (Dragged)
-const COLLISION_GROUP_DYNAMIC = GROUPS.DYNAMIC | 0x0007;
-
+// 3. Final 32-bit Collision Groups: (Membership << 16) | Filter
+const COLLISION_GROUP_STATIC      = (MEMBERSHIP_STATIC << 16) | FILTER_ALL;
+const COLLISION_GROUP_DYNAMIC     = (MEMBERSHIP_DYNAMIC << 16) | FILTER_ALL;
+const COLLISION_GROUP_RAY_DYNAMIC = (MEMBERSHIP_ALL << 16)    | FILTER_ONLY_DYNAMIC;
 
 export {
   GRAVITY,
   COLLISION_GROUP_STATIC,
   COLLISION_GROUP_DYNAMIC,
+  COLLISION_GROUP_RAY_DYNAMIC,
 };

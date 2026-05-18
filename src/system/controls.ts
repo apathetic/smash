@@ -3,8 +3,7 @@ import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createDragger } from "~/system/physics";
 import { useGameState } from "~/game/store";
-
-
+import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
 
 interface ControlProps {
   graphics: IGraphics;
@@ -85,26 +84,15 @@ function createControls({ graphics, physics }: ControlProps) {
     const solid = true;
     const ray = new Ray(origin, direction);
 
-    // In edit mode (Kinematic), we want to hit the kinematic bodies.
-    const filterFlags = QueryFilterFlags.EXCLUDE_FIXED | QueryFilterFlags.EXCLUDE_SENSORS;
-    // let filterGroups = 0x00010003;
-    // let filterExcludeCollider;
-    // let filterExcludeRigidBody; // = RAGDOLL / player_rigid_body;
-    // let filterPredicate = (collider: rapier.Collider) => {}; // data.get(collider.handle) == 10.0;
-
-    // TODO cannot we use a COLLISION_GROUP to filter out non-draggable bodies?
-    // const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups, filterExcludeCollider, filterExcludeRigidBody);
-    const hit = world.castRay(ray, maxDistance, solid, filterFlags);
+    const filterFlags = QueryFilterFlags.EXCLUDE_SENSORS;
+    const filterGroups = COLLISION_GROUP_RAY_DYNAMIC;
+    const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups);
 
     if (hit) {
-      // const body = hit.collider.parent();
-      // if (!body) return;
-
-      controls.enabled = false; // Only disable OrbitControls when we actually hit an entity to drag
-
       const hitPoint = new Vector3().copy(origin).addScaledVector(direction, hit.timeOfImpact);
       const normal = new Vector3();
 
+      controls.enabled = false; // disable OrbitControls when we actually hit an entity to drag
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
       dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });

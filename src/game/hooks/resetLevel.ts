@@ -136,8 +136,8 @@ async function resetLevel() {
       body.setBodyType(RigidBodyType.KinematicPositionBased, true);
       body.setTranslation(pos, true);
       body.setRotation(rot, true);
-      body.setLinvel(new Vector3(0, 0, 0), true);
-      body.setAngvel(new Vector3(0, 0, 0), true);
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
       const dBody = syncMeshes.get(body);
       if (dBody && dBody.mesh) {
