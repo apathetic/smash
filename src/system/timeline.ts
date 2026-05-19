@@ -29,15 +29,24 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
    */
   function start() {
     const ragdoll = registry.get('ragdoll') as any;
+    const timeStep = 1.0 / 60.0;
+    let accumulator = 0;
+
     clock.start();
 
     renderer.setAnimationLoop(() => {
-      const delta = clock.getDelta();
+      const delta = Math.min(clock.getDelta(), 0.1);
+      accumulator += delta;
 
       gui.update(delta);
       gui.stats.begin();
-      physics.update(delta);
-      registry.each((entity) => entity.update(delta));
+
+      while (accumulator >= timeStep) {
+        physics.update(timeStep);
+        registry.each((entity) => entity.update(timeStep));
+        accumulator -= timeStep;
+      }
+
       controls.update();
       ragdoll.damage(game.impacts);
       renderer.render(scene, camera);

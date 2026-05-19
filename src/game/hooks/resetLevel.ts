@@ -138,6 +138,8 @@ async function resetLevel() {
       body.setRotation(rot, true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      body.resetForces(true);
+      body.resetTorques(true);
 
       const dBody = syncMeshes.get(body);
       if (dBody && dBody.mesh) {
