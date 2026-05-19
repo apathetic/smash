@@ -1,6 +1,6 @@
+import { reconcile } from "solid-js/store";
 import { useWorld } from "~/system/world";
 import { useGameState } from "~/game/store";
-
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
 import { RagDoll } from "~/game/entities/Ragdoll";
@@ -58,7 +58,8 @@ async function loadLevel(lvl: string) {
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
   setGameState('targetDamage', levelData.targetDamage || 1000);
-
+  setGameState('mode', 'edit');
+  setGameState('entities', reconcile({}));
 
   clear();
 

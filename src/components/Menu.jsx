@@ -16,9 +16,9 @@ export const Menu = () => {
     navigate('/overview');
   };
 
-  const handleLevel = (level) => {
+  const handleLevel = async (level) => {
     closeMenu();
-    loadLevel(level);
+    await loadLevel(level);
     navigate('/set');
   };
 
