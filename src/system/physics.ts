@@ -46,33 +46,40 @@ function createPhysics() {
   function toggleGravity (enabled: boolean) {
     world.gravity.y = enabled ? GRAVITY : 0;
     if (enabled) {
-      world.forEachRigidBody((body) => body.wakeUp());
+      // Iterate deterministically via registry instead of world.forEachRigidBody
+      registry.each((entity) => {
+        entity.dynamicBodies?.forEach(({ body }) => body.wakeUp());
+      });
     }
   }
 
   function setEditMode(enabled: boolean) {
-    world.forEachRigidBody((body) => {
+    // Iterate deterministically via registry instead of world.forEachRigidBody
+    registry.each((entity) => {
+      entity.dynamicBodies?.forEach(({ body }) => {
+        // Always preserve Fixed bodies (terrain, floor, etc.) - never convert them
+        if (body.bodyType() === RigidBodyType.Fixed) {
+          return;
+        }
 
-      // Always preserve Fixed bodies (terrain, floor, etc.) - never convert them
-      if (body.bodyType() === RigidBodyType.Fixed) {
-        return;
-      }
+        if (enabled) {
+          // Set to kinematic so bodies are fixed in place and don't interact with each other
+          body.setBodyType(RigidBodyType.KinematicPositionBased, true);
 
-      if (enabled) {
-        // Set to kinematic so bodies are fixed in place and don't interact with each other
-        body.setBodyType(RigidBodyType.KinematicPositionBased, true);
+          // Zero out velocities - no momentum
+          body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          body.resetForces(true);
+          body.resetTorques(true);
+        } else {
+          // Restore to dynamic for normal physics
+          body.setBodyType(RigidBodyType.Dynamic, true);
 
-        // Zero out velocities - no momentum
-        body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      } else {
-        // Restore to dynamic for normal physics
-        body.setBodyType(RigidBodyType.Dynamic, true);
-
-        // Normal damping for physics simulation
-        body.setLinearDamping(0);
-        body.setAngularDamping(0);
-      }
+          // Normal damping for physics simulation
+          body.setLinearDamping(0);
+          body.setAngularDamping(0);
+        }
+      });
     });
 
     // Note: Joints between KinematicPositionBased bodies automatically maintain
