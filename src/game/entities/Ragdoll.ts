@@ -95,93 +95,93 @@ export class RagDoll extends Base {
 
     const [head, headBody] = createMeshBody({
       size:     [0.5, 0.5,  0.5],
-      position: [0.0, 2.18, 0.0],
+      position: [0.0, 2.35, 0.0],
       mass: 200,
       color: skin
     });
 
     const [chest, chestBody] = createMeshBody({
       size:     [0.6, 0.6,  0.3],
-      position: [0.0, 1.61, 0.0],
+      position: [0.0, 1.8, 0.0],
       mass: 300,
       color: shirt
     });
 
     const [hips, hipsBody] = createMeshBody({
       size:     [0.6, 0.3,  0.3],
-      position: [0.0, 1.14, 0.0],
+      position: [0.0, 1.425, 0.0],
       color: shirt
     });
 
     const [upperArmL, upperArmLBody] = createMeshBody({
       size:     [0.4,  0.2, 0.2],
-      position: [0.51, 1.8, 0.0],
+      position: [0.5, 2.05, 0.0],
       color: shirt
     });
 
     const [foreArmL, foreArmLBody] = createMeshBody({
       size:     [0.4,  0.2, 0.2],
-      position: [0.92, 1.8, 0.0],
+      position: [0.9, 2.05, 0.0],
       color: skin
     });
 
     const [handL, handLBody] = createMeshBody({
       size:     [0.2,  0.2, 0.2],
-      position: [1.23, 1.8, 0.0],
+      position: [1.2, 2.05, 0.0],
       color: skin
     });
 
     const [upperArmR, upperArmRBody] = createMeshBody({
       size:     [ 0.4,  0.2, 0.2],
-      position: [-0.51, 1.8, 0.0],
+      position: [-0.5, 2.05, 0.0],
       color: shirt
     });
 
     const [foreArmR, foreArmRBody] = createMeshBody({
       size:     [ 0.4,  0.2, 0.2],
-      position: [-0.92, 1.8, 0.0],
+      position: [-0.9, 2.05, 0.0],
       color: skin
     });
 
     const [handR, handRBody] = createMeshBody({
       size:     [ 0.2,  0.2, 0.2],
-      position: [-1.23, 1.8, 0.0],
+      position: [-1.2, 2.05, 0.0],
       color: skin
     });
 
     const [upperLegL, upperLegLBody] = createMeshBody({
       size:     [0.2, 0.4,  0.2],
-      position: [0.2, 0.78, 0.0],
+      position: [0.2, 1.075, 0.0],
       color: pants
     });
 
     const [lowerLegL, lowerLegLBody] = createMeshBody({
       size:     [0.2, 0.4,  0.2],
-      position: [0.2, 0.36, 0.0],
+      position: [0.2, 0.675, 0.0],
       color: skin
     });
 
     const [footL, footLBody] = createMeshBody({
       size:     [0.2, 0.12, 0.35],
-      position: [0.2, 0.08, 0.05],
+      position: [0.2, 0.415, 0.04],
       color: foot
     });
 
     const [upperLegR, upperLegRBody] = createMeshBody({
       size:     [ 0.2, 0.4,  0.2],
-      position: [-0.2, 0.78, 0.0],
+      position: [-0.2, 1.075, 0.0],
       color: pants
     });
 
     const [lowerLegR, lowerLegRBody] = createMeshBody({
       size:     [ 0.2, 0.4,  0.2],
-      position: [-0.2, 0.36, 0.0],
+      position: [-0.2, 0.675, 0.0],
       color: skin
     });
 
     const [footR, footRBody] = createMeshBody({
       size:     [ 0.2, 0.12, 0.35],
-      position: [-0.2, 0.08, 0.05],
+      position: [-0.2, 0.415, 0.04],
       color: foot
     });
 

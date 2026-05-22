@@ -1,7 +1,6 @@
 import { Ray, QueryFilterFlags } from 'rapier';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { createDragger } from "~/system/physics";
 import { useGameState } from "~/game/store";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
 
@@ -36,14 +35,12 @@ type Controls = OrbitControls & {
 function createControls({ graphics, physics }: ControlProps) {
   const [gameState] = useGameState();
   const { camera, renderer } = graphics;
-  const { world } = physics;
-  const canvas = renderer.domElement;
-  const controls = new OrbitControls(camera, canvas);
-
+  const canvas    = renderer.domElement;
+  const controls  = new OrbitControls(camera, canvas);
+  const dragger   = physics.dragger;
   const raycaster = new Raycaster();
-  const mouse = new Vector2();
+  const mouse     = new Vector2();
   const dragPlane = new Plane();
-  const dragger = createDragger(world);
 
 
 
@@ -86,13 +83,14 @@ function createControls({ graphics, physics }: ControlProps) {
 
     const filterFlags = QueryFilterFlags.EXCLUDE_SENSORS;
     const filterGroups = COLLISION_GROUP_RAY_DYNAMIC;
-    const hit = world.castRay(ray, maxDistance, solid, filterFlags, filterGroups);
+    const hit = physics.world.castRay(ray, maxDistance, solid, filterFlags, filterGroups);
 
     if (hit) {
       const hitPoint = new Vector3().copy(origin).addScaledVector(direction, hit.timeOfImpact);
       const normal = new Vector3();
 
       controls.enabled = false; // disable OrbitControls when we actually hit an entity to drag
+      physics.markEdited(); // Flag that the user modified the level layout
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
       dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });

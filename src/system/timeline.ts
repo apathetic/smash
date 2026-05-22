@@ -11,6 +11,13 @@ type TimelineProps = {
   gui: any;
 }
 
+/**
+ * A reference to a Timeline instance.
+ * The return object exposes a number of functions for interacting
+ * with the Timeline: `start` and `stop`
+ */
+let timelineHandle: ReturnType<typeof createTimeline> | null = null;
+
 
 /**
  * Creates a timeline for managing the time-evolution of the world. It is
@@ -42,8 +49,10 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
       gui.stats.begin();
 
       while (accumulator >= timeStep) {
-        physics.update(timeStep);
-        registry.each((entity) => entity.update(timeStep));
+        if (game.mode !== 'reset') {
+          physics.update(timeStep);
+          registry.each((entity) => entity.update(timeStep));
+        }
         accumulator -= timeStep;
       }
 
@@ -67,4 +76,21 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
 };
 
 
-export { createTimeline };
+/**
+ * A hook to provide access to the Timeline instance.
+ * This is a singleton pattern, so the Timeline instance is
+ * created once and then returned on subsequent calls.
+ */
+function useTimeline(props?: TimelineProps) {
+  if (props) {
+    timelineHandle = createTimeline(props);
+  }
+
+  if (!timelineHandle) {
+    throw new Error('[useTimeline]: was not initialized with `props`');
+  }
+
+  return timelineHandle;
+}
+
+export { useTimeline };

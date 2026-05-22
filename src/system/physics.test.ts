@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createPhysics } from './physics';
+import { usePhysics } from './physics';
 import { RigidBodyType } from 'rapier';
 
 
@@ -8,13 +8,12 @@ describe('Physics', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    physics = createPhysics();
+    physics = usePhysics();
   });
 
   it('should initialize the physics world with correct parameters', () => {
     expect(physics.world).toBeDefined();
     expect(physics.update).toBeDefined();
-    expect(physics.collisions).toBeDefined();
 
     // Check that the world was created with zero gravity initially
     expect(physics.world.gravity.y).toBe(0);
@@ -64,34 +63,17 @@ describe('Physics', () => {
   //   });
   // });
 
-  it.skip('should handle collision events', () => {
-    const mockEvent = {
-      collider1: vi.fn().mockReturnValue(1),
-      collider2: vi.fn().mockReturnValue(2),
-      totalForce: vi.fn().mockReturnValue(10)
-    };
 
-    // Spy on console.log to check if it's called
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    physics.collisions(mockEvent);
-
-    // Verify that the event handlers were called
-    expect(mockEvent.collider1).toHaveBeenCalled();
-    expect(mockEvent.collider2).toHaveBeenCalled();
-
-    consoleSpy.mockRestore();
-  });
 
   it('should increment stepId on each update', () => {
-    // Initial stepId should be 0
-    expect((physics.world as any).stepId).toBeUndefined();
+    // Read the current stepId (physics is a singleton, so it might not be 0)
+    const initialStep = physics.stepId;
 
-    physics.update(1/60);
-    expect((physics.world as any).stepId).toBe(1);
+    physics.update(16);
+    expect(physics.stepId).toBe(initialStep + 1);
 
-    physics.update(1/60);
-    expect((physics.world as any).stepId).toBe(2);
+    physics.update(16);
+    expect(physics.stepId).toBe(initialStep + 2);
   });
 
   it('should preserve Fixed body types when switching between edit and smash modes', () => {
@@ -164,5 +146,54 @@ describe('Physics', () => {
 
     expect(RigidBodyType.Fixed).toBeDefined();
     // This test verifies the contract: Fixed bodies should never be draggable
+  });
+
+  it('should perfectly reproduce simulation state after a save and restore (determinism)', async () => {
+    // Import the compat engine dynamically using importActual to bypass the global mock
+    const RAPIER: any = await vi.importActual('@dimforge/rapier3d-compat');
+    await RAPIER.init();
+    
+    // 1. Initialize world
+    const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    
+    // 2. Add a dynamic falling body at a high elevation
+    const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
+      .setTranslation(0, 10, 0)
+      .setAdditionalMass(1.0);
+    const body = world.createRigidBody(bodyDesc);
+    
+    // 3. Take a pristine snapshot at t=0
+    const snapshot = world.takeSnapshot();
+    
+    // 4. Run the simulation forward exactly 100 ticks
+    for(let i = 0; i < 100; i++) {
+      world.step();
+    }
+    
+    // 5. Record precise position at t=100
+    const pos1 = body.translation();
+    
+    // 6. Free the world and restore from t=0
+    world.free();
+    const world2 = RAPIER.World.restoreSnapshot(snapshot);
+    const body2 = world2.bodies.get(body.handle);
+    
+    // 7. Run the simulation forward exactly 100 ticks again
+    for(let i = 0; i < 100; i++) {
+      world2.step();
+    }
+    
+    // 8. Record precise position
+    const pos2 = body2.translation();
+    
+    // 9. Assert bit-perfect determinism
+    expect(pos2.x).toBe(pos1.x);
+    expect(pos2.y).toBe(pos1.y);
+    expect(pos2.z).toBe(pos1.z);
+    
+    // Verify it actually moved and didn't just stay at y=10
+    expect(pos1.y).toBeLessThan(10);
+    
+    world2.free();
   });
 });

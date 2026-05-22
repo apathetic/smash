@@ -1,5 +1,6 @@
 import { reconcile } from "solid-js/store";
 import { useWorld } from "~/system/world";
+import { useTimeline } from "~/system/timeline";
 import { useGameState } from "~/game/store";
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
@@ -7,14 +8,9 @@ import { RagDoll } from "~/game/entities/Ragdoll";
 import { Cube } from "~/game/entities/Cube";
 
 
-
-
-
-
-
-
-
-
+/**
+ * Load JSON Level Data
+ */
 async function getLevelData(lvl: string) {
   try {
     const levelModule = await import(`~/game/levels/${lvl}.json`);
@@ -26,65 +22,32 @@ async function getLevelData(lvl: string) {
 }
 
 
-
-
-
-
-  // load the levelData into state.
-  // only do this once
-  // subsequent loads of this page should use state data
-  // ie. where the entities have been positioned, etc.
-
 /**
- *
- * @param lvl
-  Load json data; generate entities from it; insert into the game canvas
- ///////// Load json data; extract initial data; initialize the store With this info
+ * Load Level
+ * Load json data; generate entities from it; insert into the game canvas
  */
 async function loadLevel(lvl: string) {
-  const { add, clear, start, stop } = useWorld();
+  const { add, clear, save } = useWorld();
+  const { start, stop } = useTimeline();
   const [_, setGameState] = useGameState();
-
-  stop();
-
   const levelData: Level = await getLevelData(lvl);
 
-  if (!levelData) {
-    console.error(`Failed to load level: ${lvl}`);
-    return;
-  }
+  if (!levelData) { return; }
 
-  // Reset impact data when loading a new level
+  stop();
+  clear();
+
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
   setGameState('targetDamage', levelData.targetDamage || 1000);
   setGameState('mode', 'edit');
   setGameState('entities', reconcile({}));
 
-  clear();
-
-
-  /////////////////
-  // setGameState(
-  //   'environment',
-  //   levelData.environment.reduce((acc, env) => ({ ...acc, [env.type]: env.position }), {})
-  // );
-
-  // // i THINK this actually merges w/ current store entities
-  // setGameState(
-  //   'entities',
-  //   levelData.entities.reduce((acc, ent) => ({ ...acc, [ent.type]: ent.position }), {})
-  // );
-  /////////////
-
-  // console.log('loaded state', game);
-
 
   levelData.entities.forEach((entity) => {
     switch(entity.type) {
       case "Cube":
         add(new Cube(entity));
-        // setGameState('entities', { 'cube': [0,0,0] }); // can position be a proxy that is shared by the class and by the store?
         break;
     }
   });
@@ -93,7 +56,6 @@ async function loadLevel(lvl: string) {
     switch(env.type) {
       case "Terrain":
         add(new Terrain(env));
-        //  new Terrain({ id: "terrain" }); // assign a custom `id` to keep track of it, later retrieve it my its given id
         break;
       case "Floor":
         add(new Floor());
@@ -106,10 +68,10 @@ async function loadLevel(lvl: string) {
   const ragdoll = new RagDoll({ position: [0,0,0] });
   add(ragdoll);
 
+
+  save(); // capture a snapshot for resetting
   start();
 }
-
-
 
 
 export { loadLevel };

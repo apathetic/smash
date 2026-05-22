@@ -1,4 +1,4 @@
-import { version, /* World */ } from "rapier";
+import { version, World } from "rapier";
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
 import GUI from "lil-gui";
@@ -36,12 +36,9 @@ const params = {
 
 
 export const createGUI = ({ graphics, physics }: GuiProps) => {
-  const { scene } = graphics;
-  const { world } = physics;
-
   const gui = new GUI({ title: "SMASH" });
-
   const _rapierVersion = version();
+
   let maxTimePanelValue = 16.0;
   let snap: Uint8Array;
   let snapStepId = 0;
@@ -83,19 +80,18 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   damageFolder.add(damageStats, 'target').name('Target Damage').listen();
   damageFolder.add(damageStats, 'impacts').name('Impact Count').listen();
 
-  /** */
   gui.add(params, "takeSnapshot");
   params.takeSnapshot = () => {
-    snap = world.takeSnapshot();
-    snapStepId = (world as any).stepId;
+    snap = physics.world.takeSnapshot();
+    snapStepId = physics.stepId;
   };
 
   gui.add(params, "restoreSnapshot");
   params.restoreSnapshot = () => {
     if (snap) {
-      world.free();
-      // world = World.restoreSnapshot(snap);
-      (world as any).stepId = snapStepId;
+      physics.stepId = snapStepId;
+      physics.world.free();
+      physics.world = World.restoreSnapshot(snap);
     }
   };
 
@@ -135,7 +131,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   const material = new LineBasicMaterial({ color: 0xffffff, vertexColors: true });
   const geometry = new BufferGeometry();
   const lines = new LineSegments(geometry, material);
-  scene.add(lines);
+  graphics.scene.add(lines);
 
 
 
@@ -144,12 +140,12 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     // params.running vs. game.isRunning ????
 
 
-    world.numSolverIterations = params.numSolverIters;
+    physics.world.numSolverIterations = params.numSolverIters;
     setTiming(delta);  // setTiming(new Date().getTime() - t0);
 
 
     if (params.debugRender) {
-      let buffers = world.debugRender();
+      let buffers = physics.world.debugRender();
       lines.visible = true;
       lines.geometry.setAttribute("position", new BufferAttribute(buffers.vertices, 3));
       lines.geometry.setAttribute("color", new BufferAttribute(buffers.colors, 4));
@@ -169,7 +165,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
         t1 = performance.now();
 
         setDebugInfos({
-          stepId: (world as any).stepId,
+          stepId: physics.stepId,
           worldHash,
           worldHashTime: t1 - t0,
           snapshotTime,

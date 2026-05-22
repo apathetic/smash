@@ -1,82 +1,67 @@
-import { RigidBody, RigidBodyType } from 'rapier';
-import { Vector3, Quaternion } from 'three';
+import { Vector3, Quaternion } from "three";
 import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
+import { useWorld } from "~/system/world";
 
 /**
  * Resets entities to their saved positions from the game state.
  * This restores the level to the state it was in when saveLevel was called.
  */
 async function resetLevel() {
-  const [gameState, setGameState] = useGameState();
+  const [_, setGameState] = useGameState();
+  const { restore } = useWorld();
 
-  console.log('Resetting level to saved state');
+  console.log('Resetting level');
 
-  const targets = new Map<RigidBody, { targetPos: {x:number, y:number, z:number}, targetRot: {x:number, y:number, z:number, w:number} }>();
-  const syncMeshes = new Map<RigidBody, any>();
+  // 1. Destroy and restore the Rapier world
+  restore();
 
-  // Iterate through all entities in the world
-  registry.each((entity) => {
-    const entityData = gameState.entities[entity.id];
+  // 2. Animate the Three.js meshes to gently catch up to the restored bodies
+  await new Promise<void>((resolve) => {
+    const vels = new Map<any, { v: Vector3, omega: Vector3 }>();
 
-    entity.dynamicBodies?.forEach((dBody, index) => {
-      const bodyState = entityData?.bodies?.[index];
-      if (bodyState) {
-        targets.set(dBody.body, {
-          targetPos: { x: bodyState.position[0], y: bodyState.position[1], z: bodyState.position[2] },
-          targetRot: { x: bodyState.rotation[0], y: bodyState.rotation[1], z: bodyState.rotation[2], w: bodyState.rotation[3] }
-        });
-        syncMeshes.set(dBody.body, dBody);
-      }
-    });
-  });
-
-  if (targets.size > 0) {
-    await new Promise<void>((resolve) => {
-      const vels = new Map<RigidBody, { v: Vector3, omega: Vector3 }>();
-
-      targets.forEach((target, body) => {
-         // Ensure they are kinematic so they don't fight us or explode
-         body.setBodyType(RigidBodyType.KinematicPositionBased, true);
-         vels.set(body, { v: new Vector3(), omega: new Vector3() });
+    registry.each((entity) => {
+      entity.dynamicBodies?.forEach(({ mesh, body }) => {
+        if (mesh && body) {
+           vels.set(mesh, { v: new Vector3(), omega: new Vector3() });
+        }
       });
+    });
 
-      const stiffness = 0.1;
-      const damping = 0.75;
+    const stiffness = 0.1;
+    const damping = 0.75;
 
-      function animate() {
-        let allSettled = true;
+    function animate() {
+      let allSettled = true;
 
-        targets.forEach((target, body) => {
-          const dBody = syncMeshes.get(body);
-          if (!dBody) return;
+      registry.each((entity) => {
+        entity.dynamicBodies?.forEach(({ mesh, body }) => {
+          if (!mesh || !body) return;
 
-          const currentPos = body.translation();
-          const currentRot = body.rotation();
+          const currentPos = mesh.position;
+          const currentRot = mesh.quaternion;
 
-          const vData = vels.get(body)!;
+          const targetPos = body.translation();
+          const targetRot = body.rotation();
+
+          const vData = vels.get(mesh);
+          if (!vData) return;
 
           // Position spring
-          vData.v.x += (target.targetPos.x - currentPos.x) * stiffness;
-          vData.v.y += (target.targetPos.y - currentPos.y) * stiffness;
-          vData.v.z += (target.targetPos.z - currentPos.z) * stiffness;
+          vData.v.x += (targetPos.x - currentPos.x) * stiffness;
+          vData.v.y += (targetPos.y - currentPos.y) * stiffness;
+          vData.v.z += (targetPos.z - currentPos.z) * stiffness;
+          vData.v.multiplyScalar(damping);
 
-          vData.v.x *= damping;
-          vData.v.y *= damping;
-          vData.v.z *= damping;
-
-          const nextPos = {
-            x: currentPos.x + vData.v.x,
-            y: currentPos.y + vData.v.y,
-            z: currentPos.z + vData.v.z,
-          };
-
-          body.setNextKinematicTranslation(nextPos);
-          dBody.mesh.position.set(nextPos.x, nextPos.y, nextPos.z);
+          mesh.position.set(
+            currentPos.x + vData.v.x,
+            currentPos.y + vData.v.y,
+            currentPos.z + vData.v.z
+          );
 
           // Rotation spring
-          const qCur = new Quaternion(currentRot.x, currentRot.y, currentRot.z, currentRot.w);
-          const qTar = new Quaternion(target.targetRot.x, target.targetRot.y, target.targetRot.z, target.targetRot.w);
+          const qCur = new Quaternion().copy(currentRot);
+          const qTar = new Quaternion(targetRot.x, targetRot.y, targetRot.z, targetRot.w);
 
           if (qCur.dot(qTar) < 0) {
             qTar.set(-qTar.x, -qTar.y, -qTar.z, -qTar.w);
@@ -105,62 +90,45 @@ async function resetLevel() {
             nextRot.normalize();
           }
 
-          body.setNextKinematicRotation(nextRot);
-          dBody.mesh.quaternion.copy(nextRot);
+          mesh.quaternion.copy(nextRot);
 
-          // check settling
+          // Check settling
           const speedSq = vData.v.lengthSq();
           const spinSq = vData.omega.lengthSq();
-          const distSq = (target.targetPos.x - currentPos.x)**2 + (target.targetPos.y - currentPos.y)**2 + (target.targetPos.z - currentPos.z)**2;
+          const distSq = (targetPos.x - currentPos.x)**2 + (targetPos.y - currentPos.y)**2 + (targetPos.z - currentPos.z)**2;
 
           if (distSq > 0.001 || speedSq > 0.001 || spinSq > 0.001) {
             allSettled = false;
           }
         });
+      });
 
-        if (allSettled) {
-          resolve();
-        } else {
-          requestAnimationFrame(animate);
-        }
+      if (allSettled) {
+        resolve();
+      } else {
+        requestAnimationFrame(animate);
       }
+    }
 
-      animate();
-    });
+    animate();
+  });
 
-    // Now perform the final exact snap to ensure absolutely zero jitter and precise initial state
-    targets.forEach((target, body) => {
-      const pos = new Vector3(target.targetPos.x, target.targetPos.y, target.targetPos.z);
-      const rot = new Quaternion(target.targetRot.x, target.targetRot.y, target.targetRot.z, target.targetRot.w);
-
-      body.setBodyType(RigidBodyType.KinematicPositionBased, true);
-      body.setTranslation(pos, true);
-      body.setRotation(rot, true);
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      body.resetForces(true);
-      body.resetTorques(true);
-
-      const dBody = syncMeshes.get(body);
-      if (dBody && dBody.mesh) {
-        dBody.mesh.position.copy(pos);
-        dBody.mesh.quaternion.copy(rot);
+  // 3. Final visual snap
+  registry.each((entity) => {
+    entity.dynamicBodies?.forEach(({ mesh, body }) => {
+      if (mesh && body) {
+        mesh.position.copy(body.translation());
+        mesh.quaternion.copy(body.rotation());
       }
     });
-  }
+  });
 
   // Reset impacts and total damage
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
+  setGameState('mode', 'edit');
 
   console.log('Level reset complete');
 }
 
 export { resetLevel };
-
-
-/**
-  RESET: pulls  data from GAMESTATE (o
-
-
-*/

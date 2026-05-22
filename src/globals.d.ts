@@ -11,8 +11,17 @@ interface IGraphics {
 
 interface IPhysics {
   world: import("rapier").World;
-  collisions: (event: any) => void;
+  dragger: any;
+  stepId: number;
   update: (delta: number) => void;
+  save: () => void;
+  restore: () => void;
+  setGravity: (enabled: boolean) => void;
+  setBodiesKinematic: (enabled: boolean) => void;
+
+  // MEH: find a better / less hacky way for this:
+  markEdited: () => void;
+  get hasEdited(): boolean;
 }
 
 type Entities = "Cube" | "Wall" | "Floor" | "Terrain" | "Sphere" | "Ragdoll";

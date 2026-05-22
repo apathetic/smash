@@ -1,17 +1,18 @@
-import {
-  World,
-  EventQueue,
-  RigidBodyType,
-  RigidBody,
-  Collider,
-  ImpulseJointHandle,
-} from "rapier";
-import { Vector3 } from "three";
 import { createEffect } from "solid-js";
-import { useGameState } from "~/game/store";
+import { World, EventQueue, RigidBodyType} from "rapier";
 import { registry } from "~/game/store/registry";
+import { useGameState } from "~/game/store";
 import { GRAVITY } from "~/system/constants";
 import { createDamageHandler } from "~/system/damage";
+import { createDragger } from "~/system/dragger";
+
+
+/**
+ * A reference to a Physics instance.
+ * The return object exposes a number of functions for interacting
+ * with the
+ */
+let physicsHandle: ReturnType<typeof createPhysics>;
 
 
 /**
@@ -22,37 +23,48 @@ import { createDamageHandler } from "~/system/damage";
  * @returns {function} return.collisions - A collisions function.
  */
 function createPhysics() {
-  const gravity       = { x: 0.0, y: 0, z: 0.0 };
-  const world         = new World(gravity);
-  const eventQueue    = new EventQueue(true); // 'true' to capture contact force events
-  const damageHandler = createDamageHandler(world);
-  const [game]        = useGameState();
-  let stepId          = 0;
-
-  // Increase solver iterations for more stable constraint solving
-  world.integrationParameters.numSolverIterations = 20; // Default is ~4
-
-
+  const gravity = { x: 0.0, y: 0, z: 0.0 };
+  const world = new World(gravity);
+  let eventQueue = new EventQueue(true);
+  let damageHandler = createDamageHandler(world);
+  let snapshot: Uint8Array | null = null;
+  let hasEdited = true;
 
   function update(_delta: number) {
-    world.step(eventQueue);
-    stepId += 1;
-    (world as any).stepId = stepId;
+    instance.world.step(eventQueue);
+    instance.stepId += 1;
     eventQueue.drainContactForceEvents(damageHandler);
   }
 
-  function toggleGravity (enabled: boolean) {
-    world.gravity.y = enabled ? GRAVITY : 0;
+  function save() {
+    instance.setBodiesKinematic(true);
+    snapshot = instance.world.takeSnapshot();
+    hasEdited = false;
+  }
+
+  function restore() {
+    if (snapshot) {
+      instance.dragger.cleanup();
+      instance.world.free();
+      instance.world = World.restoreSnapshot(snapshot);
+      instance.world.integrationParameters.numSolverIterations = 20;
+      instance.stepId = 0;
+      eventQueue = new EventQueue(true);
+      damageHandler = createDamageHandler(instance.world);
+      hasEdited = false;
+    }
+  }
+
+  function setGravity(enabled: boolean) {
+    instance.world.gravity.y = enabled ? GRAVITY : 0;
     if (enabled) {
-      // Iterate deterministically via registry instead of world.forEachRigidBody
       registry.each((entity) => {
         entity.dynamicBodies?.forEach(({ body }) => body.wakeUp());
       });
     }
   }
 
-  function setEditMode(enabled: boolean) {
-    // Iterate deterministically via registry instead of world.forEachRigidBody
+  function setBodiesKinematic(enabled: boolean) {
     registry.each((entity) => {
       entity.dynamicBodies?.forEach(({ body }) => {
         // Always preserve Fixed bodies (terrain, floor, etc.) - never convert them
@@ -76,207 +88,68 @@ function createPhysics() {
           // Normal damping for physics simulation
           body.setLinearDamping(0);
           body.setAngularDamping(0);
+          body.wakeUp();
         }
       });
     });
-
-    // Note: Joints between KinematicPositionBased bodies automatically maintain
-    // their relative positions since kinematic bodies don't respond to forces.
-    // This effectively makes joints rigid in edit mode.
   }
 
 
-  // React to game state changes
+  const instance: IPhysics = {
+    world,
+    stepId: 0,
+    dragger: null, // Connected below due to circular construction
+    save,
+    update,
+    restore,
+    setGravity,
+    setBodiesKinematic,
+    markEdited: () => { hasEdited = true; },
+    get hasEdited() { return hasEdited; },
+  };
+
+  instance.dragger = createDragger(instance);
+  instance.world.integrationParameters.numSolverIterations = 20;
+
+
   createEffect(() => {
-    if (game.mode == 'smash') {
-      toggleGravity(true);
-      setEditMode(false);
-    } else {
-      toggleGravity(false);
-      setEditMode(true);
+    const [game] = useGameState();
+
+    if (game.mode === 'smash') {
+      if (instance.hasEdited) {
+        instance.save();
+      }
+
+      // note: order is important:
+      instance.setBodiesKinematic(false);
+      instance.setGravity(true);
+    } else if (game.mode === 'edit') {
+      instance.setGravity(false);
+      instance.setBodiesKinematic(true);
     }
   });
 
-  return { world, update };
+  return instance;
 }
+
 
 
 
 
 /**
- * Creates a dragger for the physics world.
- * @param world The physics world.
- * @returns An object containing the dragger.
+ * A hook to provide access to the physics instance.
+ * This is a singleton pattern, so the physics instance is
+ * created once and then returned on subsequent calls.
  */
-function createDragger(world: World) {
-  const [game] = useGameState();
-  const characterController = world.createCharacterController(0.01);
-  characterController.setApplyImpulsesToDynamicBodies(false);
-
-  let grabbedCollider: Collider | null = null;
-  let grabbedBody: RigidBody | null = null;
-  let draggedBodies: RigidBody[] = [];
-  let grabOffset: Vector3 | null = null;
-
-  const settlingIntervals = new Map<RigidBody, ReturnType<typeof setInterval>>();
-  const connectedBodiesCache = new Map<number, RigidBody[]>();
-
-  function getConnectedBodies(startBody: RigidBody): RigidBody[] {
-    if (connectedBodiesCache.has(startBody.handle)) {
-      return connectedBodiesCache.get(startBody.handle)!;
-    }
-    const connected = new Set<RigidBody>();
-    const queue = [startBody];
-    connected.add(startBody);
-
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      world.impulseJoints.forEachJointHandleAttachedToRigidBody(current.handle, (jointHandle: ImpulseJointHandle) => {
-        const joint = world.impulseJoints.get(jointHandle);
-        if (joint) {
-          const b1 = joint.body1();
-          const b2 = joint.body2();
-          const neighbor = (b1.handle === current.handle) ? b2 : b1;
-          if (!connected.has(neighbor)) {
-            connected.add(neighbor);
-            queue.push(neighbor);
-          }
-        }
-      });
-    }
-    const arr = Array.from(connected);
-    arr.forEach(b => {
-      connectedBodiesCache.set(b.handle, arr);
-    });
-    return arr;
+function usePhysics() {
+  if (!physicsHandle) {
+    physicsHandle = createPhysics();
   }
 
-  return {
-    start(collider: Collider, hitPoint: { x: number, y: number, z: number }) {
-      this.stop(); // Ensure cleanup
-
-      grabbedCollider = collider;
-      grabbedBody = collider.parent() as RigidBody;
-      if (!grabbedBody) return;
-
-      const bodyPos = grabbedBody.translation();
-      grabOffset = new Vector3(bodyPos.x, bodyPos.y, bodyPos.z).sub(new Vector3(hitPoint.x, hitPoint.y, hitPoint.z));
-
-      draggedBodies = getConnectedBodies(grabbedBody);
-
-      draggedBodies.forEach((b) => {
-        if (settlingIntervals.has(b)) {
-          clearInterval(settlingIntervals.get(b));
-          settlingIntervals.delete(b);
-        }
-
-        if (b === grabbedBody) {
-          b.setBodyType(RigidBodyType.KinematicPositionBased, true);
-        } else {
-          b.setBodyType(RigidBodyType.Dynamic, true);
-          b.setLinearDamping(10.0);
-          b.setAngularDamping(10.0);
-        }
-
-        b.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        b.setAngvel({ x: 0, y: 0, z: 0 }, true);
-        b.wakeUp();
-      });
-    },
-
-    move(targetPoint: { x: number, y: number, z: number }) {
-      if (!grabbedBody || !grabbedCollider || !grabOffset) return;
-
-      const currentPos = new Vector3().copy(grabbedBody.translation() as any);
-      const desiredPos = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z).add(grabOffset);
-      const movement = new Vector3().subVectors(desiredPos, currentPos);
-
-      // Compute movement to avoid obstacles, ignore other bodies in this entity group
-      characterController.computeColliderMovement(
-        grabbedCollider,
-        movement,
-        undefined,
-        undefined,
-        (c) => {
-          const parent = c.parent();
-          if (parent) {
-             return !draggedBodies.includes(parent as RigidBody);
-          }
-          return true;
-        }
-      );
-      const computedMovement = characterController.computedMovement();
-
-      grabbedBody.setNextKinematicTranslation({
-        x: currentPos.x + computedMovement.x,
-        y: currentPos.y + computedMovement.y,
-        z: currentPos.z + computedMovement.z
-      });
-    },
-
-    stop() {
-      if (!grabbedBody) return;
-
-      draggedBodies.forEach((b) => {
-        if (game.mode !== 'edit') {
-          // In smash mode, the global setEditMode(false) forces bodies to Dynamic and resets damping.
-          return;
-        }
-
-        if (b === grabbedBody) {
-          b.setBodyType(RigidBodyType.KinematicPositionBased, true);
-          b.setLinearDamping(0);
-          b.setAngularDamping(0);
-        } else {
-          // Attached bodies stop normally, heavily damped
-          b.setBodyType(RigidBodyType.Dynamic, true);
-          b.setLinearDamping(10.0);
-          b.setAngularDamping(10.0);
-
-          const interval = setInterval(() => {
-            try {
-              if (game.mode !== 'edit') {
-                 // Game switched to smash mode while settling! Global setEditMode handles cleanup.
-                 clearInterval(interval);
-                 settlingIntervals.delete(b);
-                 return;
-              }
-
-              const lv = b.linvel();
-              const av = b.angvel();
-              const speedSq = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z;
-              const angSq = av.x * av.x + av.y * av.y + av.z * av.z;
-              if (speedSq < 0.005 && angSq < 0.005) {
-                b.setBodyType(RigidBodyType.KinematicPositionBased, true);
-                b.setLinearDamping(0);
-                b.setAngularDamping(0);
-                clearInterval(interval);
-                settlingIntervals.delete(b);
-              }
-            } catch (_err) {
-              // Body was likely destroyed
-              clearInterval(interval);
-              settlingIntervals.delete(b);
-              console.error(_err);
-            }
-          }, 100);
-          settlingIntervals.set(b, interval);
-        }
-      });
-
-      grabbedCollider = null;
-      grabbedBody = null;
-      grabOffset = null;
-      draggedBodies = [];
-    },
-
-    isDragging() {
-      return !!grabbedBody;
-    }
-  };
+  return physicsHandle;
 }
 
+
 export {
-  createPhysics,
-  createDragger,
+  usePhysics,
 };

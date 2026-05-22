@@ -1,8 +1,8 @@
 import { createScene, createLights } from "./scene";
 import { createResizer } from "./resizer";
-import { createTimeline } from "./timeline";
+import { useTimeline } from "./timeline";
 import { createControls } from "./controls";
-import { createPhysics } from "./physics";
+import { usePhysics } from "./physics";
 import { createGUI } from "./gui";
 import { registry } from "~/game/store/registry";
 
@@ -23,11 +23,11 @@ let worldHandle: ReturnType<typeof createWorld>;
  */
 function createWorld(canvas: HTMLCanvasElement) {
   const graphics = createScene(canvas);
-  const physics  = createPhysics();
+  const physics  = usePhysics();
   const lights   = createLights();
   const gui      = createGUI({ graphics, physics });
   const controls = createControls({ graphics, physics });
-  const timeline = createTimeline({ graphics, physics, controls, gui });
+  const timeline = useTimeline({ graphics, physics, controls, gui });
 
   createResizer(graphics);
   graphics.scene.add(...lights);
@@ -68,7 +68,30 @@ function createWorld(canvas: HTMLCanvasElement) {
     graphics.scene.clear();
   }
 
-  return { ...timeline, add, remove, clear, destroy };
+  /**
+   * Saves a deterministic snapshot of the physics world.
+   */
+  function save() {
+    physics.save();
+  }
+
+  /**
+   * Restores the physics world from a previously saved snapshot.
+   */
+  function restore() {
+    physics.restore();
+
+    // Relink existing dynamicBodies to the newly restored Rapier bodies
+    registry.each((entity) => {
+      entity.dynamicBodies?.forEach((dBody) => {
+        if (dBody.body) {
+          dBody.body = physics.world.getRigidBody(dBody.body.handle);
+        }
+      });
+    });
+  }
+
+  return { add, remove, clear, destroy, save, restore };
 };
 
 
