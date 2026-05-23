@@ -13,7 +13,19 @@ vi.mock('./scene', () => ({
 }));
 
 vi.mock('./physics', () => ({
-  createPhysics: vi.fn(() => ({ world: {} }))
+  usePhysics: vi.fn(() => ({
+    world: {
+      getRigidBody: vi.fn()
+    },
+    save: vi.fn(),
+    restore: vi.fn(),
+    stepId: 0,
+    update: vi.fn(),
+    setGravity: vi.fn(),
+    setBodiesKinematic: vi.fn(),
+    markEdited: vi.fn(),
+    hasEdited: false
+  }))
 }));
 
 vi.mock('./resizer', () => ({

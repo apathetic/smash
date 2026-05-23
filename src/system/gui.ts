@@ -3,6 +3,7 @@ import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
 import GUI from "lil-gui";
 import { useGameState } from "~/game/store";
+import { NUM_SOLVER_ITERATIONS } from "~/system/constants";
 
 import { LineBasicMaterial, BufferGeometry, LineSegments, BufferAttribute } from 'three';
 
@@ -23,7 +24,7 @@ export interface DebugInfos {
 
 
 const params = {
-  numSolverIters: 16,
+  numSolverIters: NUM_SOLVER_ITERATIONS,
   debugRender: false,
   debugInfos: false,
   running: false,

@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { usePhysics } from './physics';
 import { RigidBodyType } from 'rapier';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NUM_SOLVER_ITERATIONS } from '~/system/constants';
+import { usePhysics } from './physics';
+
 
 
 describe('Physics', () => {
@@ -19,7 +21,7 @@ describe('Physics', () => {
     expect(physics.world.gravity.y).toBe(0);
 
     // Check that solver iterations were increased
-    expect(physics.world.integrationParameters.numSolverIterations).toBe(20);
+    expect(physics.world.integrationParameters.numSolverIterations).toBe(NUM_SOLVER_ITERATIONS);
   });
 
   it('should update the physics world when update is called', () => {
@@ -152,48 +154,48 @@ describe('Physics', () => {
     // Import the compat engine dynamically using importActual to bypass the global mock
     const RAPIER: any = await vi.importActual('@dimforge/rapier3d-compat');
     await RAPIER.init();
-    
+
     // 1. Initialize world
     const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
-    
+
     // 2. Add a dynamic falling body at a high elevation
     const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(0, 10, 0)
       .setAdditionalMass(1.0);
     const body = world.createRigidBody(bodyDesc);
-    
+
     // 3. Take a pristine snapshot at t=0
     const snapshot = world.takeSnapshot();
-    
+
     // 4. Run the simulation forward exactly 100 ticks
     for(let i = 0; i < 100; i++) {
       world.step();
     }
-    
+
     // 5. Record precise position at t=100
     const pos1 = body.translation();
-    
+
     // 6. Free the world and restore from t=0
     world.free();
     const world2 = RAPIER.World.restoreSnapshot(snapshot);
     const body2 = world2.bodies.get(body.handle);
-    
+
     // 7. Run the simulation forward exactly 100 ticks again
     for(let i = 0; i < 100; i++) {
       world2.step();
     }
-    
+
     // 8. Record precise position
     const pos2 = body2.translation();
-    
+
     // 9. Assert bit-perfect determinism
     expect(pos2.x).toBe(pos1.x);
     expect(pos2.y).toBe(pos1.y);
     expect(pos2.z).toBe(pos1.z);
-    
+
     // Verify it actually moved and didn't just stay at y=10
     expect(pos1.y).toBeLessThan(10);
-    
+
     world2.free();
   });
 });

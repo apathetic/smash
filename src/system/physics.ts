@@ -2,7 +2,7 @@ import { createEffect } from "solid-js";
 import { World, EventQueue, RigidBodyType} from "rapier";
 import { registry } from "~/game/store/registry";
 import { useGameState } from "~/game/store";
-import { GRAVITY } from "~/system/constants";
+import { GRAVITY, NUM_SOLVER_ITERATIONS } from "~/system/constants";
 import { createDamageHandler } from "~/system/damage";
 import { createDragger } from "~/system/dragger";
 
@@ -47,10 +47,20 @@ function createPhysics() {
       instance.dragger.cleanup();
       instance.world.free();
       instance.world = World.restoreSnapshot(snapshot);
-      instance.world.integrationParameters.numSolverIterations = 20;
+      instance.world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
       instance.stepId = 0;
       eventQueue = new EventQueue(true);
       damageHandler = createDamageHandler(instance.world);
+
+      // Relink existing dynamicBodies to the newly restored Rapier bodies
+      registry.each((entity) => {
+        entity.dynamicBodies?.forEach((dBody) => {
+          if (dBody.body) {
+            dBody.body = instance.world.getRigidBody(dBody.body.handle);
+          }
+        });
+      });
+
       hasEdited = false;
     }
   }
@@ -109,7 +119,7 @@ function createPhysics() {
   };
 
   instance.dragger = createDragger(instance);
-  instance.world.integrationParameters.numSolverIterations = 20;
+  instance.world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
 
 
   createEffect(() => {
@@ -118,6 +128,8 @@ function createPhysics() {
     if (game.mode === 'smash') {
       if (instance.hasEdited) {
         instance.save();
+      } else {
+        instance.restore();
       }
 
       // note: order is important:

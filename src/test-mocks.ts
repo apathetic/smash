@@ -132,6 +132,10 @@ vi.mock('~/system/timeline', () => ({
   createTimeline: vi.fn(() => ({
     start: vi.fn(),
     stop: vi.fn()
+  })),
+  useTimeline: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn()
   }))
 }));
 
@@ -141,6 +145,17 @@ vi.mock('~/system/controls', () => ({
 
 vi.mock('~/system/gui', () => ({
   createGUI: vi.fn(() => ({}))
+}));
+
+vi.mock('~/system/world', () => ({
+  useWorld: vi.fn(() => ({
+    add: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn(),
+    destroy: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn()
+  }))
 }));
 
 
