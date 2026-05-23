@@ -73,6 +73,10 @@ function createControls({ graphics, physics }: ControlProps) {
     // In smash mode, no entity interaction - only camera controls
     if (gameState.mode !== 'edit') return;
 
+    // Only process clicks that originate directly on the canvas -- not menus, buttons, etc
+    if (event.target !== canvas) return;
+
+
     raycast(event);
 
     const origin = raycaster.ray.origin;
@@ -120,14 +124,14 @@ function createControls({ graphics, physics }: ControlProps) {
    * Destroys the controls and removes event listeners.
    */
   function destroy() {
-    window.removeEventListener("mousedown", onMouseDown);
+    canvas.removeEventListener("mousedown", onMouseDown);
     window.removeEventListener("mousemove", onMouseMove);
     window.removeEventListener("mouseup", onMouseUp);
     controls.dispose();
   }
 
 
-  window.addEventListener("mousedown", onMouseDown);
+  canvas.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mousemove", onMouseMove);
   window.addEventListener("mouseup", onMouseUp);
 

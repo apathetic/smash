@@ -2,7 +2,7 @@ import { createEffect } from "solid-js";
 import { World, EventQueue, RigidBodyType} from "rapier";
 import { registry } from "~/game/store/registry";
 import { useGameState } from "~/game/store";
-import { GRAVITY } from "~/system/constants";
+import { GRAVITY, NUM_SOLVER_ITERATIONS } from "~/system/constants";
 import { createDamageHandler } from "~/system/damage";
 import { createDragger } from "~/system/dragger";
 
@@ -47,7 +47,7 @@ function createPhysics() {
       instance.dragger.cleanup();
       instance.world.free();
       instance.world = World.restoreSnapshot(snapshot);
-      instance.world.integrationParameters.numSolverIterations = 20;
+      instance.world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
       instance.stepId = 0;
       eventQueue = new EventQueue(true);
       damageHandler = createDamageHandler(instance.world);
@@ -119,7 +119,7 @@ function createPhysics() {
   };
 
   instance.dragger = createDragger(instance);
-  instance.world.integrationParameters.numSolverIterations = 20;
+  instance.world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
 
 
   createEffect(() => {
