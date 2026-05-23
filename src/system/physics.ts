@@ -51,6 +51,16 @@ function createPhysics() {
       instance.stepId = 0;
       eventQueue = new EventQueue(true);
       damageHandler = createDamageHandler(instance.world);
+
+      // Relink existing dynamicBodies to the newly restored Rapier bodies
+      registry.each((entity) => {
+        entity.dynamicBodies?.forEach((dBody) => {
+          if (dBody.body) {
+            dBody.body = instance.world.getRigidBody(dBody.body.handle);
+          }
+        });
+      });
+
       hasEdited = false;
     }
   }
@@ -118,6 +128,8 @@ function createPhysics() {
     if (game.mode === 'smash') {
       if (instance.hasEdited) {
         instance.save();
+      } else {
+        instance.restore();
       }
 
       // note: order is important:

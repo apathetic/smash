@@ -65,6 +65,13 @@ describe('Controls', () => {
       // update: vi.fn()
     };
 
+    const mockDragger = {
+      isDragging: vi.fn().mockReturnValue(false),
+      start: vi.fn(),
+      move: vi.fn(),
+      cleanup: vi.fn()
+    };
+
     mockPhysics = {
       world: {
         castRay: vi.fn().mockReturnValue({
@@ -83,9 +90,11 @@ describe('Controls', () => {
           get: vi.fn()
         }
       } as any,
+      dragger: mockDragger,
+      markEdited: vi.fn(),
       collisions: vi.fn(),
       update: vi.fn()
-    };
+    } as any;
 
     // Create controls
     controls = createControls({ graphics: mockGraphics, physics: mockPhysics });

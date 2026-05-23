@@ -38,13 +38,13 @@ describe('resetLevel', () => {
     vi.clearAllMocks();
   });
 
-  it('should reset all entities in the registry', () => {
+  it('should reset all entities in the registry', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    resetLevel();
+    await resetLevel();
 
     expect(registry.each).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith('Resetting level to saved state');
+    expect(consoleSpy).toHaveBeenCalledWith('Resetting level');
     expect(consoleSpy).toHaveBeenCalledWith('Level reset complete');
 
     consoleSpy.mockRestore();

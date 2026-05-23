@@ -80,15 +80,6 @@ function createWorld(canvas: HTMLCanvasElement) {
    */
   function restore() {
     physics.restore();
-
-    // Relink existing dynamicBodies to the newly restored Rapier bodies
-    registry.each((entity) => {
-      entity.dynamicBodies?.forEach((dBody) => {
-        if (dBody.body) {
-          dBody.body = physics.world.getRigidBody(dBody.body.handle);
-        }
-      });
-    });
   }
 
   return { add, remove, clear, destroy, save, restore };
