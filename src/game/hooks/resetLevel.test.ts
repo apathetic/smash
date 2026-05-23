@@ -3,6 +3,13 @@ import { resetLevel } from './resetLevel';
 import { registry } from '~/game/store/registry';
 
 // Mock dependencies
+vi.mock('~/system/world', () => ({
+  useWorld: vi.fn(() => ({
+    clear: vi.fn(),
+    restore: vi.fn(),
+    save: vi.fn()
+  }))
+}));
 vi.mock('~/game/store', () => ({
   useGameState: vi.fn(() => [
     {

@@ -8,6 +8,10 @@ vi.mock('~/system/world', () => ({
   useWorld: () => ({ add, clear, save: vi.fn(), start: vi.fn(), stop: vi.fn() })
 }));
 
+vi.mock('~/system/timeline', () => ({
+  useTimeline: () => ({ start: vi.fn(), stop: vi.fn() })
+}));
+
 const mockGameData = {
   entities: [{ type: 'Cube', position: [1, 2, 3], rotation: [0, 0, 0, 1] }],
   environment: [{ type: 'Terrain', position: [0, 0, 0] }]

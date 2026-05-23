@@ -57,10 +57,7 @@ describe('Controls', () => {
         })
       } as any,
       renderer: {
-        domElement: {
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn()
-        } as any
+        domElement: document.createElement('canvas') as any
       } as any,
       scene: {
         add: vi.fn()
@@ -72,7 +69,8 @@ describe('Controls', () => {
       isDragging: vi.fn().mockReturnValue(false),
       start: vi.fn(),
       move: vi.fn(),
-      cleanup: vi.fn()
+      cleanup: vi.fn(),
+      stop: vi.fn()
     };
 
     mockPhysics = {
@@ -114,10 +112,11 @@ describe('Controls', () => {
       clientY: 300
     });
 
-    window.dispatchEvent(event);
+    Object.defineProperty(event, 'target', { value: mockGraphics.renderer.domElement, writable: false });
+    mockGraphics.renderer.domElement.dispatchEvent(event);
 
     expect(mockPhysics.world.castRay).toHaveBeenCalled();
-    expect(mockCollider.parent().setBodyType).toHaveBeenCalled();
+    expect(mockPhysics.dragger.start).toHaveBeenCalled();
   });
 
   it('should handle mouse move event when an object is selected', () => {
@@ -127,7 +126,11 @@ describe('Controls', () => {
       clientY: 300
     });
 
-    window.dispatchEvent(downEvent);
+    Object.defineProperty(downEvent, 'target', { value: mockGraphics.renderer.domElement, writable: false });
+    mockGraphics.renderer.domElement.dispatchEvent(downEvent);
+
+    // Mock that we are dragging
+    (mockPhysics.dragger.isDragging as any).mockReturnValue(true);
 
     // Then move the mouse
     const moveEvent = new MouseEvent('mousemove', {
@@ -136,9 +139,7 @@ describe('Controls', () => {
     });
 
     window.dispatchEvent(moveEvent);
-
-    // The selected body should have its position updated
-    expect(mockCollider.parent().setNextKinematicTranslation).toHaveBeenCalled();
+    expect(mockPhysics.dragger.move).toHaveBeenCalled();
   });
 
   it('should handle mouse up event and reset the selected body', () => {
@@ -148,14 +149,15 @@ describe('Controls', () => {
       clientY: 300
     });
 
-    window.dispatchEvent(downEvent);
+    Object.defineProperty(downEvent, 'target', { value: mockGraphics.renderer.domElement, writable: false });
+    mockGraphics.renderer.domElement.dispatchEvent(downEvent);
 
     // Then release the mouse
     const upEvent = new MouseEvent('mouseup');
     window.dispatchEvent(upEvent);
 
-    // The body type should be reset to Dynamic
-    expect(mockCollider.parent().setBodyType).toHaveBeenCalledTimes(2);
+    // The dragger should be stopped
+    expect(mockPhysics.dragger.stop).toHaveBeenCalled();
   });
 
   it.skip('should not interact with objects when not in edit mode', () => {
