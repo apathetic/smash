@@ -128,9 +128,10 @@ function createPhysics() {
     if (game.mode === 'smash') {
       if (instance.hasEdited) {
         instance.save();
-      } else {
-        instance.restore();
       }
+
+      // Always restore before a smash to guarantee a 100% clean slate
+      instance.restore();
 
       // note: order is important:
       instance.setBodiesKinematic(false);

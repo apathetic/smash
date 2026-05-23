@@ -36,6 +36,10 @@ vi.mock('./timeline', () => ({
   createTimeline: vi.fn(() => ({
     start: vi.fn(),
     stop: vi.fn()
+  })),
+  useTimeline: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn()
   }))
 }));
 

@@ -167,35 +167,54 @@ describe('Physics', () => {
     // 3. Take a pristine snapshot at t=0
     const snapshot = world.takeSnapshot();
 
-    // 4. Run the simulation forward exactly 100 ticks
+    // 4. THE BUG: Simulate the user "editing" the level. 
+    // In edit mode, physics still steps to process dragging/kinematic movements.
+    // This "dirties" the internal solver caches (contact manifolds, warm-starts, PRNG).
+    for(let i = 0; i < 50; i++) {
+      world.step();
+    }
+    
+    // Reset position to mimic the start of a smash, but the internal engine state remains dirty!
+    body.setTranslation({ x: 0, y: 10, z: 0 }, true);
+    body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+    // 5. Run the simulation forward exactly 100 ticks
     for(let i = 0; i < 100; i++) {
       world.step();
     }
-
-    // 5. Record precise position at t=100
     const pos1 = body.translation();
-
-    // 6. Free the world and restore from t=0
     world.free();
-    const world2 = RAPIER.World.restoreSnapshot(snapshot);
-    const body2 = world2.bodies.get(body.handle);
 
-    // 7. Run the simulation forward exactly 100 ticks again
+    // 6. SECOND SMASH (Restored clean world)
+    const worldClean1 = RAPIER.World.restoreSnapshot(snapshot);
+    const bodyClean1 = worldClean1.bodies.get(body.handle);
     for(let i = 0; i < 100; i++) {
-      world2.step();
+      worldClean1.step();
     }
+    const posClean1 = bodyClean1.translation();
+    worldClean1.free();
 
-    // 8. Record precise position
-    const pos2 = body2.translation();
+    // 7. THIRD SMASH (Restored clean world again)
+    const worldClean2 = RAPIER.World.restoreSnapshot(snapshot);
+    const bodyClean2 = worldClean2.bodies.get(body.handle);
+    for(let i = 0; i < 100; i++) {
+      worldClean2.step();
+    }
+    const posClean2 = bodyClean2.translation();
+    worldClean2.free();
 
-    // 9. Assert bit-perfect determinism
-    expect(pos2.x).toBe(pos1.x);
-    expect(pos2.y).toBe(pos1.y);
-    expect(pos2.z).toBe(pos1.z);
+    // 8. Assertions
+    // The clean, restored worlds MUST be bit-for-bit identical to the original run
+    expect(posClean1.x).toBe(pos1.x);
+    expect(posClean1.y).toBe(pos1.y);
+    expect(posClean1.z).toBe(pos1.z);
+
+    expect(posClean2.x).toBe(pos1.x);
+    expect(posClean2.y).toBe(pos1.y);
+    expect(posClean2.z).toBe(pos1.z);
 
     // Verify it actually moved and didn't just stay at y=10
-    expect(pos1.y).toBeLessThan(10);
-
-    world2.free();
+    expect(posClean1.y).toBeLessThan(10);
   });
 });

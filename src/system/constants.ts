@@ -1,5 +1,5 @@
 const GRAVITY = -9.81;
-const NUM_SOLVER_ITERATIONS = 16;
+const NUM_SOLVER_ITERATIONS = 20;
 
 
 // -----------------------------------------------------------------------------

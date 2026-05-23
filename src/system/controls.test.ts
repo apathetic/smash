@@ -57,7 +57,10 @@ describe('Controls', () => {
         })
       } as any,
       renderer: {
-        domElement: vi.fn()
+        domElement: {
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn()
+        } as any
       } as any,
       scene: {
         add: vi.fn()

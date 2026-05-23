@@ -77,6 +77,15 @@ vi.mock('three', () => ({
       direction: { x: 0, y: 0, z: -1 },
       intersectPlane: vi.fn().mockReturnValue({ x: 1, y: 2, z: 0 })
     }
+  })),
+  WebGLRenderer: vi.fn().mockImplementation(() => ({
+    domElement: {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn()
+    },
+    dispose: vi.fn(),
+    render: vi.fn(),
+    setAnimationLoop: vi.fn()
   }))
 }));
 
@@ -116,7 +125,15 @@ vi.mock('~/game/store/registry', () => ({
 vi.mock('~/system/scene', () => ({
   createScene: vi.fn(() => ({
     scene: {
-      add: vi.fn()
+      add: vi.fn(),
+      clear: vi.fn()
+    },
+    renderer: {
+      dispose: vi.fn(),
+      domElement: {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn()
+      }
     }
   })),
   createLights: vi.fn(() => [])
