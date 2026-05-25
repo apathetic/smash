@@ -25,12 +25,11 @@
   ],
   "environment": [
     {
-      "type": "Terrain",
-      "position": [0, -1, 0]
+      "type": "Floor"
     },
     {
       "type": "Wall",
-      "position": [0, 0, 0]
+      "position": [0, 0, 4]
     }
   ]
 }
