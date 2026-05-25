@@ -1,3 +1,4 @@
+import { LineBasicMaterial, BufferGeometry, LineSegments, BufferAttribute } from 'three';
 import { version, World } from "rapier";
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
@@ -5,24 +6,16 @@ import GUI from "lil-gui";
 import { useGameState } from "~/game/store";
 import { NUM_SOLVER_ITERATIONS } from "~/system/constants";
 
-import { LineBasicMaterial, BufferGeometry, LineSegments, BufferAttribute } from 'three';
 
-
-interface GuiProps {
+type GuiProps = {
   graphics: IGraphics;
   physics: IPhysics;
-}
+};
 
 
-export interface DebugInfos {
-  // token: number;
-  stepId: number;
-  worldHash: string;
-  worldHashTime: number;
-  snapshotTime: number;
-}
-
-
+/**
+ *
+ */
 const params = {
   numSolverIters: NUM_SOLVER_ITERATIONS,
   debugRender: false,
@@ -35,7 +28,11 @@ const params = {
 };
 
 
-
+/**
+ * Debugging widgets
+ * @param {GuiProps}
+ * @returns
+ */
 export const createGUI = ({ graphics, physics }: GuiProps) => {
   const gui = new GUI({ title: "SMASH" });
   const _rapierVersion = version();
@@ -47,20 +44,6 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   gui.add(params, "numSolverIters", 0, 20)
     .step(1)
     .listen();
-
-  // const debugText = document.createElement("div");
-  // debugText.style.position = "absolute";
-  // debugText.innerHTML = "";
-  // debugText.style.top = 50 + "px";
-  // debugText.style.visibility = "visible";
-  // debugText.style.color = "#fff";
-  // debugText.style.fontFamily = "monospace";
-  // debugText.style.pointerEvents = "none";
-  // document.body.appendChild(debugText);
-
-  // gui.add(params, "debugInfos")
-  //   .listen()
-  //   .onChange((value: boolean) => debugText.style.visibility = value ? "visible" : "hidden");
 
   gui.add(params, "debugRender")
     .listen();
@@ -77,6 +60,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     get target() { return gameState.targetDamage; },
     get impacts() { return gameState.impacts.length; }
   };
+
   damageFolder.add(damageStats, 'total').name('Total Damage').listen();
   damageFolder.add(damageStats, 'target').name('Target Damage').listen();
   damageFolder.add(damageStats, 'impacts').name('Impact Count').listen();
@@ -95,13 +79,6 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
       physics.world = World.restoreSnapshot(snap);
     }
   };
-
-  // gui.add(params, "restart");
-  // params.restart = () => {
-  //   ....
-  // };
-
-
 
 
   const stats = new Stats();
@@ -132,18 +109,15 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   const material = new LineBasicMaterial({ color: 0xffffff, vertexColors: true });
   const geometry = new BufferGeometry();
   const lines = new LineSegments(geometry, material);
+
   graphics.scene.add(lines);
 
 
 
   function update(delta: number) {
 
-    // params.running vs. game.isRunning ????
-
-
     physics.world.numSolverIterations = params.numSolverIters;
     setTiming(delta);  // setTiming(new Date().getTime() - t0);
-
 
     if (params.debugRender) {
       let buffers = physics.world.debugRender();
@@ -176,11 +150,10 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     */
 
     if (params.stepping) {
-      params.running = false; //  game.isRunning = false;
+      params.running = false;
       params.stepping = false;
     }
   };
-
 
   function destroy() {
     gui.destroy();

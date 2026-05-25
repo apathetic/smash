@@ -1,12 +1,21 @@
+/**
+ * Set's the World's gravity
+ */
 const GRAVITY = -9.81;
+
+
+/**
+ * Number of solver iterations for the physics engine.
+ * Higher values = more accurate physics, but slower performance.
+ */
 const NUM_SOLVER_ITERATIONS = 20;
 
 
-// -----------------------------------------------------------------------------
-// COLLISION SYSTEM
-// In Rapier, a "Collision Group" is a 32-bit integer composed of two 16-bit halves:
-// [ 16-bit Membership (What I am) ] | [ 16-bit Filter (What I collide with) ]
-// -----------------------------------------------------------------------------
+/**
+ * Collision system
+ * In Rapier, a Collision Group is a 32-bit integer composed of two 16-bit halves:
+ * [16-bit Membership (What I am)] | [16-bit Filter (What I collide with)]
+ */
 
 // 1. Memberships (What am I?)
 const MEMBERSHIP_STATIC  = 0x0001;

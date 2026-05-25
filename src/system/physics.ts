@@ -146,9 +146,6 @@ function createPhysics() {
 }
 
 
-
-
-
 /**
  * A hook to provide access to the physics instance.
  * This is a singleton pattern, so the physics instance is
