@@ -86,11 +86,30 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     new Stats.Panel("ms (step)", "#ff8", "#221"),
   );
 
-  stats.dom.style.top = 'unset';
-  stats.dom.style.bottom = '0px';
-  stats.showPanel(stats.dom.children.length - 1);  // 0: fps, 1: ms, 2: mb, 3+: custom
+  stats.dom.style.cssText = 'position: relative; display: flex; width: 100%; pointer-events: none; opacity: 0.9;';
+  
+  const originalShowPanel = stats.showPanel;
+  stats.showPanel = function(id: number) {
+    originalShowPanel.call(stats, id);
+    Array.from(stats.dom.children).forEach((child, index) => {
+      const el = child as HTMLElement;
+      if (index === 3) { // Hide the custom yellow ms (step) panel
+        el.style.display = 'none';
+      } else {
+        el.style.display = 'block';
+        el.style.flex = '1';
+        el.style.width = '100%';
+      }
+    });
+  };
   stats.showPanel(0);
-  document.body.appendChild(stats.dom);
+  
+  const childrenEl = gui.domElement.querySelector('.children');
+  if (childrenEl) {
+    childrenEl.prepend(stats.dom);
+  } else {
+    gui.domElement.appendChild(stats.dom);
+  }
 
 
 
