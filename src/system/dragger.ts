@@ -42,11 +42,13 @@ export function createDragger(physics: IPhysics) {
         }
       });
     }
+
     const arr = Array.from(connected);
 
     arr.forEach(b => {
       connectedBodiesCache.set(b.handle, arr);
     });
+
     return arr;
   }
 
@@ -94,27 +96,37 @@ export function createDragger(physics: IPhysics) {
       const currentPos = new Vector3().copy(grabbedBody.translation() as any);
       const desiredPos = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z).add(grabOffset);
       const movement = new Vector3().subVectors(desiredPos, currentPos);
+      const minComputedMovement = movement.clone();
+      const numColliders = grabbedBody.numColliders();
 
-      // Compute movement to avoid obstacles, ignore other bodies in this entity group
-      characterController.computeColliderMovement(
-        grabbedCollider,
-        movement,
-        undefined,
-        undefined,
-        (c: Collider) => {
-          const parent = c.parent();
-          if (parent) {
-             return !draggedBodies.includes(parent as RigidBody);
+      for (let i = 0; i < numColliders; i++) {
+        const c = grabbedBody.collider(i);
+        // Compute movement to avoid obstacles, ignore other bodies in this entity group
+        characterController.computeColliderMovement(
+          c,
+          movement,
+          undefined,
+          undefined,
+          (col: Collider) => {
+            const parent = col.parent();
+            if (parent) {
+               return !draggedBodies.includes(parent as RigidBody);
+            }
+            return true;
           }
-          return true;
-        }
-      );
-      const computedMovement = characterController.computedMovement();
+        );
+        const cm = characterController.computedMovement();
+
+        // Take the most restrictive movement along each axis
+        if (Math.abs(cm.x) < Math.abs(minComputedMovement.x)) minComputedMovement.x = cm.x;
+        if (Math.abs(cm.y) < Math.abs(minComputedMovement.y)) minComputedMovement.y = cm.y;
+        if (Math.abs(cm.z) < Math.abs(minComputedMovement.z)) minComputedMovement.z = cm.z;
+      }
 
       grabbedBody.setNextKinematicTranslation({
-        x: currentPos.x + computedMovement.x,
-        y: currentPos.y + computedMovement.y,
-        z: currentPos.z + computedMovement.z
+        x: currentPos.x + minComputedMovement.x,
+        y: currentPos.y + minComputedMovement.y,
+        z: currentPos.z + minComputedMovement.z
       });
     },
 

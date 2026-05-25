@@ -35,10 +35,6 @@
     {
       "type": "Terrain",
       "position": [0, -1, 0]
-    },
-    {
-      "type": "Wall",
-      "position": [0, 0, 0]
     }
   ]
 }

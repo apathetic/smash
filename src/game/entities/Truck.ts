@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, CylinderGeometry, MeshStandardMaterial, Vector3, Quaternion, Group } from 'three';
+import { Mesh, BoxGeometry, CylinderGeometry, MeshStandardMaterial, Vector3, Quaternion, Group, Euler } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
@@ -21,56 +21,65 @@ export class Truck extends Base {
     const group = new Group();
     const material = new MeshStandardMaterial({ color: 0x3b82f6 }); // Blue truck
 
-    // Chassis / Base of the bed (width 3.0, length 6.0)
-    const chassisGeo = new BoxGeometry(3.0, 0.4, 6.0);
+    // Chassis / Base of the bed (width 3.6, length 7.2)
+    const chassisGeo = new BoxGeometry(3.6, 0.4, 7.2);
     const chassisMesh = new Mesh(chassisGeo, material);
     chassisMesh.position.set(0, 0.4, 0); // elevated to make room for wheels
     group.add(chassisMesh);
 
-    // Cab Roof (width 3.0, depth 2.0)
-    const cabRoofGeo = new BoxGeometry(3.0, 0.1, 2.0);
+    // Hood
+    const hoodGeo = new BoxGeometry(3.6, 0.5, 2.0);
+    const hoodMesh = new Mesh(hoodGeo, material);
+    hoodMesh.position.set(0, 0.85, 2.6);
+    group.add(hoodMesh);
+
+    // Cab Roof
+    const cabRoofGeo = new BoxGeometry(3.6, 0.1, 1.4);
     const cabRoof = new Mesh(cabRoofGeo, material);
-    cabRoof.position.set(0, 1.55, 2.0);
+    cabRoof.position.set(0, 1.55, -0.1);
     group.add(cabRoof);
 
     // Cab Left
-    const cabLeftGeo = new BoxGeometry(0.1, 1.1, 2.0);
+    const cabLeftGeo = new BoxGeometry(0.1, 0.9, 1.4);
     const cabLeft = new Mesh(cabLeftGeo, material);
-    cabLeft.position.set(1.45, 1.05, 2.0);
+    cabLeft.position.set(1.75, 1.05, -0.1);
     group.add(cabLeft);
 
     // Cab Right
-    const cabRightGeo = new BoxGeometry(0.1, 1.1, 2.0);
+    const cabRightGeo = new BoxGeometry(0.1, 0.9, 1.4);
     const cabRight = new Mesh(cabRightGeo, material);
-    cabRight.position.set(-1.45, 1.05, 2.0);
+    cabRight.position.set(-1.75, 1.05, -0.1);
     group.add(cabRight);
 
-    // Cab Front
-    const cabFrontGeo = new BoxGeometry(2.8, 1.1, 0.1);
+    // Cab Front (Windshield)
+    const windshieldLength = Math.sqrt(1.0 * 1.0 + 0.5 * 0.5); // 1.118
+    const cabFrontGeo = new BoxGeometry(3.4, windshieldLength, 0.1);
     const cabFront = new Mesh(cabFrontGeo, material);
-    cabFront.position.set(0, 1.05, 2.95);
+    cabFront.position.set(0, 1.35, 1.1);
+    const windshieldAngle = -Math.atan(2); // Tilt back
+    cabFront.rotation.x = windshieldAngle;
     group.add(cabFront);
 
     // Cab Back
-    const cabBackGeo = new BoxGeometry(2.8, 1.1, 0.1);
+    const cabBackGeo = new BoxGeometry(3.4, 0.9, 0.1);
     const cabBack = new Mesh(cabBackGeo, material);
-    cabBack.position.set(0, 1.05, 1.05);
+    cabBack.position.set(0, 1.05, -0.8);
     group.add(cabBack);
 
     // Bed walls
-    const wallLeftGeo = new BoxGeometry(0.1, 0.6, 4.0);
+    const wallLeftGeo = new BoxGeometry(0.1, 0.6, 2.8);
     const wallLeftMesh = new Mesh(wallLeftGeo, material);
-    wallLeftMesh.position.set(1.45, 0.8, -1.0);
+    wallLeftMesh.position.set(1.75, 0.8, -2.2);
     group.add(wallLeftMesh);
 
-    const wallRightGeo = new BoxGeometry(0.1, 0.6, 4.0);
+    const wallRightGeo = new BoxGeometry(0.1, 0.6, 2.8);
     const wallRightMesh = new Mesh(wallRightGeo, material);
-    wallRightMesh.position.set(-1.45, 0.8, -1.0);
+    wallRightMesh.position.set(-1.75, 0.8, -2.2);
     group.add(wallRightMesh);
 
-    const wallBackGeo = new BoxGeometry(2.8, 0.6, 0.1);
+    const wallBackGeo = new BoxGeometry(3.4, 0.6, 0.1);
     const wallBackMesh = new Mesh(wallBackGeo, material);
-    wallBackMesh.position.set(0, 0.8, -2.95);
+    wallBackMesh.position.set(0, 0.8, -3.55);
     group.add(wallBackMesh);
 
     // Wheels
@@ -82,10 +91,10 @@ export class Truck extends Base {
     const spokeGeo = new BoxGeometry(0.42, 0.8, 0.1); // Spoke to visualize rotation
 
     const wheelPositions = [
-      [1.7, 0.3, 2.0],   // Front left
-      [-1.7, 0.3, 2.0],  // Front right
-      [1.7, 0.3, -2.0],  // Back left
-      [-1.7, 0.3, -2.0]  // Back right
+      [2.04, 0.3, 2.4],   // Front left
+      [-2.04, 0.3, 2.4],  // Front right
+      [2.04, 0.3, -2.4],  // Back left
+      [-2.04, 0.3, -2.4]  // Back right
     ];
 
     wheelPositions.forEach(pos => {
@@ -109,67 +118,76 @@ export class Truck extends Base {
 
     // Base collider
     const baseColliderDesc = ColliderDesc
-      .cuboid(1.5, 0.2, 3.0)
+      .cuboid(1.8, 0.2, 3.6)
       .setTranslation(0, 0.4, 0)
-      .setMass(6000)
+      .setMass(8600)
       .setRestitution(0.2)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(baseColliderDesc, body);
 
+    // Hood collider
+    const hoodColliderDesc = ColliderDesc
+      .cuboid(1.8, 0.25, 1.0)
+      .setTranslation(0, 0.85, 2.6)
+      .setMass(400)
+      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
+    physics.createCollider(hoodColliderDesc, body);
+
     // Cab colliders (Hollow)
     const cabRoofColliderDesc = ColliderDesc
-      .cuboid(1.5, 0.05, 1.0)
-      .setTranslation(0, 1.55, 2.0)
+      .cuboid(1.8, 0.05, 0.7)
+      .setTranslation(0, 1.55, -0.1)
       .setMass(400)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(cabRoofColliderDesc, body);
 
     const cabLeftColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.5, 1.0)
-      .setTranslation(1.45, 1.1, 2.0)
+      .cuboid(0.05, 0.45, 0.7)
+      .setTranslation(1.75, 1.05, -0.1)
       .setMass(400)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(cabLeftColliderDesc, body);
 
     const cabRightColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.5, 1.0)
-      .setTranslation(-1.45, 1.1, 2.0)
+      .cuboid(0.05, 0.45, 0.7)
+      .setTranslation(-1.75, 1.05, -0.1)
       .setMass(400)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(cabRightColliderDesc, body);
 
     const cabFrontColliderDesc = ColliderDesc
-      .cuboid(1.4, 0.5, 0.05)
-      .setTranslation(0, 1.1, 2.95)
+      .cuboid(1.7, windshieldLength / 2, 0.05)
+      .setTranslation(0, 1.35, 1.1)
+      .setRotation(new Quaternion().setFromEuler(new Euler(windshieldAngle, 0, 0)))
       .setMass(400)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(cabFrontColliderDesc, body);
 
     const cabBackColliderDesc = ColliderDesc
-      .cuboid(1.4, 0.5, 0.05)
-      .setTranslation(0, 1.1, 1.05)
+      .cuboid(1.7, 0.45, 0.05)
+      .setTranslation(0, 1.05, -0.8)
       .setMass(400)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(cabBackColliderDesc, body);
 
     // Bed walls colliders
     const wallLeftColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.25, 2.0)
-      .setTranslation(1.45, 0.85, -1.0)
+      .cuboid(0.05, 0.3, 1.4)
+      .setTranslation(1.75, 0.8, -2.2)
       .setMass(40)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(wallLeftColliderDesc, body);
 
     const wallRightColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.25, 2.0)
-      .setTranslation(-1.45, 0.85, -1.0)
+      .cuboid(0.05, 0.3, 1.4)
+      .setTranslation(-1.75, 0.8, -2.2)
       .setMass(40)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(wallRightColliderDesc, body);
 
     const wallBackColliderDesc = ColliderDesc
-      .cuboid(1.4, 0.25, 0.05)
-      .setTranslation(0, 0.85, -2.95)
+      .cuboid(1.7, 0.3, 0.05)
+      .setTranslation(0, 0.8, -3.55)
       .setMass(40)
       .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
     physics.createCollider(wallBackColliderDesc, body);
