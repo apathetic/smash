@@ -123,9 +123,10 @@ export class Terrain extends Base {
 
     // TODO. these don't update / need updating.
     // adding them here is a convenient way to hold on to their ref's if we ever need to remove / destroy them
-    // however, it is a minor performance drag as they then need to be processed during the `update` loop
     this.dynamicBodies.push({ mesh, body });
   }
 
-
+  update(_delta: number) {
+    // Fixed entity, no need to update position each frame
+  }
 };

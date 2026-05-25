@@ -91,6 +91,7 @@ LEVEL STORE
 type LevelEntity = {
   type: Entities; //string;
   position?: Position; // can be undefined b/c Floor / Terrain just hard-code it
+  rotation?: Tuple; // Euler angles in degrees [x, y, z]
   meta?: any;
 }
 

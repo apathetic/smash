@@ -27,47 +27,51 @@ export class Truck extends Base {
     chassisMesh.position.set(0, 0.4, 0); // elevated to make room for wheels
     group.add(chassisMesh);
 
-    // Hollow Cab (width 3.0, length 2.0)
+    // Cab Roof (width 3.0, depth 2.0)
     const cabRoofGeo = new BoxGeometry(3.0, 0.1, 2.0);
     const cabRoof = new Mesh(cabRoofGeo, material);
     cabRoof.position.set(0, 1.55, 2.0);
     group.add(cabRoof);
 
-    const cabLeftGeo = new BoxGeometry(0.1, 1.0, 2.0);
+    // Cab Left
+    const cabLeftGeo = new BoxGeometry(0.1, 1.1, 2.0);
     const cabLeft = new Mesh(cabLeftGeo, material);
-    cabLeft.position.set(1.45, 1.1, 2.0);
+    cabLeft.position.set(1.45, 1.05, 2.0);
     group.add(cabLeft);
 
-    const cabRightGeo = new BoxGeometry(0.1, 1.0, 2.0);
+    // Cab Right
+    const cabRightGeo = new BoxGeometry(0.1, 1.1, 2.0);
     const cabRight = new Mesh(cabRightGeo, material);
-    cabRight.position.set(-1.45, 1.1, 2.0);
+    cabRight.position.set(-1.45, 1.05, 2.0);
     group.add(cabRight);
 
-    const cabFrontGeo = new BoxGeometry(2.8, 1.0, 0.1);
+    // Cab Front
+    const cabFrontGeo = new BoxGeometry(2.8, 1.1, 0.1);
     const cabFront = new Mesh(cabFrontGeo, material);
-    cabFront.position.set(0, 1.1, 2.95);
+    cabFront.position.set(0, 1.05, 2.95);
     group.add(cabFront);
 
-    const cabBackGeo = new BoxGeometry(2.8, 1.0, 0.1);
+    // Cab Back
+    const cabBackGeo = new BoxGeometry(2.8, 1.1, 0.1);
     const cabBack = new Mesh(cabBackGeo, material);
-    cabBack.position.set(0, 1.1, 1.05);
+    cabBack.position.set(0, 1.05, 1.05);
     group.add(cabBack);
 
     // Bed walls
-    const wallLeftGeo = new BoxGeometry(0.1, 0.5, 4.0);
-    const wallLeft = new Mesh(wallLeftGeo, material);
-    wallLeft.position.set(1.45, 0.85, -1.0);
-    group.add(wallLeft);
+    const wallLeftGeo = new BoxGeometry(0.1, 0.6, 4.0);
+    const wallLeftMesh = new Mesh(wallLeftGeo, material);
+    wallLeftMesh.position.set(1.45, 0.8, -1.0);
+    group.add(wallLeftMesh);
 
-    const wallRightGeo = new BoxGeometry(0.1, 0.5, 4.0);
-    const wallRight = new Mesh(wallRightGeo, material);
-    wallRight.position.set(-1.45, 0.85, -1.0);
-    group.add(wallRight);
+    const wallRightGeo = new BoxGeometry(0.1, 0.6, 4.0);
+    const wallRightMesh = new Mesh(wallRightGeo, material);
+    wallRightMesh.position.set(-1.45, 0.8, -1.0);
+    group.add(wallRightMesh);
 
-    const wallBackGeo = new BoxGeometry(2.8, 0.5, 0.1);
-    const wallBack = new Mesh(wallBackGeo, material);
-    wallBack.position.set(0, 0.85, -2.95);
-    group.add(wallBack);
+    const wallBackGeo = new BoxGeometry(2.8, 0.6, 0.1);
+    const wallBackMesh = new Mesh(wallBackGeo, material);
+    wallBackMesh.position.set(0, 0.8, -2.95);
+    group.add(wallBackMesh);
 
     // Wheels
     const wheelGeo = new CylinderGeometry(0.5, 0.5, 0.4, 16);
@@ -182,6 +186,15 @@ export class Truck extends Base {
     });
 
     group.position.set(...position);
+    
+    // Enable shadows for all meshes in the truck group
+    group.traverse((child) => {
+      if (child instanceof Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     scene.add(group);
     this.dynamicBodies.push({ mesh: group, body });
   };

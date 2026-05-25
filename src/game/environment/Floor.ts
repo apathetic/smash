@@ -29,8 +29,11 @@ export class Floor extends Base {
 
     scene.add(mesh);
 
-    // I put this line here so I could comment it out. So I could be
-    // reminded that this doesn't need to ever update
-    // this.dynamicBodies.push({ mesh, body });
+    // Keep track for destruction, but we override update() to skip physics sync
+    this.dynamicBodies.push({ mesh, body });
+  }
+
+  update(_delta: number) {
+    // Fixed entity, no need to update position each frame
   }
 }

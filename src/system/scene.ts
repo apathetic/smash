@@ -1,11 +1,12 @@
-import { Scene, WebGLRenderer, PerspectiveCamera, DirectionalLight, HemisphereLight } from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera, DirectionalLight, HemisphereLight, PCFSoftShadowMap } from 'three';
 
 
 function createRenderer(canvas: HTMLCanvasElement) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
 
   renderer.setClearColor( 0x000000, 0 );
-  // renderer.physicallyCorrectLights = true;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = PCFSoftShadowMap;
 
   return renderer;
 };
@@ -32,7 +33,18 @@ function createLights() {
     5, // intensity
   );
 
-  light.position.set(10, 10, 10);
+  light.position.set(10, 20, 10);
+  light.castShadow = true;
+  light.shadow.mapSize.width = 2048;
+  light.shadow.mapSize.height = 2048;
+  light.shadow.camera.near = 0.5;
+  light.shadow.camera.far = 100;
+  light.shadow.camera.left = -25;
+  light.shadow.camera.right = 25;
+  light.shadow.camera.top = 25;
+  light.shadow.camera.bottom = -25;
+  light.shadow.bias = -0.001; // Prevent shadow acne/lines on surfaces
+  light.shadow.normalBias = 0.05; // Prevent shadow acne on flat surfaces
 
   return [ light, ambientLight ];
 };

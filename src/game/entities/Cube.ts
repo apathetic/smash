@@ -31,6 +31,8 @@ export class Cube extends Base {
     const body      = physics.createRigidBody(rigidBodyDesc);
     const _collider = physics.createCollider(colliderDesc, body);
 
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     mesh.position.set(...position);
     scene.add(mesh);
     this.dynamicBodies.push({ mesh, body });

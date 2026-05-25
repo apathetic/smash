@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, MeshPhongMaterial } from 'three';
+import { Mesh, BoxGeometry, MeshPhongMaterial, Euler, Quaternion } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { COLLISION_GROUP_STATIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
@@ -26,7 +26,13 @@ export class Wall extends Base {
     const material = new MeshPhongMaterial({ color: 0x888888 });
     const mesh = new Mesh(geometry, material);
 
-    const bodyDesc = RigidBodyDesc.fixed().setTranslation(...centerPosition);
+    const rot = this.rotation || [0, 0, 0];
+    const euler = new Euler(rot[0] * Math.PI / 180, rot[1] * Math.PI / 180, rot[2] * Math.PI / 180);
+    const quat = new Quaternion().setFromEuler(euler);
+
+    const bodyDesc = RigidBodyDesc.fixed()
+      .setTranslation(...centerPosition)
+      .setRotation(quat);
     const body = physics.createRigidBody(bodyDesc);
 
     const colliderDesc = ColliderDesc.cuboid(width / 2, height / 2, depth / 2)
@@ -36,7 +42,15 @@ export class Wall extends Base {
     mesh.receiveShadow = true;
     mesh.castShadow = true;
     mesh.position.set(...centerPosition);
+    mesh.quaternion.copy(quat);
 
     scene.add(mesh);
+
+    // keep track so that they may be removed (ie. when level changes)
+    this.dynamicBodies.push({ mesh, body });
+  }
+
+  update(_delta: number) {
+    // Fixed entity, no need to update position each frame
   }
 }

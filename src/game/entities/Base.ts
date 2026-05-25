@@ -13,17 +13,19 @@ export class Base implements WorldEntity {
   public id: string;
   public dynamicBodies: DynamicBody[];
   public position: Position; // coords: any?
+  public rotation?: Tuple;
   public type: string;
   static count: Record<string, number> = {}; // Track count per entity type
 
 
-  constructor({ type, position, meta }: BaseProps = {}) {
+  constructor({ type, position, rotation, meta }: BaseProps = {}) {
     type ??= 'Cube'; // TBD
     Base.count[type] ??= 0;
     this.type = type;
     this.id = generateEntityId(type, Base.count[type]++);
     this.dynamicBodies = [];
     this.position = position || [0, 0, 0];
+    this.rotation = rotation;
 
     console.log("Creating entity:", this.constructor.name, meta);
   }

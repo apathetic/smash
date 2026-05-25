@@ -28,6 +28,8 @@ const createMesh = (x: number, y: number, z: number, color: number) => {
   const geometry = new BoxGeometry(x, y, z);
   const material = new MeshPhongMaterial({ color });
   const mesh     = new Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
 
   return mesh;
 };
