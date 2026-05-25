@@ -1,0 +1,35 @@
+{
+  "targetDamage": 1500,
+  "boosts": {},
+  "entities": [
+    {
+      "type": "Truck",
+      "position": [0, 2, -10],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [0, 4, 4],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [2, 4, 4],
+      "meta": { }
+    },
+    {
+      "type": "Cube",
+      "position": [-2, 4, 4],
+      "meta": { }
+    }
+  ],
+  "environment": [
+    {
+      "type": "Floor"
+    },
+    {
+      "type": "Wall",
+      "position": [0, 0, 4]
+    }
+  ]
+}

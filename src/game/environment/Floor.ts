@@ -16,7 +16,7 @@ export class Floor extends Base {
     const position: [number, number, number] = [0, -1, 0]; // floor is "1" high; this means its top will be at 0
 
     const geometry = new BoxGeometry(100, 1, 100); // full extents
-    const material = new MeshPhongMaterial();
+    const material = new MeshPhongMaterial({ color: 0x2e7d32 }); // Green grass color
     const mesh = new Mesh(geometry, material);
 
     const floorBody = RigidBodyDesc.fixed().setTranslation(...position);

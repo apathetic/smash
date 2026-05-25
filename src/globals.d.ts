@@ -24,7 +24,7 @@ interface IPhysics {
   get hasEdited(): boolean;
 }
 
-type Entities = "Cube" | "Wall" | "Floor" | "Terrain" | "Sphere" | "Ragdoll";
+type Entities = "Cube" | "Wall" | "Floor" | "Terrain" | "Sphere" | "Ragdoll" | "Truck";
 
 type DynamicBody = {
   name?: string;

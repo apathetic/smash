@@ -4,8 +4,10 @@ import { useTimeline } from "~/system/timeline";
 import { useGameState } from "~/game/store";
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
+import { Wall } from "~/game/environment/Wall";
 import { RagDoll } from "~/game/entities/Ragdoll";
 import { Cube } from "~/game/entities/Cube";
+import { Truck } from "~/game/entities/Truck";
 
 
 /**
@@ -49,6 +51,9 @@ async function loadLevel(lvl: string) {
       case "Cube":
         add(new Cube(entity));
         break;
+      case "Truck":
+        add(new Truck(entity));
+        break;
     }
   });
 
@@ -61,6 +66,7 @@ async function loadLevel(lvl: string) {
         add(new Floor());
         break;
       case "Wall":
+        add(new Wall(env));
         break;
     }
   });
