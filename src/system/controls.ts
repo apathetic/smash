@@ -4,17 +4,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
 
-interface ControlProps {
+type ControlProps = {
   graphics: IGraphics;
   physics: IPhysics;
-}
+};
 
 type Controls = OrbitControls & {
   destroy: () => void;
 };
 
-
-// TODO optimize this whole monstrosity
 
 /**
  * Handles mouse interaction with World entities.
@@ -42,15 +40,10 @@ function createControls({ graphics, physics }: ControlProps) {
   const mouse     = new Vector2();
   const dragPlane = new Plane();
 
-
-
-  // controls.enableDamping = true;
-  controls.minDistance = 0.1; // not smaller than the camera's near clipping plane
-  controls.maxDistance = 100; // not greater than far clipping
+  controls.minDistance = 2; // empirically chosen. Cannot be not smaller than 0.1 (camera's near clipping plane)
+  controls.maxDistance = 25; // empirically chosen. Cannot be greater than 100 (far clipping)
   controls.maxPolarAngle = Math.PI / 2 - (10 * Math.PI / 180); // stop 10 degrees above the horizon
   controls.enabled = true;
-
-
 
 
   /**
@@ -101,6 +94,10 @@ function createControls({ graphics, physics }: ControlProps) {
     }
   }
 
+  /**
+   * Handles mouse move events during entity dragging.
+   * @param {MouseEvent} event - The mouse event containing client coordinates
+   */
   function onMouseMove(event: MouseEvent) {
     if (!dragger.isDragging()) return;
     if (gameState.mode !== 'edit') return;
@@ -115,6 +112,9 @@ function createControls({ graphics, physics }: ControlProps) {
     }
   }
 
+  /**
+   * Handles mouse-up events during entity dragging.
+   */
   function onMouseUp() {
     controls.enabled = true;
     dragger.stop();

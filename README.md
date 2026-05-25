@@ -120,23 +120,3 @@ All entities within the Scene have attached Rapier collliders. By default, they 
 - https://javascriptgametutorials.com/tutorials/react-three-fiber/crossy-road/restricting-player-movement *****
 
 
-
-
-## Open Questions
-
-1. why is the floor "off"?  the falling cube comes to rest just above of it.
-  setting the floor's mesh.position or rigidBody.translation doesnt seem to have an effect
-  answered: see next question.  rigidBody, mesh, should not be same size
-
-2. what is going on in ragdoll branch? some weird invisible thing (collider?) that is eclipsing the meshes
-  answered: camera depth of vision was too "shallow" couldn't see things beyond certain distance
-
-3. can we make it so the camera doesn't go "below ground" / below the horizon?
-
-
-4. ~~shouldn't geometry / collider / rigidbodies all be the same size...?~~
-  answered: Rapier’s collider sizes represent half-extents, while Three.js use full-extents
-            using half-extents is easier / more efficient for internal calculations, etc
-
-
-5. "units" of size?  how "large" is a cube?  1?  should things be relative to... that?
