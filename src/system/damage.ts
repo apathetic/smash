@@ -2,7 +2,10 @@ import { World } from "rapier";
 import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
 
-const FORCE_SCALAR = 1000;
+
+/**
+ * Minimum raw force required to register an impact. Discards microscopic physics twitches.
+ */
 const FORCE_THRESHOLD = 50;
 
 
@@ -89,8 +92,10 @@ export const createDamageHandler = (world: World) => {
         break;
     }
 
-    // Scale force down relative to our 1000 target level.
-    const scaledForce = (rawForce / FORCE_SCALAR) * multiplier;
+    // Combine raw force with velocity to create "Impact Energy".
+    const impactEnergy = rawForce * Math.sqrt(maxVelSq);
+
+    const force = impactEnergy * multiplier;
 
     // Update the game state with impact data
     setGameState('impacts', (impacts: any) => [
@@ -98,7 +103,7 @@ export const createDamageHandler = (world: World) => {
       {
         id: Date.now() + Math.random(),
         bodyPart: bodyPartName,
-        force: scaledForce,
+        force: force,
         position: [ragdollBody.translation().x, ragdollBody.translation().y, ragdollBody.translation().z],
         rigidBody: ragdollBody,
         timestamp: Date.now()
@@ -106,6 +111,6 @@ export const createDamageHandler = (world: World) => {
     ]);
 
     // Update total damage
-    setGameState('totalDamage', (current: number) => current + scaledForce);
+    setGameState('totalDamage', (current: number) => current + force);
   };
 };
