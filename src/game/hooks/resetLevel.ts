@@ -123,10 +123,14 @@ async function resetLevel() {
     });
   });
 
-  // Reset impacts and total damage
-  setGameState('impacts', []);
-  setGameState('totalDamage', 0);
-  setGameState('mode', 'edit');
+  // Reset impacts and total damage only if we're still in reset mode
+  // This prevents overwriting the mode if the user already clicked "Smash"
+  const [gameState] = useGameState();
+  if (gameState.mode === 'reset') {
+    setGameState('impacts', []);
+    setGameState('totalDamage', 0);
+    setGameState('mode', 'edit');
+  }
 
   console.log('Level reset complete');
 }

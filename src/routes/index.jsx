@@ -1,6 +1,6 @@
 import { onMount, onCleanup } from "solid-js";
 import { reconcile } from "solid-js/store";
-import { A } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { useWorld } from "~/system/world";
 import { useTimeline } from "~/system/timeline";
 import { useGraphics } from "~/system/scene";
@@ -10,9 +10,11 @@ import { Terrain } from "~/game/environment/Terrain";
 import { RagDoll } from "~/game/entities/Ragdoll";
 import { Cube } from "~/game/entities/Cube";
 import { Truck } from "~/game/entities/Truck";
+import { loadLevel } from "~/game/hooks/loadLevel";
 
 export default function Index() {
   const [_, setGameState] = useGameState();
+  const navigate = useNavigate();
 
   let timer;
   let animFrame;
@@ -137,12 +139,15 @@ export default function Index() {
 
   return (
     <div class="fixed inset-0 flex flex-col items-center justify-center z-10 bg-black/10 backdrop-blur-[2px]">
-      <A
-        href="/set"
-        class="text-white text-3xl font-light hover:text-gray-300 transition-colors uppercase tracking-widest drop-shadow-md"
+      <button
+        onClick={async () => {
+          await loadLevel('1-discovery');
+          navigate('/set');
+        }}
+        class="text-white text-3xl font-light hover:text-gray-300 transition-colors uppercase tracking-widest drop-shadow-md bg-transparent border-none cursor-pointer"
       >
         Play
-      </A>
+      </button>
     </div>
   );
 }
