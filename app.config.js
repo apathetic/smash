@@ -12,11 +12,15 @@ export default defineConfig({
     resolve: {
       alias: {
         'controls': 'three/examples/jsm/controls/OrbitControls',
-        'rapier': '@dimforge/rapier3d' //-compat'
+        'rapier': '@dimforge/rapier3d'
       }
     },
+    ssr: {
+      noExternal: ['@dimforge/rapier3d', 'three']
+    }
   },
   server: {
+    preset: 'static',
     compatibilityDate: '2025-01-01'
   }
 });

@@ -9,7 +9,7 @@
     "check": "tsc --noEmit",
     "lint": "oxlint src/ --fix -D correctness",
     "test": "vitest run",
-    "deploy": "deno task deploy"
+    "deploy": "pnpm build && wrangler pages deploy .output/public"
   },
   "dependencies": {
     "@dimforge/rapier3d": "^0.18.2",
