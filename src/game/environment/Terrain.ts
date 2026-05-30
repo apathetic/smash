@@ -109,8 +109,8 @@ export class Terrain extends Base {
     );
 
     const clDesc = ColliderDesc.heightfield(
-      TERRAIN_STRIDE,
-      TERRAIN_STRIDE,
+      TERRAIN_SIZE,
+      TERRAIN_SIZE,
       heightMap,
       new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
     ).setCollisionGroups(COLLISION_GROUP_STATIC);

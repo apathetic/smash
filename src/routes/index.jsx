@@ -111,6 +111,11 @@ export default function Index() {
   };
 
   onMount(() => {
+    // HACK: Delay scene creation to ensure the <Stage /> component and its canvas 
+    // have fully mounted and initialized the graphics/physics singletons.
+    // A better solution would be using a reactive Solid signal (e.g. `isReady`)
+    // or an event emitter from the Stage component to guarantee safe initialization 
+    // without relying on arbitrary, race-condition-prone timers.
     setTimeout(() => {
       createRandomScene();
       timer = setInterval(createRandomScene, 5000);
