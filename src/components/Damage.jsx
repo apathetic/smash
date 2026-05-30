@@ -12,20 +12,12 @@ function calculateDamagePercentage(totalDamage, targetDamage) {
 
 
 /**
- * Divides raw physics impact energy (which can reach hundreds of thousands) 
- * down to human-readable "arcade points" (10s and 100s) for UI display 
- * and progress calculations against the level's targetDamage.
- */
-const DISPLAY_SCALAR = 1000;
-
-/**
  * The Damage display.
  * @returns {JSX.Element}
  */
 const Damage = () => {
   const [gameState] = useGameState();
-  const displayDamage = createMemo(() => gameState.totalDamage / DISPLAY_SCALAR);
-  const damagePercent = createMemo(() => calculateDamagePercentage(displayDamage(), gameState.targetDamage));
+  const damagePercent = createMemo(() => calculateDamagePercentage(gameState.totalDamage, gameState.targetDamage));
 
   return (
     <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed'}>
@@ -34,7 +26,7 @@ const Damage = () => {
           damage
         </div>
         <div class="text-xs font-mono mt-1">
-          {Math.round(displayDamage())} / {gameState.targetDamage}
+          {Math.round(gameState.totalDamage)} / {gameState.targetDamage}
         </div>
         <div class="text-4xl font-black mt-1">
           {Math.round(damagePercent())}%

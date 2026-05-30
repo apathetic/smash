@@ -8,6 +8,11 @@ import { registry } from "~/game/store/registry";
  */
 const FORCE_THRESHOLD = 50;
 
+/**
+ * Divides raw physics impact energy down to human-readable "arcade points"
+ */
+const DAMAGE_SCALAR = 1000;
+
 
 
 const [game, setGameState] = useGameState();
@@ -92,10 +97,10 @@ export const createDamageHandler = (world: World) => {
         break;
     }
 
-    // Combine raw force with velocity to create "Impact Energy".
     const impactEnergy = rawForce * Math.sqrt(maxVelSq);
 
-    const force = impactEnergy * multiplier;
+    // Scale down the massive physics values to human-readable "arcade points"
+    const force = (impactEnergy * multiplier) / DAMAGE_SCALAR;
 
     // Update the game state with impact data
     setGameState('impacts', (impacts: any) => [

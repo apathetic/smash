@@ -16,11 +16,11 @@ function SmashButton() {
   const isSmashMode = () => gameState.mode === 'smashing' || gameState.mode === 'smashed';
   const isResetMode = () => gameState.mode === 'reset';
   const isEditMode = () => gameState.mode === 'edit';
-  const isLevelComplete = () => (gameState.totalDamage / 1000) >= gameState.targetDamage;
+  const isLevelComplete = () => gameState.totalDamage >= gameState.targetDamage;
 
   function goStore(e) {
     e.stopPropagation();
-    const excess = Math.max(0, (gameState.totalDamage / 1000) - gameState.targetDamage);
+    const excess = Math.max(0, gameState.totalDamage - gameState.targetDamage);
     if (excess > 0) {
       setGameState('currency', c => c + excess);
     }
