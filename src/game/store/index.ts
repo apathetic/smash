@@ -22,6 +22,8 @@ type GameState = {
   impacts: Impact[];
   targetDamage: number;
   totalDamage: number;
+  currency: number;
+  inventory: string[];
 }
 
 type gameHook = () => [GameState, SetStoreFunction<GameState>];
@@ -51,6 +53,8 @@ const [gameState, setGameState] = createStore({
   impacts: [],
   targetDamage: 1000,
   totalDamage: 0,
+  currency: 0,
+  inventory: [],
   // boosts: { /** which were used/applied? */}
 } as GameState);
 

@@ -39,6 +39,10 @@ async function loadLevel(lvl: string) {
   stop();
   clear();
 
+  const levels = ['1-discovery', '2-blocks', '3-alpha'];
+  const lvlIdx = levels.indexOf(lvl);
+  setGameState('level', lvlIdx !== -1 ? lvlIdx : 0);
+
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
   setGameState('targetDamage', levelData.targetDamage || 1000);
