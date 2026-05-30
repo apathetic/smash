@@ -1,0 +1,88 @@
+import { useGameState } from "~/game/store";
+import { useNavigate } from "@solidjs/router";
+import { loadLevel } from "~/game/hooks/loadLevel";
+import { Page } from "~/components/Page";
+
+const STORE_ITEMS = [
+  { id: 'Rocket', name: 'Rocket', cost: 500, description: 'A fast, explosive projectile.' },
+  { id: 'Truck', name: 'Truck', cost: 800, description: 'A heavy vehicle for maximum impact.' },
+  { id: 'Cube', name: 'Cube', cost: 100, description: 'A basic building block.' },
+];
+
+const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
+
+export default function Store() {
+  const [gameState, setGameState] = useGameState();
+  const navigate = useNavigate();
+
+  const handleNextLevel = async () => {
+    const nextIdx = (gameState.level + 1) % LEVELS.length;
+    await loadLevel(LEVELS[nextIdx]);
+    navigate('/set');
+  };
+
+  const handleBuy = (item) => {
+    if (gameState.currency >= item.cost) {
+      setGameState('currency', (c) => c - item.cost);
+      setGameState('inventory', (i) => [...i, item.id]);
+    }
+  };
+
+  return (
+    <>
+      <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center pointer-events-auto">
+        <Page>
+          <div class="text-white font-mono p-4 h-full flex flex-col relative">
+            <h1 class="text-3xl font-black italic tracking-tighter mb-2 text-fuchsia-400 uppercase">Store</h1>
+            <p class="mb-6 font-bold text-lg text-zinc-300 tracking-wider">
+              DAMAGE POINTS: <span class="text-white">{Math.floor(gameState.currency)}</span>
+            </p>
+
+            <div class="flex-1 overflow-y-auto mb-6 flex flex-col gap-3 pr-2">
+              {STORE_ITEMS.map((item) => {
+                const canAfford = gameState.currency >= item.cost;
+                const count = gameState.inventory.filter((id) => id === item.id).length;
+
+                return (
+                  <div key={item.id} class="flex items-center justify-between bg-black/40 p-3 rounded border border-white/10">
+                    <div>
+                      <div class="font-bold text-lg uppercase tracking-wide flex items-center gap-2">
+                        {item.name}
+                        {count > 0 && (
+                          <span class="text-xs bg-fuchsia-600/50 text-fuchsia-200 px-2 py-0.5 rounded-full">
+                            Owned: {count}
+                          </span>
+                        )}
+                      </div>
+                      <div class="text-xs text-zinc-400 mt-1">{item.description}</div>
+                    </div>
+                    <button
+                      onClick={() => handleBuy(item)}
+                      disabled={!canAfford}
+                      class={`px-4 py-2 font-bold font-mono uppercase tracking-widest rounded transition-colors border-none ${
+                        canAfford
+                          ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-500 cursor-pointer shadow-[0_0_10px_rgba(192,38,211,0.3)]'
+                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {item.cost} DP
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div class="mt-auto flex justify-end">
+              <button
+                onClick={handleNextLevel}
+                class="px-6 py-3 bg-white text-black font-mono font-black uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors border-none cursor-pointer"
+              >
+                Next Level &rarr;
+              </button>
+            </div>
+          </div>
+        </Page>
+      </div>
+    </>
+  );
+}

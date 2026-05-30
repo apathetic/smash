@@ -4,6 +4,7 @@ import { SmashButton } from "~/components/SmashButton";
 import { resetLevel } from "~/game/hooks/resetLevel";
 
 import { useGameState } from "~/game/store";
+import { Inventory } from "~/components/Inventory";
 
 export default function Set() {
   const [_, setGameState] = useGameState();
@@ -17,6 +18,7 @@ export default function Set() {
   return (
     <>
       <Nav />
+      <Inventory />
       <SmashButton />
     </>
   );
