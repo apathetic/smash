@@ -11,7 +11,7 @@ import type { Scene } from 'three';
  */
 export class Cube extends Base {
   setup(scene: Scene, physics: World) {
-    const position: Position = [0, 3, 0];
+    const position: Position = this.position || [0, 3, 0];
 
     const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshNormalMaterial();

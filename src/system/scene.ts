@@ -1,5 +1,13 @@
 import { Scene, WebGLRenderer, PerspectiveCamera, DirectionalLight, HemisphereLight, PCFSoftShadowMap } from 'three';
 
+/**
+ * A reference to a Graphics instance.
+ * The return object exposes a number of visual systems
+ * @param {HTMLCanvasElement} canvas
+ */
+let graphicsHandle: ReturnType<typeof createGraphics> | null = null;
+
+
 
 function createRenderer(canvas: HTMLCanvasElement) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -25,7 +33,17 @@ function createCamera() {
   return camera;
 };
 
-function createLights() {
+
+/**
+ * Creates a new graphics object, which houses the primary visual systems.
+ * This includes the ThreeJS scene, camera, renderer, and basic lighting.
+ * @param {HTMLCanvasElement} canvas
+ * @returns {object}
+ */
+function createGraphics(canvas: HTMLCanvasElement) {
+  const scene = new Scene();
+  const camera = createCamera();
+  const renderer = createRenderer(canvas);
   const light = new DirectionalLight('white', 8);
   const ambientLight = new HemisphereLight(
     'white', // bright sky color
@@ -46,20 +64,30 @@ function createLights() {
   light.shadow.bias = -0.001; // Prevent shadow acne/lines on surfaces
   light.shadow.normalBias = 0.05; // Prevent shadow acne on flat surfaces
 
-  return [ light, ambientLight ];
-};
-
-
-function createScene(canvas: HTMLCanvasElement) {
-  const scene = new Scene();
-  const camera = createCamera();
-  const renderer = createRenderer(canvas);
+  scene.add(light, ambientLight);
 
   return { scene, camera, renderer };
 }
 
 
-export {
-  createScene,
-  createLights,
-};
+/**
+ * A hook to provide access to the graphics instance.
+ * This is a singleton pattern, so the graphics instance is
+ * created once and then returned on subsequent calls.
+ *
+ * @param {HTMLCanvasElement} canvas
+ * @returns {object}
+ */
+function useGraphics(canvas?: HTMLCanvasElement) {
+  if (canvas) {
+    graphicsHandle = createGraphics(canvas);
+  }
+
+  if (!graphicsHandle) {
+    throw new Error('[useGraphics]: was not initialized');
+  }
+
+  return graphicsHandle;
+}
+
+export { useGraphics };

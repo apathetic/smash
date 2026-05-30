@@ -1,4 +1,4 @@
-import { Router, Route, Navigate } from "@solidjs/router";
+import { Router, Route } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import { Stage } from "~/components/Stage";
@@ -17,7 +17,6 @@ const Layout = ({ children }) => (
 export default function App() {
   return (
     <Router root={Layout}>
-      <Route path="/" component={() => <Navigate href="/set" />} />
       <Route path="*"><FileRoutes /></Route>
     </Router>
   );

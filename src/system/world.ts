@@ -1,4 +1,4 @@
-import { createScene, createLights } from "./scene";
+import { useGraphics } from "./scene";
 import { createResizer } from "./resizer";
 import { useTimeline } from "./timeline";
 import { createControls } from "./controls";
@@ -22,15 +22,13 @@ let worldHandle: ReturnType<typeof createWorld>;
  * @returns ...
  */
 function createWorld(canvas: HTMLCanvasElement) {
-  const graphics = createScene(canvas);
+  const graphics = useGraphics(canvas);
   const physics  = usePhysics();
-  const lights   = createLights();
   const gui      = createGUI({ graphics, physics });
   const controls = createControls({ graphics, physics });
   const timeline = useTimeline({ graphics, physics, controls, gui });
 
   createResizer(graphics);
-  graphics.scene.add(...lights);
 
   /**
    * Adds an entity to the world.
