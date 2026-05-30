@@ -16,6 +16,7 @@ interface IPhysics {
   update: (delta: number) => void;
   save: () => void;
   restore: () => void;
+  isSettled: () => boolean;
   setGravity: (enabled: boolean) => void;
   setBodiesKinematic: (enabled: boolean) => void;
 

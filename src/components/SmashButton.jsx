@@ -13,14 +13,14 @@ function SmashButton() {
   const navigate = useNavigate();
   let timer;
 
-  const isSmashMode = () => gameState.mode === 'smash';
+  const isSmashMode = () => gameState.mode === 'smashing' || gameState.mode === 'smashed';
   const isResetMode = () => gameState.mode === 'reset';
   const isEditMode = () => gameState.mode === 'edit';
-  const isLevelComplete = () => isSmashMode() && gameState.totalDamage >= gameState.targetDamage;
+  const isLevelComplete = () => (gameState.totalDamage / 1000) >= gameState.targetDamage;
 
   function goStore(e) {
     e.stopPropagation();
-    const excess = Math.max(0, gameState.totalDamage - gameState.targetDamage);
+    const excess = Math.max(0, (gameState.totalDamage / 1000) - gameState.targetDamage);
     if (excess > 0) {
       setGameState('currency', c => c + excess);
     }
@@ -148,6 +148,16 @@ function SmashButton() {
         stroke-dashoffset: 0;
       }
     }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .pulse-anim {
+      animation: pulse 1s infinite;
+      transform-origin: center;
+    }
   `}
   </style>
 
@@ -181,7 +191,7 @@ function SmashButton() {
 
           </svg>
         ) : (
-          <svg viewBox="0 0 64 20" xmlns="http://www.w3.org/2000/svg" style={{ width: '64px' }}>
+          <svg viewBox="0 0 64 20" xmlns="http://www.w3.org/2000/svg" style={{ width: '64px' }} class={gameState.mode === 'smashed' ? 'pulse-anim' : ''}>
             <text
               x="32"
               y="14"

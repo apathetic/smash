@@ -17,13 +17,14 @@ type GameState = {
   entities: Record<StoreEntity['id'], StoreEntity>;
   environment: Record<string, Position>;
   level: number;
-  mode: 'edit' | 'smash' | 'replay' | 'reset';
+  mode: 'edit' | 'smashing' | 'smashed' | 'replay' | 'reset';
   gravity: number;
   impacts: Impact[];
   targetDamage: number;
   totalDamage: number;
   currency: number;
   inventory: string[];
+  timeout: number;
 }
 
 type gameHook = () => [GameState, SetStoreFunction<GameState>];
@@ -55,6 +56,7 @@ const [gameState, setGameState] = createStore({
   totalDamage: 0,
   currency: 0,
   inventory: [],
+  timeout: 10,
   // boosts: { /** which were used/applied? */}
 } as GameState);
 

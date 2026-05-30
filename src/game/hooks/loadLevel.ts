@@ -46,6 +46,7 @@ async function loadLevel(lvl: string) {
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
   setGameState('targetDamage', levelData.targetDamage || 1000);
+  setGameState('timeout', levelData.timeout || 10);
   setGameState('mode', 'edit');
   setGameState('entities', reconcile({}));
 

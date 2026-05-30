@@ -28,7 +28,7 @@ const Damage = () => {
   const damagePercent = createMemo(() => calculateDamagePercentage(displayDamage(), gameState.targetDamage));
 
   return (
-    <Show when={gameState.mode === 'smash'}>
+    <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed'}>
       <aside class="fixed bottom-24 right-5 z-10 pointer-events-none flex flex-col items-end text-white drop-shadow-md uppercase">
         <div class="text-sm font-bold tracking-wider">
           damage

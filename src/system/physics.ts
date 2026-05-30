@@ -104,6 +104,24 @@ function createPhysics() {
     });
   }
 
+  function isSettled() {
+    let settled = true;
+    registry.each((entity) => {
+      entity.dynamicBodies?.forEach(({ body }) => {
+        if (body.bodyType() === RigidBodyType.Dynamic) {
+          const linvel = body.linvel();
+          const angvel = body.angvel();
+          const speedSq = linvel.x**2 + linvel.y**2 + linvel.z**2;
+          const spinSq = angvel.x**2 + angvel.y**2 + angvel.z**2;
+          // small threshold allows micro-jitters to be ignored
+          if (speedSq > 0.1 || spinSq > 0.1) {
+            settled = false;
+          }
+        }
+      });
+    });
+    return settled;
+  }
 
   const instance: IPhysics = {
     world,
@@ -114,6 +132,7 @@ function createPhysics() {
     restore,
     setGravity,
     setBodiesKinematic,
+    isSettled,
     markEdited: () => { hasEdited = true; },
     get hasEdited() { return hasEdited; },
   };
@@ -125,7 +144,7 @@ function createPhysics() {
   createEffect(() => {
     const [game] = useGameState();
 
-    if (game.mode === 'smash') {
+    if (game.mode === 'smashing') {
       if (instance.hasEdited) {
         instance.save();
       }

@@ -16,7 +16,7 @@ export const createDamageHandler = (world: World) => {
   return function handleCollisions(event: any) {
     const ragdoll = registry.get('ragdoll');
     if (!ragdoll) return;
-    if (game.mode !== 'smash') return;
+    if (game.mode !== 'smashing') return;
 
     // RigidBody attached to the first collider
     const handle1 = event.collider1();
