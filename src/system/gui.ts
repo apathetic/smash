@@ -1,10 +1,11 @@
 import { LineBasicMaterial, BufferGeometry, LineSegments, BufferAttribute } from 'three';
-import { version, World } from "rapier";
+import { version } from "rapier";
 import Stats from "stats.js";
 // import { xxhash128 } from "hash-wasm";
 import GUI from "lil-gui";
 import { useGameState } from "~/game/store";
-import { NUM_SOLVER_ITERATIONS } from "~/system/constants";
+import { NUM_SOLVER_ITERATIONS, SESSION_STORAGE_KEY } from "~/system/constants";
+import { loadLevel } from "~/game/hooks/loadLevel";
 
 
 type GuiProps = {
@@ -20,11 +21,11 @@ const params = {
   numSolverIters: NUM_SOLVER_ITERATIONS,
   debugRender: false,
   debugInfos: false,
-  running: false,
-  stepping: false,
-  step: () => params.stepping = true,
-  takeSnapshot: () => {},
-  restoreSnapshot: () => {},
+  level: 0,
+  reset: () => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    window.location.href = '/';
+  }
 };
 
 
@@ -38,8 +39,9 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   const _rapierVersion = version();
 
   let maxTimePanelValue = 16.0;
-  let snap: Uint8Array;
-  let snapStepId = 0;
+
+  const [gameState] = useGameState();
+  params.level = gameState.level;
 
   gui.add(params, "numSolverIters", 0, 20)
     .step(1)
@@ -48,12 +50,12 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   gui.add(params, "debugRender")
     .listen();
 
-  gui.add(params, "running")
-    .listen();
+  gui.add(params, "level", { "1-discovery": 0, "2-blocks": 1, "3-alpha": 2 }).name("Select Level").onChange((lvl: number) => {
+    loadLevel(lvl);
+  }).listen();
 
-  gui.add(params, "step");
+  gui.add(params, "reset").name("Clear Game State");
 
-  const [gameState] = useGameState();
   const damageFolder = gui.addFolder("Damage Debug");
   const damageStats = {
     get total() { return gameState.totalDamage.toFixed(2); },
@@ -65,21 +67,6 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   damageFolder.add(damageStats, 'target').name('Target Damage').listen();
   damageFolder.add(damageStats, 'impacts').name('Impact Count').listen();
 
-  gui.add(params, "takeSnapshot");
-  params.takeSnapshot = () => {
-    snap = physics.world.takeSnapshot();
-    snapStepId = physics.stepId;
-  };
-
-  gui.add(params, "restoreSnapshot");
-  params.restoreSnapshot = () => {
-    if (snap) {
-      physics.stepId = snapStepId;
-      physics.world.free();
-      physics.world = World.restoreSnapshot(snap);
-    }
-  };
-
 
   const stats = new Stats();
   const stepTimePanel = stats.addPanel(
@@ -87,7 +74,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   );
 
   stats.dom.style.cssText = 'position: relative; display: flex; width: 100%; pointer-events: none; opacity: 0.9;';
-  
+
   const originalShowPanel = stats.showPanel;
   stats.showPanel = function(id: number) {
     originalShowPanel.call(stats, id);
@@ -103,7 +90,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
     });
   };
   stats.showPanel(0);
-  
+
   const childrenEl = gui.domElement.querySelector('.children');
   if (childrenEl) {
     childrenEl.prepend(stats.dom);
@@ -145,32 +132,6 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
       lines.geometry.setAttribute("color", new BufferAttribute(buffers.colors, 4));
     } else {
       lines.visible = false;
-    }
-
-    /*
-    if (params.debugInfos) {
-      let t0 = performance.now();
-      let snapshot = world.takeSnapshot();
-      let t1 = performance.now();
-      let snapshotTime = t1 - t0;
-
-      t0 = performance.now();
-      xxhash128(snapshot).then((worldHash) => {
-        t1 = performance.now();
-
-        setDebugInfos({
-          stepId: physics.stepId,
-          worldHash,
-          worldHashTime: t1 - t0,
-          snapshotTime,
-        });
-      });
-    }
-    */
-
-    if (params.stepping) {
-      params.running = false;
-      params.stepping = false;
     }
   };
 
