@@ -19,7 +19,7 @@ function SmashButton() {
 
     // Stop and clear any previous active animations to prevent overlap
     activeAnims.forEach(anim => {
-      try { anim.stop(); } catch {}
+      try { anim.cancel(); } catch {}
     });
     activeAnims = [];
 
@@ -77,7 +77,7 @@ function SmashButton() {
 
   onCleanup(() => {
     activeAnims.forEach(anim => {
-      try { anim.stop(); } catch {}
+      try { anim.cancel(); } catch {}
     });
   });
 
