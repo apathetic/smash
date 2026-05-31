@@ -109,13 +109,23 @@ function createPhysics() {
     registry.each((entity) => {
       entity.dynamicBodies?.forEach(({ body }) => {
         if (body.bodyType() === RigidBodyType.Dynamic) {
-          const linvel = body.linvel();
-          const angvel = body.angvel();
-          const speedSq = linvel.x**2 + linvel.y**2 + linvel.z**2;
-          const spinSq = angvel.x**2 + angvel.y**2 + angvel.z**2;
-          // lower threshold so it doesn't trigger while sliding slowly
-          if (speedSq > 0.005 || spinSq > 0.005) {
-            settled = false;
+          // If the body fell off the map, consider it settled (out of bounds)
+          const isOutOfBounds = body.translation().y < -20;
+
+          if (!body.isSleeping() && !isOutOfBounds) {
+            // Fallback for objects that are explicitly told to NEVER sleep (e.g. Trucks/Rockets)
+            // or objects caught in infinite joint-resolution loops (Ragdoll jitters)
+            const linvel = body.linvel();
+            const angvel = body.angvel();
+            const speedSq = linvel.x**2 + linvel.y**2 + linvel.z**2;
+            const spinSq = angvel.x**2 + angvel.y**2 + angvel.z**2;
+
+            // We allow a much higher spin tolerance (2.0) because ragdoll joints
+            // often get trapped in infinite micro-adjustment loops that cause
+            // high angular velocity (twitching) without any linear movement.
+            if (speedSq > 0.05 || spinSq > 2.0) {
+              settled = false;
+            }
           }
         }
       });

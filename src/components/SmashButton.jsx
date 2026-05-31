@@ -8,7 +8,6 @@ import { useGameState } from "~/game/store";
  *
  */
 function SmashButton() {
-  const [_, setSmashing] = createSignal(false);
   const [gameState, setGameState] = useGameState();
   const navigate = useNavigate();
 
@@ -49,21 +48,8 @@ function SmashButton() {
       return;
     }
 
-    reset();
-
-    setConfirming(true);
-
-    // cool animation while holding button....
-    // then...
-    timer = setTimeout(() => {
-      setSmashing(true);
-      saveLevel();
-      setTimeout(() => {
-        setSmashing(false);
-        setConfirming(false);
-        navigate('/smash');
-      }, 400); // animation-exit
-    }, 1000 );
+    saveLevel();
+    navigate('/smash');
   }
 
   const targetText = createMemo(() => isEditMode() ? "SMASH" : "RESET");
@@ -151,7 +137,7 @@ function SmashButton() {
               }
               @keyframes pulse-stroke {
                 0% { stroke-width: 0; stroke-opacity: 0.65; }
-                70% { stroke-width: 8px; stroke-opacity: 0; }
+                70% { stroke-width: 10px; stroke-opacity: 0; }
                 100% { stroke-width: 0; stroke-opacity: 0; }
               }
               .pulse-anim {
@@ -169,14 +155,15 @@ function SmashButton() {
             `}
             </style>
 
-            <svg viewBox="0 0 48 20" xmlns="http://www.w3.org/2000/svg" style={{ width: '96px' }} class={`text-container ${gameState.mode === 'smashed' ? 'pulse-anim' : ''}`}>
+            <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" style={{ width: '120px' }} class={`text-container ${gameState.mode === 'smashed' ? 'pulse-anim' : ''}`}>
               {/* Expanding Pulse Ring */}
               <text
-                x="24"
-                y="14"
+                x="30"
+                y="17.5"
                 font-family="monospace"
-                font-weight="bold"
-                font-size="14"
+                font-weight="900"
+                font-size="17.5"
+                letter-spacing="-1.25px"
                 text-anchor="middle"
                 class={`pulse-ring ${gameState.mode === 'smashed' ? 'active' : ''}`}
                 stroke="white"
@@ -186,11 +173,12 @@ function SmashButton() {
 
               {/* Main Text */}
               <text
-                x="24"
-                y="14"
+                x="30"
+                y="17.5"
                 font-family="monospace"
-                font-weight="bold"
-                font-size="14"
+                font-weight="900"
+                font-size="17.5"
+                letter-spacing="-1.25px"
                 text-anchor="middle"
                 fill="white"
               >
