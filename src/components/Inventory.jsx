@@ -17,24 +17,23 @@ export function Inventory() {
   const animationContainer = createCurtain({
     navigate: true,
     onEnter: (el) => {
-      animate(el.children, {
+      animate(Array.from(el.children), {
         opacity: [0, 1],
         scale: [0.6, 1],
         translateY: [20, 0],
-        delay: stagger(60),
-        duration: 650,
-        ease: spring({ bounce: 0.5 })
+        delay: stagger(35),
+        ease: spring({ bounce: 0.5, duration: 380 })
       });
     },
     onExit: (el, done) => {
-      animate(el.children, {
+      animate(Array.from(el.children), {
         opacity: [1, 0],
         scale: [1, 0.6],
         translateY: [0, 20],
-        delay: stagger(60, { from: 'last' }),
-        duration: 300,
+        delay: stagger(35, { from: 'last' }),
+        duration: 250,
         ease: "inBack",
-        complete: done
+        onComplete: done
       });
     }
   });

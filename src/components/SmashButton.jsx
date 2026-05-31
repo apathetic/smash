@@ -2,6 +2,7 @@ import { createSignal, createEffect, onCleanup, untrack, createMemo } from "soli
 import { useNavigate } from "@solidjs/router";
 import { saveLevel } from "~/game/hooks/saveLevel";
 import { useGameState } from "~/game/store";
+import { animate, spring, createTimeline } from "animejs";
 
 
 /**
@@ -10,6 +11,75 @@ import { useGameState } from "~/game/store";
 function SmashButton() {
   const [gameState, setGameState] = useGameState();
   const navigate = useNavigate();
+  let textRef;
+  let activeAnims = [];
+
+  createEffect(() => {
+    const mode = gameState.mode;
+
+    // Stop and clear any previous active animations to prevent overlap
+    activeAnims.forEach(anim => {
+      try { anim.stop(); } catch {}
+    });
+    activeAnims = [];
+
+    // Reset elements to base styles
+    if (textRef) {
+      textRef.style.transform = 'scale(1)';
+      textRef.style.opacity = '1';
+      const ring = textRef.querySelector('.pulse-ring');
+      if (ring) {
+        ring.style.strokeWidth = '0px';
+        ring.style.opacity = '0';
+      }
+    }
+
+    if (mode === 'smashing') {
+      const tl = createTimeline();
+      tl.add(textRef, {
+        opacity: 0,
+        scale: 0.7,
+        duration: 150,
+        ease: 'outQuad'
+      })
+      .add(textRef, {
+        opacity: [0, 1],
+        scale: [0.7, 1],
+        ease: spring({ bounce: 0.5 }),
+        duration: 500
+      });
+      activeAnims.push(tl);
+    } else if (mode === 'smashed') {
+      // Loop pulse scale animation
+      const pulse = animate(textRef, {
+        scale: [
+          { to: 1.25, ease: 'inOut(3)', duration: 200 },
+          { to: 1, ease: spring({ bounce: .7 }) }
+        ],
+        loop: true,
+        loopDelay: 250,
+      });
+      activeAnims.push(pulse);
+
+      const ring = textRef.querySelector('.pulse-ring');
+      if (ring) {
+        const ringPulse = animate(ring, {
+          strokeWidth: ['0px', '10px'],
+          opacity: [0.65, 0],
+          duration: 1500,
+          loop: true,
+          ease: 'outQuad'
+        });
+        activeAnims.push(ringPulse);
+      }
+    }
+  });
+
+  onCleanup(() => {
+    activeAnims.forEach(anim => {
+      try { anim.stop(); } catch {}
+    });
+  });
 
   const isSmashMode = () => gameState.mode === 'smashing' || gameState.mode === 'smashed';
   const isResetMode = () => gameState.mode === 'reset';
@@ -103,7 +173,7 @@ function SmashButton() {
 
 
   return (
-    <div class="fixed bottom-5 right-5 z-100 flex items-center gap-3">
+    <div class="fixed bottom-3 right-5 z-100 flex items-center gap-3">
         {isLevelComplete() ? (
           <>
             <button
@@ -127,45 +197,32 @@ function SmashButton() {
                 cursor: pointer;
                 transform-origin: center;
                 user-select: none;
- /*               filter: drop-shadow(1px 1px 1px black); */
-              }
-
-              @keyframes pulse-scale {
-                0% { transform: scale(1); }
-                70% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-              }
-              @keyframes pulse-stroke {
-                0% { stroke-width: 0; stroke-opacity: 0.65; }
-                70% { stroke-width: 10px; stroke-opacity: 0; }
-                100% { stroke-width: 0; stroke-opacity: 0; }
-              }
-              .pulse-anim {
-                animation: pulse-scale 1.5s infinite;
-                transform-origin: center;
               }
               .pulse-ring {
                 stroke-linejoin: round;
                 fill: none;
                 stroke-width: 0;
               }
-              .pulse-ring.active {
-                animation: pulse-stroke 1.5s infinite;
-              }
             `}
             </style>
 
-            <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" style={{ width: '120px' }} class={`text-container ${gameState.mode === 'smashed' ? 'pulse-anim' : ''}`}>
+            <svg
+              ref={textRef}
+              viewBox="0 0 60 25"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ width: '120px', 'transform-origin': 'center' }}
+              class="text-container"
+            >
               {/* Expanding Pulse Ring */}
               <text
                 x="30"
-                y="17.5"
-                font-family="monospace"
+                y="20"
+                font-family="'Lilita One', sans-serif"
                 font-weight="900"
-                font-size="17.5"
-                letter-spacing="-1.25px"
+                font-size="20"
+                letter-spacing="-1px"
                 text-anchor="middle"
-                class={`pulse-ring ${gameState.mode === 'smashed' ? 'active' : ''}`}
+                class="pulse-ring"
                 stroke="white"
               >
                 {displayText()}
@@ -174,11 +231,11 @@ function SmashButton() {
               {/* Main Text */}
               <text
                 x="30"
-                y="17.5"
-                font-family="monospace"
+                y="20"
+                font-family="'Lilita One', sans-serif"
                 font-weight="900"
-                font-size="17.5"
-                letter-spacing="-1.25px"
+                font-size="20"
+                letter-spacing="-1px"
                 text-anchor="middle"
                 fill="white"
               >
