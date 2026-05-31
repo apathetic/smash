@@ -12,6 +12,12 @@ const NUM_SOLVER_ITERATIONS = 20;
 
 
 /**
+ * Solid Smash Session State Storage
+ */
+const SESSION_STORAGE_KEY = 'sssss';
+
+
+/**
  * Collision system
  * In Rapier, a Collision Group is a 32-bit integer composed of two 16-bit halves:
  * [16-bit Membership (What I am)] | [16-bit Filter (What I collide with)]
@@ -34,6 +40,7 @@ const COLLISION_GROUP_RAY_DYNAMIC = (MEMBERSHIP_ALL << 16)    | FILTER_ONLY_DYNA
 
 export {
   GRAVITY,
+  SESSION_STORAGE_KEY,
   NUM_SOLVER_ITERATIONS,
   COLLISION_GROUP_STATIC,
   COLLISION_GROUP_DYNAMIC,

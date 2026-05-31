@@ -1,5 +1,6 @@
 import { createStore } from "solid-js/store";
 import { Vector3, Quaternion } from 'rapier';
+import { SESSION_STORAGE_KEY } from '~/system/constants';
 import type { SetStoreFunction } from "solid-js/store";
 import type { Mesh } from 'three';
 import type { RigidBody } from 'rapier';
@@ -124,8 +125,7 @@ function updateEntityFromStore(
  */
 function hydrateSession() {
   try {
-    // Solid Smash Session State Storage
-    const saved = localStorage.getItem('sssss');
+    const saved = localStorage.getItem(SESSION_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       if (typeof parsed.level === 'number') setGameState('level', parsed.level);
