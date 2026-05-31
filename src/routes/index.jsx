@@ -1,7 +1,7 @@
-import { onMount, onCleanup } from "solid-js";
+import { onCleanup, createEffect } from "solid-js";
 import { reconcile } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
-import { useWorld } from "~/system/world";
+import { useWorld, isWorldReady } from "~/system/world";
 import { useTimeline } from "~/system/timeline";
 import { useGraphics } from "~/system/scene";
 import { useGameState } from "~/game/store";
@@ -112,16 +112,11 @@ export default function Index() {
     }
   };
 
-  onMount(() => {
-    // HACK: Delay scene creation to ensure the <Stage /> component and its canvas 
-    // have fully mounted and initialized the graphics/physics singletons.
-    // A better solution would be using a reactive Solid signal (e.g. `isReady`)
-    // or an event emitter from the Stage component to guarantee safe initialization 
-    // without relying on arbitrary, race-condition-prone timers.
-    setTimeout(() => {
+  createEffect(() => {
+    if (isWorldReady()) {
       createRandomScene();
       timer = setInterval(createRandomScene, 5000);
-    }, 100);
+    }
   });
 
   onCleanup(() => {

@@ -1,3 +1,4 @@
+import { createSignal } from "solid-js";
 import { useGraphics } from "./scene";
 import { createResizer } from "./resizer";
 import { useTimeline } from "./timeline";
@@ -5,6 +6,12 @@ import { createControls } from "./controls";
 import { usePhysics } from "./physics";
 import { createGUI } from "./gui";
 import { registry } from "~/game/store/registry";
+
+/**
+ * Global signal to indicate when the World singletons are ready.
+ */
+const [isWorldReady, setWorldReady] = createSignal(false);
+
 
 /**
  * A reference to a World instance.
@@ -52,6 +59,7 @@ function createWorld(canvas: HTMLCanvasElement) {
   function clear() {
     registry.each((entity) => entity.destroy(graphics.scene, physics.world));
     registry.clear();
+    physics.dragger.cleanup();
   }
 
   /**
@@ -95,6 +103,7 @@ function createWorld(canvas: HTMLCanvasElement) {
 function useWorld(canvas?: HTMLCanvasElement) {
   if (canvas) {
     worldHandle = createWorld(canvas);
+    setWorldReady(true);
   }
 
   if (!worldHandle) {
@@ -105,4 +114,4 @@ function useWorld(canvas?: HTMLCanvasElement) {
 }
 
 
-export { useWorld };
+export { useWorld, isWorldReady };
