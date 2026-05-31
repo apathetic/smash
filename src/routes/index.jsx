@@ -122,14 +122,6 @@ export default function Index() {
   onCleanup(() => {
     if (timer) clearInterval(timer);
     if (animFrame) cancelAnimationFrame(animFrame);
-    try {
-      const { clear } = useWorld();
-      const { stop } = useTimeline();
-      stop();
-      clear();
-    } catch {
-      // Ignore if world is already destroyed
-    }
   });
 
   return (
