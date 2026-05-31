@@ -1,4 +1,4 @@
-import anime from 'animejs';
+import { animate, spring } from 'animejs';
 import { createMemo, Show } from 'solid-js';
 import { useGameState } from '~/game/store';
 
@@ -25,14 +25,13 @@ const Damage = () => {
       <aside
         ref={(el) => {
           if (el) {
-            anime({
-              targets: el,
+            animate(el, {
               opacity: [0, 1],
               scale: [0.9, 1],
               translateX: [30, 0],
               delay: 150, // Matches the fade out duration of "SMASH" text
-              duration: 300,
-              easing: "easeOutBack"
+              duration: 400,
+              ease: spring({ bounce: 0.4 })
             });
           }
         }}

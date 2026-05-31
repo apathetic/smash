@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { animate, stagger, spring } from "animejs";
 import { useGameState } from "~/game/store";
 import { EntityIcon } from "./EntityIcon";
 import { createCurtain } from "~/system/curtain";
@@ -17,29 +17,28 @@ export function Inventory() {
   const animationContainer = createCurtain({
     navigate: true,
     onEnter: (el) => {
-      anime({
-        targets: el.querySelectorAll(".inventory-tile"),
+      animate(el.children, {
         opacity: [0, 1],
         scale: [0.6, 1],
         translateY: [20, 0],
-        delay: anime.stagger(60),
+        delay: stagger(60),
         duration: 650,
-        easing: "easeOutElastic(1.2, 0.6)"
+        ease: spring({ bounce: 0.5 })
       });
     },
     onExit: (el, done) => {
-      anime({
-        targets: el.querySelectorAll(".inventory-tile"),
+      animate(el.children, {
         opacity: [1, 0],
         scale: [1, 0.6],
         translateY: [0, 20],
-        delay: anime.stagger(60, { from: 'last' }),
+        delay: stagger(60, { from: 'last' }),
         duration: 300,
-        easing: "easeInBack",
+        ease: "inBack",
         complete: done
       });
     }
   });
+
 
   return (
     <div ref={animationContainer} class="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 pointer-events-none">
