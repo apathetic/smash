@@ -11,6 +11,12 @@ import { Truck } from "~/game/entities/Truck";
 
 
 /**
+ * Level filenames
+ */
+const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
+
+
+/**
  * Load JSON Level Data
  */
 async function getLevelData(lvl: string) {
@@ -24,33 +30,31 @@ async function getLevelData(lvl: string) {
 }
 
 
+
 /**
  * Load Level
  * Load json data; generate entities from it; insert into the game canvas
  */
-const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
-
-
 async function loadLevel(lvl: number) {
+  if (lvl < 0 || lvl >= LEVELS.length) { throw new Error(`Level index ${lvl} out of bounds.`); }
+
   const { add, clear, save } = useWorld();
   const { start, stop } = useTimeline();
   const [_, setGameState] = useGameState();
-  const levelData: Level = await getLevelData(lvl);
+  const levelData: Level = await getLevelData(LEVELS[lvl]);
 
   if (!levelData) { return; }
 
   stop();
   clear();
 
-  setGameState('level', lvlIdx);
-
+  setGameState('level', lvl);
   setGameState('impacts', []);
   setGameState('totalDamage', 0);
   setGameState('targetDamage', levelData.targetDamage || 1000);
   setGameState('timeout', levelData.timeout || 10);
   setGameState('mode', 'edit');
   setGameState('entities', reconcile({}));
-
 
   levelData.entities.forEach((entity) => {
     switch(entity.type) {
@@ -79,7 +83,6 @@ async function loadLevel(lvl: number) {
 
   const ragdoll = new RagDoll({ position: [0,0,0] });
   add(ragdoll);
-
 
   save(); // capture a snapshot for resetting
   start();

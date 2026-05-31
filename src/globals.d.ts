@@ -101,4 +101,5 @@ type Level = {
   targetDamage: number;
   environment: LevelEntity[];
   entities: LevelEntity[];
+  timeout: number;
 }

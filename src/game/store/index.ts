@@ -25,22 +25,22 @@ type GameState = {
   currency: number;
   inventory: string[];
   timeout: number;
-}
+};
 
 type gameHook = () => [GameState, SetStoreFunction<GameState>];
 
-// Set store data via:
-//  * setGamestate(key, (setting) => ...some calculation...)
-//  *
-//  * e.g. setGamestate('mode', 'smash');
-//  * e.g. setGamestate('level', (currentLevel) => currentLevel + 1);
 
 /**
  * GameState store
  * This stores all static information from the level, including
- * data for each entity (position, rotation), ...
+ * data for each entity (position, rotation).
+ *
+ * Set store data via: `setGamestate(key, (setting) => ....)`
+ *
+ * @example
+ *   setGamestate('mode', 'smash');
+ *   setGamestate('level', (currentLevel) => currentLevel + 1);
  */
-// const [levelData, setLevelData] = createStore({
 const [gameState, setGameState] = createStore({
   mode: 'edit',
   environment: {
@@ -60,7 +60,7 @@ const [gameState, setGameState] = createStore({
   // boosts: { /** which were used/applied? */}
 } as GameState);
 
-
+const useGameState: gameHook = () => [gameState, setGameState];
 
 
 // Helper functions for entity management
@@ -117,8 +117,33 @@ function updateEntityFromStore(
   return true;
 }
 
-const useGameState: gameHook = () => [gameState, setGameState];
+
+/**
+ * Hydrates the game state from local storage.
+ * @returns true if the session was hydrated, false otherwise
+ */
+function hydrateSession() {
+  try {
+    // Solid Smash Session State Storage
+    const saved = localStorage.getItem('sssss');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed.level === 'number') setGameState('level', parsed.level);
+      if (typeof parsed.currency === 'number') setGameState('currency', parsed.currency);
+      if (Array.isArray(parsed.inventory)) setGameState('inventory', parsed.inventory);
+      return true;
+    }
+  } catch (e) {
+    console.error('Failed to load session', e);
+  }
+  return false;
+}
 
 export {
   useGameState,
-  saveEntityToStore, updateEntityFromStore, generateEntityId };
+  hydrateSession,
+  saveEntityToStore,
+  updateEntityFromStore,
+  generateEntityId
+};
+

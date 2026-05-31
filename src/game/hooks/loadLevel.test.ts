@@ -36,12 +36,6 @@ describe('loadLevel', () => {
   });
 
   it('should handle errors when loading a non-existent level', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // Test with a level that doesn't exist
-    await loadLevel(-1);
-
-    expect(consoleSpy).toHaveBeenCalled();
-    consoleSpy.mockRestore();
+    await expect(loadLevel(-1)).rejects.toThrow('Level index -1 out of bounds.');
   });
 });
