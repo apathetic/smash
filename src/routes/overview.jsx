@@ -2,9 +2,10 @@ import { onMount, onCleanup } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
-import { Nav } from "~/components/Nav";
+import { useGameState } from "~/game/store";
 
 export default function Overview() {
+  const [_, setGameState] = useGameState();
   const navigate = useNavigate();
 
   const handleClose = () => {
@@ -20,6 +21,7 @@ export default function Overview() {
   };
 
   onMount(() => {
+    setGameState('mode', 'display');
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         handleClose();
@@ -31,7 +33,6 @@ export default function Overview() {
 
   return (
     <>
-      <Nav />
       behind text neato
 
       <Page>

@@ -1,9 +1,7 @@
-import { useGameState } from "~/game/store";
-import { Nav } from "~/components/Nav";
-import { Damage } from "~/components/Damage";
-import { SmashButton } from "~/components/SmashButton";
-import { usePhysics } from "~/system/physics";
 import { onMount, onCleanup } from "solid-js";
+import { useGameState } from "~/game/store";
+import { Damage } from "~/components/Damage";
+import { usePhysics } from "~/system/physics";
 
 export default function Smash() {
   const [gameState, setGameState] = useGameState();
@@ -11,16 +9,20 @@ export default function Smash() {
 
   let checkInterval;
   let timeoutTimer;
+  let checkTimeout;
 
   onMount(() => {
     setGameState('mode', 'smashing');
 
-    // Check if physics have settled every 500ms
-    checkInterval = setInterval(() => {
-      if (physics.isSettled()) {
-        finishSmash();
-      }
-    }, 500);
+    // Wait 2 seconds before we even start checking if physics are settled
+    // (Prevents accidental triggers if an object is at the apex of a bounce)
+    checkTimeout = setTimeout(() => {
+      checkInterval = setInterval(() => {
+        if (physics.isSettled()) {
+          finishSmash();
+        }
+      }, 500);
+    }, 2000);
 
     // Also set a maximum timeout based on the level settings
     timeoutTimer = setTimeout(() => {
@@ -29,21 +31,21 @@ export default function Smash() {
   });
 
   function finishSmash() {
-    setGameState('mode', 'smashed');
-    if (checkInterval) clearInterval(checkInterval);
-    if (timeoutTimer) clearTimeout(timeoutTimer);
+    console.log("SMASH FINISHED"); setGameState('mode', 'smashed');
+    clearTimeout(checkTimeout);
+    clearInterval(checkInterval);
+    clearTimeout(timeoutTimer);
   }
 
   onCleanup(() => {
-    if (checkInterval) clearInterval(checkInterval);
-    if (timeoutTimer) clearTimeout(timeoutTimer);
+    clearTimeout(checkTimeout);
+    clearInterval(checkInterval);
+    clearTimeout(timeoutTimer);
   });
 
   return (
     <>
       <Damage />
-      <Nav back />
-      <SmashButton />
     </>
   )
 }

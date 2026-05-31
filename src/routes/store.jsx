@@ -1,4 +1,5 @@
 import { useGameState } from "~/game/store";
+import { onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
@@ -9,9 +10,14 @@ const STORE_ITEMS = [
   { id: 'Cube', name: 'Cube', cost: 100, description: 'A basic building block.' },
 ];
 
+
 export default function Store() {
   const [gameState, setGameState] = useGameState();
   const navigate = useNavigate();
+
+  onMount(() => {
+    setGameState('mode', 'display');
+  });
 
   const handleNextLevel = async () => {
     await loadLevel(gameState.level + 1);

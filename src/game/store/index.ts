@@ -18,7 +18,7 @@ type GameState = {
   entities: Record<StoreEntity['id'], StoreEntity>;
   environment: Record<string, Position>;
   level: number;
-  mode: 'edit' | 'smashing' | 'smashed' | 'replay' | 'reset';
+  mode: 'edit' | 'smashing' | 'smashed' | 'replay' | 'reset' | 'display';
   gravity: number;
   impacts: Impact[];
   targetDamage: number;

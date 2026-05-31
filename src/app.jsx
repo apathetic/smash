@@ -1,7 +1,9 @@
+import { Suspense, createEffect, on, Show } from "solid-js";
 import { Router, Route, useNavigate, useLocation } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Suspense, createEffect, on } from "solid-js";
 import { Stage } from "~/components/Stage";
+import { Nav } from "~/components/Nav";
+import { SmashButton } from "~/components/SmashButton";
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { useGameState, hydrateSession } from "~/game/store";
 import { SESSION_STORAGE_KEY } from "~/system/constants";
@@ -43,6 +45,10 @@ const Layout = ({ children }) => {
     <main>
       <Suspense>{children}</Suspense>
       <Stage />
+      <Show when={gameState.mode !== 'display'}>
+        <Nav />
+        <SmashButton />
+      </Show>
     </main>
   );
 };

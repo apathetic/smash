@@ -113,8 +113,8 @@ function createPhysics() {
           const angvel = body.angvel();
           const speedSq = linvel.x**2 + linvel.y**2 + linvel.z**2;
           const spinSq = angvel.x**2 + angvel.y**2 + angvel.z**2;
-          // small threshold allows micro-jitters to be ignored
-          if (speedSq > 0.1 || spinSq > 0.1) {
+          // lower threshold so it doesn't trigger while sliding slowly
+          if (speedSq > 0.005 || spinSq > 0.005) {
             settled = false;
           }
         }

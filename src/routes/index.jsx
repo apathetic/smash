@@ -1,4 +1,4 @@
-import { onCleanup, createEffect } from "solid-js";
+import { onCleanup, createEffect, onMount } from "solid-js";
 import { reconcile } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { useWorld, isWorldReady } from "~/system/world";
@@ -19,7 +19,6 @@ export default function Index() {
   let timer;
   let animFrame;
   let sceneStartTime = Date.now();
-
   let angle = 0;
   let endAngle = 0;
   let startRadius = 15;
@@ -111,6 +110,11 @@ export default function Index() {
       console.warn("World not ready yet, retrying...", e);
     }
   };
+
+
+  onMount(() => {
+    setGameState('mode', 'display');
+  });
 
   createEffect(() => {
     if (isWorldReady()) {
