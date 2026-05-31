@@ -1,6 +1,6 @@
-import { useGameState } from "~/game/store";
 import { onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { useGameState } from "~/game/store";
 import { loadLevel } from "~/game/hooks/loadLevel";
 import { Page } from "~/components/Page";
 

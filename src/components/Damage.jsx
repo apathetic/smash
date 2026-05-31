@@ -1,3 +1,4 @@
+import anime from 'animejs';
 import { createMemo, Show } from 'solid-js';
 import { useGameState } from '~/game/store';
 
@@ -21,7 +22,23 @@ const Damage = () => {
 
   return (
     <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed'}>
-      <aside class="fixed bottom-24 right-5 z-10 pointer-events-none flex flex-col items-end text-white drop-shadow-md uppercase">
+      <aside
+        ref={(el) => {
+          if (el) {
+            anime({
+              targets: el,
+              opacity: [0, 1],
+              scale: [0.9, 1],
+              translateX: [30, 0],
+              delay: 150, // Matches the fade out duration of "SMASH" text
+              duration: 300,
+              easing: "easeOutBack"
+            });
+          }
+        }}
+        style="opacity: 0;"
+        class="fixed bottom-24 right-5 z-10 pointer-events-none flex flex-col items-end text-white drop-shadow-md uppercase"
+      >
         <div class="text-sm font-bold tracking-wider">
           damage
         </div>
