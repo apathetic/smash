@@ -138,7 +138,7 @@ export const Menu = () => {
             <li>
               <button
                 class="text-left text-white bg-transparent border-none uppercase tracking-widest font-bold cursor-pointer pb-2 transition-colors hover:text-fuchsia-400"
-                onClick={() => handleLevel('1-discovery')}
+                onClick={() => handleLevel(0)}
                 style={{ "pointer-events": isOpen() ? "auto" : "none" }}
               >
                 1. Discovery
@@ -147,7 +147,7 @@ export const Menu = () => {
             <li>
               <button
                 class="text-left text-white bg-transparent border-none uppercase tracking-widest font-bold cursor-pointer pb-2 transition-colors hover:text-fuchsia-400"
-                onClick={() => handleLevel('2-blocks')}
+                onClick={() => handleLevel(1)}
                 style={{ "pointer-events": isOpen() ? "auto" : "none" }}
               >
                 2. Blocks
@@ -156,7 +156,7 @@ export const Menu = () => {
             <li>
               <button
                 class="text-left text-white bg-transparent border-none uppercase tracking-widest font-bold cursor-pointer pb-2 transition-colors hover:text-fuchsia-400"
-                onClick={() => handleLevel('3-alpha')}
+                onClick={() => handleLevel(2)}
                 style={{ "pointer-events": isOpen() ? "auto" : "none" }}
               >
                 3. Alpha

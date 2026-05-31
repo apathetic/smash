@@ -29,7 +29,7 @@ describe('loadLevel', () => {
 
   it('should load a level and add entities to the world', async () => {
 
-    await loadLevel('1-discovery');
+    await loadLevel(0);
 
     expect(clear).toHaveBeenCalled();
     expect(add).toHaveBeenCalledTimes(3); // Cube, Terrain, + RagDoll (always added)
@@ -39,7 +39,7 @@ describe('loadLevel', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Test with a level that doesn't exist
-    await loadLevel('nonexistent');
+    await loadLevel(-1);
 
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();

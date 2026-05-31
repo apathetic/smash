@@ -9,15 +9,12 @@ const STORE_ITEMS = [
   { id: 'Cube', name: 'Cube', cost: 100, description: 'A basic building block.' },
 ];
 
-const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
-
 export default function Store() {
   const [gameState, setGameState] = useGameState();
   const navigate = useNavigate();
 
   const handleNextLevel = async () => {
-    const nextIdx = (gameState.level + 1) % LEVELS.length;
-    await loadLevel(LEVELS[nextIdx]);
+    await loadLevel(gameState.level + 1);
     navigate('/set');
   };
 

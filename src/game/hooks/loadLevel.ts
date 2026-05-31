@@ -28,7 +28,10 @@ async function getLevelData(lvl: string) {
  * Load Level
  * Load json data; generate entities from it; insert into the game canvas
  */
-async function loadLevel(lvl: string) {
+const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
+
+
+async function loadLevel(lvl: number) {
   const { add, clear, save } = useWorld();
   const { start, stop } = useTimeline();
   const [_, setGameState] = useGameState();
@@ -39,9 +42,7 @@ async function loadLevel(lvl: string) {
   stop();
   clear();
 
-  const levels = ['1-discovery', '2-blocks', '3-alpha'];
-  const lvlIdx = levels.indexOf(lvl);
-  setGameState('level', lvlIdx !== -1 ? lvlIdx : 0);
+  setGameState('level', lvlIdx);
 
   setGameState('impacts', []);
   setGameState('totalDamage', 0);

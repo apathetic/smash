@@ -14,7 +14,7 @@ export default function Overview() {
       navigate(-1);
     } else {
       // Default to picking a level if there's no history to go back to
-      loadLevel('1-discovery');
+      loadLevel(0);
       navigate('/set');
     }
   };

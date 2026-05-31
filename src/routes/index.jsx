@@ -141,7 +141,7 @@ export default function Index() {
     <div class="fixed inset-0 flex flex-col items-center justify-center z-10 bg-black/10 backdrop-blur-[2px]">
       <button
         onClick={async () => {
-          await loadLevel('1-discovery');
+          await loadLevel(0);
           navigate('/set');
         }}
         class="text-white text-3xl font-light hover:text-gray-300 transition-colors uppercase tracking-widest drop-shadow-md bg-transparent border-none cursor-pointer"
