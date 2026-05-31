@@ -89,7 +89,7 @@ function SmashButton() {
             class="px-6 py-2 bg-fuchsia-600 text-white font-mono font-bold uppercase tracking-widest rounded hover:bg-fuchsia-500 transition-colors border-none cursor-pointer shadow-[0_0_15px_rgba(192,38,211,0.5)]"
             onClick={goStore}
           >
-            Next
+            Next Scenario
           </button>
         </>
       ) : (

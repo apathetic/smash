@@ -71,10 +71,10 @@ export default function Store() {
 
             <div class="mt-auto flex justify-end">
               <button
+                class="px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-mono font-bold uppercase tracking-widest rounded transition-all border-none cursor-pointer text-lg flex items-center gap-2"
                 onClick={handleNextLevel}
-                class="px-6 py-3 bg-white text-black font-mono font-black uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors border-none cursor-pointer"
               >
-                Next Level &rarr;
+                Proceed &rarr;
               </button>
             </div>
           </div>
