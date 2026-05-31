@@ -144,32 +144,47 @@ function SmashButton() {
  /*               filter: drop-shadow(1px 1px 1px black); */
               }
 
-              @keyframes pulse {
-                0% {
-                  transform: scale(1);
-                  filter: drop-shadow(1px 1px 1px black) drop-shadow(0 0 0 rgba(255, 51, 51, 1));
-                }
-                40% {
-                  transform: scale(1.06);
-                  filter: drop-shadow(1px 1px 1px black) drop-shadow(0 0 8px rgba(255, 51, 51, 0.9));
-                }
-                70% {
-                  transform: scale(1.1);
-                  filter: drop-shadow(1px 1px 1px black) drop-shadow(0 0 18px rgba(255, 51, 51, 0));
-                }
-                100% {
-                  transform: scale(1);
-                  filter: drop-shadow(1px 1px 1px black) drop-shadow(0 0 0 rgba(255, 51, 51, 0));
-                }
+              @keyframes pulse-scale {
+                0% { transform: scale(1); }
+                70% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+              }
+              @keyframes pulse-stroke {
+                0% { stroke-width: 0; stroke-opacity: 0.65; }
+                70% { stroke-width: 8px; stroke-opacity: 0; }
+                100% { stroke-width: 0; stroke-opacity: 0; }
               }
               .pulse-anim {
-                animation: pulse 1.5s infinite;
+                animation: pulse-scale 1.5s infinite;
                 transform-origin: center;
+              }
+              .pulse-ring {
+                stroke-linejoin: round;
+                fill: none;
+                stroke-width: 0;
+              }
+              .pulse-ring.active {
+                animation: pulse-stroke 1.5s infinite;
               }
             `}
             </style>
 
             <svg viewBox="0 0 48 20" xmlns="http://www.w3.org/2000/svg" style={{ width: '96px' }} class={`text-container ${gameState.mode === 'smashed' ? 'pulse-anim' : ''}`}>
+              {/* Expanding Pulse Ring */}
+              <text
+                x="24"
+                y="14"
+                font-family="monospace"
+                font-weight="bold"
+                font-size="14"
+                text-anchor="middle"
+                class={`pulse-ring ${gameState.mode === 'smashed' ? 'active' : ''}`}
+                stroke="white"
+              >
+                {displayText()}
+              </text>
+
+              {/* Main Text */}
               <text
                 x="24"
                 y="14"
