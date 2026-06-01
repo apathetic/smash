@@ -24,16 +24,14 @@ const Damage = () => {
     <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed'}>
       <aside
         ref={(el) => {
-          if (el) {
-            animate(el, {
-              opacity: [0, 1],
-              scale: [0.9, 1],
-              translateX: [30, 0],
-              delay: 150, // Matches the fade out duration of "SMASH" text
-              duration: 400,
-              ease: spring({ bounce: 0.4 })
-            });
-          }
+          animate(el, {
+            opacity: [0, 1],
+            scale: [0.9, 1],
+            translateX: [30, 0],
+            delay: 150,
+            duration: 400,
+            ease: spring({ bounce: 0.4 })
+          });
         }}
         style="opacity: 0;"
         class="fixed bottom-24 right-5 z-10 pointer-events-none flex flex-col items-end text-white drop-shadow-md uppercase"

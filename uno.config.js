@@ -4,17 +4,20 @@ import { defineConfig, presetUno, presetTypography } from 'unocss';
 export default defineConfig({
 
   rules: [
-    ['smash-svg', {
-      'min-height': '20em'
-    }],
-
+    ['font-lilita', {
+      'font-family': '"Lilita One", sans-serif'
+    }]
   ],
   shortcuts: {
-    'nav-button':  'inline-block text-lg font-black p-4 z-100  relative rounded-full border',
-    'container':   'max-w-3xl m-auto px-8',
     'bg-base':     'bg-white        dark:bg-[#1e1e20]',
     'color-base':  'text-[#181818]  dark:text-[#ddd]',
+    'container':   'max-w-3xl m-auto px-8',
 
+    'button-base': 'font-mono font-bold uppercase tracking-widest rounded transition-colors border-none',
+    'button-action': 'button-base cursor-pointer',
+    'modal-dialog': 'bg-zinc-900/90 m-auto max-w-3xl p-0 relative rounded-xl shadow-2xl w-full',
+    'card-blur':   'relative backdrop-blur-md border border-white/50 rounded-2xl p-3 shadow-2xl transition-transform hover:scale-105',
+    'store-row':   'flex items-center justify-between bg-black/40 p-3 rounded border border-white/10',
   },
   theme: {
     breakpoints: {

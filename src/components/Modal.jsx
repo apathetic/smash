@@ -43,16 +43,7 @@ export const Modal = (props) => {
         ref={contentRef}
         open
         style="opacity: 0; transform-origin: center;"
-        class="
-          bg-zinc-900/90
-          m-auto
-          max-w-3xl
-          p-0
-          relative
-          rounded-xl
-          shadow-2xl
-          w-full
-        "
+        class="modal-dialog"
       >
         <div class="h-full flex flex-col relative p-4 text-white font-mono">
           {props.children}

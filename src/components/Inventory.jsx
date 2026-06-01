@@ -1,7 +1,7 @@
 import { animate, stagger, spring } from "animejs";
+import { createCurtain } from "~/system/curtain";
 import { useGameState } from "~/game/store";
 import { EntityIcon } from "./EntityIcon";
-import { createCurtain } from "~/system/curtain";
 
 export function Inventory() {
   const [gameState] = useGameState();
@@ -46,7 +46,7 @@ export function Inventory() {
     <div ref={animationContainer} class="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 pointer-events-none">
       {inventoryCounts().map(({ type, count }) => (
         <div key={type} class="inventory-tile opacity-0 pointer-events-auto">
-          <div class="relative backdrop-blur-md border border-white/50 rounded-2xl p-3 shadow-2xl transition-transform hover:scale-105">
+          <div class="card-blur">
             <EntityIcon type={type} />
             {count > 1 && (
               <div class="absolute -top-3 -right-3 bg-fuchsia-600 text-white text-sm font-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg">

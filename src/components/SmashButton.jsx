@@ -176,13 +176,13 @@ function SmashButton() {
         {isLevelComplete() ? (
           <>
             <button
-              class="px-4 py-2 bg-zinc-800 text-white font-mono font-bold uppercase tracking-widest rounded hover:text-fuchsia-400 transition-colors border-none cursor-pointer"
+              class="px-4 py-2 bg-zinc-800 text-white hover:text-fuchsia-400 button-action"
               onClick={goReplay}
             >
               Replay
             </button>
             <button
-              class="px-6 py-2 bg-fuchsia-600 text-white font-mono font-bold uppercase tracking-widest rounded hover:bg-fuchsia-500 transition-colors border-none cursor-pointer shadow-[0_0_15px_rgba(192,38,211,0.5)]"
+              class="px-6 py-2 bg-fuchsia-600 text-white hover:bg-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.5)] button-action"
               onClick={goStore}
             >
               Next Scenario

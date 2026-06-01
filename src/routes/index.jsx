@@ -135,8 +135,7 @@ export default function Index() {
           await loadLevel(0);
           navigate('/set');
         }}
-        class="text-white text-3xl tracking-widest drop-shadow-md bg-transparent border-none cursor-pointer"
-        style="font-family: 'Lilita One', sans-serif;"
+        class="text-white text-3xl drop-shadow-md bg-transparent border-none cursor-pointer font-lilita"
       >
         PLAY
       </button>

@@ -44,7 +44,7 @@ export default function Store() {
           const count = gameState.inventory.filter((id) => id === item.id).length;
 
           return (
-            <div key={item.id} class="flex items-center justify-between bg-black/40 p-3 rounded border border-white/10">
+            <div key={item.id} class="store-row">
               <div>
                 <div class="font-bold text-lg uppercase tracking-wide flex items-center gap-2">
                   {item.name}
@@ -59,10 +59,10 @@ export default function Store() {
               <button
                 onClick={() => handleBuy(item)}
                 disabled={!canAfford}
-                class={`px-4 py-2 font-bold font-mono uppercase tracking-widest rounded transition-colors border-none ${
+                class={`px-4 py-2 ${
                   canAfford
-                    ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-500 cursor-pointer shadow-[0_0_10px_rgba(192,38,211,0.3)]'
-                    : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                    ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-500 shadow-[0_0_10px_rgba(192,38,211,0.3)] button-action'
+                    : 'bg-zinc-800 text-zinc-500 button-base cursor-not-allowed'
                 }`}
               >
                 {item.cost} DP
@@ -74,7 +74,7 @@ export default function Store() {
 
       <div class="mt-auto flex justify-end">
         <button
-          class="px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-mono font-bold uppercase tracking-widest rounded transition-all border-none cursor-pointer text-lg flex items-center gap-2"
+          class="px-8 py-4 bg-green-500 hover:bg-green-400 text-black text-lg flex items-center gap-2 button-action"
           onClick={handleNextLevel}
         >
           Proceed &rarr;
