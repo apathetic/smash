@@ -19,7 +19,7 @@ export const Modal = (props) => {
       scale: [0.85, 1],
       translateY: [20, 0],
       ease: spring({ bounce: 0.5 }),
-      duration: 600
+      duration: 300
     });
   });
 
@@ -27,7 +27,17 @@ export const Modal = (props) => {
     <div
       ref={backdropRef}
       style="opacity: 0;"
-      class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center pointer-events-auto"
+      class="
+        fixed
+        inset-0
+        bg-black/60
+        z-50
+        p-4
+        flex
+        items-center
+        justify-center
+        pointer-events-auto
+      "
     >
       <dialog
         ref={contentRef}
@@ -35,9 +45,6 @@ export const Modal = (props) => {
         style="opacity: 0; transform-origin: center;"
         class="
           bg-zinc-900/90
-          border
-          border-white/10
-          h-80
           m-auto
           max-w-3xl
           p-0

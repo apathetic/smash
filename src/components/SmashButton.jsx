@@ -1,8 +1,8 @@
+import { animate, spring, createTimeline } from "animejs";
 import { createSignal, createEffect, onCleanup, untrack, createMemo } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { saveLevel } from "~/game/hooks/saveLevel";
 import { useGameState } from "~/game/store";
-import { animate, spring, createTimeline } from "animejs";
 
 
 /**
@@ -106,7 +106,6 @@ function SmashButton() {
     if (isResetMode()) return '#ffaa00'; // orange
     return '#4488ff';
   };
-
 
   function goSmash(e) {
     e.stopPropagation();

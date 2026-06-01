@@ -22,7 +22,10 @@ export function Inventory() {
         scale: [0.6, 1],
         translateY: [20, 0],
         delay: stagger(35),
-        ease: spring({ bounce: 0.5, duration: 380 })
+        ease: spring({ bounce: 0.5, duration: 380 }),
+        onComplete: (anim) => {
+          anim.targets.forEach((t) => t.style.removeProperty('transform'))
+        }
       });
     },
     onExit: (el, done) => {
