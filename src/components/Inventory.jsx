@@ -23,33 +23,34 @@ export function Inventory() {
         translateY: [20, 0],
         delay: stagger(35),
         ease: spring({ bounce: 0.5, duration: 380 }),
+        // TODO: Backdrop-filter still pops in late (after ~0.5s) when the entrance transform settles and is cleared.
         onComplete: (anim) => {
-          anim.targets.forEach((t) => t.style.removeProperty('transform'))
+          anim.targets.forEach((t) => {
+            t.style.removeProperty("transform");
+          });
         }
       });
     },
     onExit: (el, done) => {
       animate(Array.from(el.children), {
         opacity: [1, 0],
-        scale: [1, 0.6],
+        scale: [1, 0.4],
         translateY: [0, 20],
-        delay: stagger(35, { from: 'last' }),
-        duration: 250,
-        ease: "inBack",
+        delay: stagger(35, { from: "last" }),
+        ease: spring({ bounce: 0.2, duration: 320 }),
         onComplete: done
       });
     }
   });
 
-
   return (
     <div ref={animationContainer} class="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 pointer-events-none">
       {inventoryCounts().map(({ type, count }) => (
         <div key={type} class="inventory-tile opacity-0 pointer-events-auto">
-          <div class="card-blur">
+          <div class="card-blur cursor-pointer">
             <EntityIcon type={type} />
             {count > 1 && (
-              <div class="absolute -top-3 -right-3 bg-fuchsia-600 text-white text-sm font-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+              <div class="absolute -top-3 -right-3 bg-fuchsia-600 text-white text-sm font-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg pointer-events-none">
                 {count}
               </div>
             )}
@@ -59,3 +60,4 @@ export function Inventory() {
     </div>
   );
 }
+
