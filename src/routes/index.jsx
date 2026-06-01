@@ -1,3 +1,4 @@
+import { animate } from "animejs";
 import { onCleanup, createEffect, onMount } from "solid-js";
 import { reconcile } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
@@ -132,8 +133,27 @@ export default function Index() {
     <div class="fixed inset-0 flex flex-col items-center justify-center z-10 bg-black/10 backdrop-blur-[2px]">
       <button
         onClick={async () => {
+          await new Promise((resolve) => {
+            animate(document.body, {
+              opacity: [1, 0],
+              duration: 400,
+              onComplete: resolve
+            });
+          });
+
           await loadLevel(0);
-          navigate('/set');
+
+          navigate("/set");
+
+          await new Promise((resolve) => {
+            animate(document.body, {
+              opacity: [0, 1],
+              duration: 500,
+              onComplete: resolve
+            });
+          });
+
+
         }}
         class="text-white text-3xl drop-shadow-md bg-transparent border-none cursor-pointer font-lilita"
       >
