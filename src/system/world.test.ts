@@ -4,18 +4,25 @@ import { registry } from '~/game/store/registry';
 
 // Mock dependencies
 vi.mock('./scene', () => ({
-  createScene: vi.fn(() => ({
+  useGraphics: vi.fn(() => ({
     scene: {
-      add: vi.fn()
+      add: vi.fn(),
+      clear: vi.fn()
+    },
+    camera: {},
+    renderer: {
+      dispose: vi.fn()
     }
-  })),
-  createLights: vi.fn(() => [])
+  }))
 }));
 
 vi.mock('./physics', () => ({
   usePhysics: vi.fn(() => ({
     world: {
       getRigidBody: vi.fn()
+    },
+    dragger: {
+      cleanup: vi.fn()
     },
     save: vi.fn(),
     restore: vi.fn(),
@@ -24,7 +31,7 @@ vi.mock('./physics', () => ({
     setGravity: vi.fn(),
     setBodiesKinematic: vi.fn(),
     markEdited: vi.fn(),
-    hasEdited: false
+    hasEdited: false,
   }))
 }));
 
