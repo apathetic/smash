@@ -70,7 +70,8 @@ describe('Controls', () => {
       start: vi.fn(),
       move: vi.fn(),
       cleanup: vi.fn(),
-      stop: vi.fn()
+      stop: vi.fn(),
+      rotate: vi.fn()
     };
 
     mockPhysics = {
