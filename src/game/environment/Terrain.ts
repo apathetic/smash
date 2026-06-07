@@ -108,11 +108,12 @@ export class Terrain extends Base {
       origin.z + TERRAIN_SIZE * 0.5
     );
 
-    const clDesc = ColliderDesc.heightfield(
-      TERRAIN_SIZE,
-      TERRAIN_SIZE,
-      heightMap,
-      new Vector3(TERRAIN_SIZE, 1, TERRAIN_SIZE)
+    // Use a TriMesh collider instead of a heightfield.
+    // Heightfields in Rapier WASM have strict dimensional requirements and can panic or scramble data 
+    // if the cell/vertex matrix dimensions don't perfectly align. A trimesh is guaranteed to be 1:1 with the visual mesh.
+    const clDesc = ColliderDesc.trimesh(
+      new Float32Array(position),
+      new Uint32Array(indices)
     ).setCollisionGroups(COLLISION_GROUP_STATIC);
 
     const body = physics.createRigidBody(rbDesc);

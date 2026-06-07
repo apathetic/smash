@@ -1,7 +1,6 @@
 import { Vector3, Quaternion } from "three";
-import { RigidBody, Collider, RigidBodyType, ImpulseJointHandle } from "rapier";
+import { RigidBody, Collider, RigidBodyType } from "rapier";
 import { useGameState } from "~/game/store";
-
 
 /**
  * Creates a dragger for the physics world.
