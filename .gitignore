@@ -19,6 +19,7 @@ TODO.md
 .zed/
 .vscode/
 .cursor/
+.gemini
 
 # System Files
 .DS_Store

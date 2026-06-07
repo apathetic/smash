@@ -1,7 +1,6 @@
 import { Vector3, Quaternion } from "three";
 import { RigidBody, Collider, RigidBodyType } from "rapier";
 import { useGameState } from "~/game/store";
-import type { ImpulseJointHandle } from "rapier";
 
 /**
  * Creates a dragger for the physics world.
@@ -10,49 +9,75 @@ import type { ImpulseJointHandle } from "rapier";
  */
 export function createDragger(physics: IPhysics) {
   const [game] = useGameState();
-  const settlingIntervals = new Map<RigidBody, ReturnType<typeof setInterval>>();
-  const connectedBodiesCache = new Map<number, RigidBody[]>();
+  const settlingBodies = new Map<number, RigidBody>();
 
   let characterController: any = null;
   let grabbedCollider: Collider | null = null;
   let grabbedBody: RigidBody | null = null;
   let draggedBodies: RigidBody[] = [];
   let grabOffset: Vector3 | null = null;
+  let settlingInterval: ReturnType<typeof setInterval> | null = null;
+
 
   /**
-   * Finds all rigid bodies connected to `startbody` via joints.
+   * Applies damping to bodies after dragging so they quickly stop moving
+   */
+  function startSettlingLoop() {
+    if (settlingInterval) return;
+    settlingInterval = setInterval(() => {
+      if (game.mode !== 'edit' || settlingBodies.size === 0) {
+        clearInterval(settlingInterval!);
+        settlingInterval = null;
+        settlingBodies.clear();
+        return;
+      }
+
+      for (const [handle, b] of settlingBodies.entries()) {
+        try {
+          const lv = b.linvel();
+          const av = b.angvel();
+          const speedSq = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z;
+          const angSq = av.x * av.x + av.y * av.y + av.z * av.z;
+
+          if (speedSq < 0.005 && angSq < 0.005) {
+            b.setBodyType(RigidBodyType.KinematicPositionBased, true);
+            b.setLinearDamping(0);
+            b.setAngularDamping(0);
+            settlingBodies.delete(handle);
+          }
+        } catch (e) {
+          // Body was likely destroyed
+          settlingBodies.delete(handle);
+        }
+      }
+    }, 100);
+  }
+
+  /**
+   * Finds all rigid bodies connected to `startBody`. Uses a joints BFS.
    */
   function getConnectedBodies(startBody: RigidBody): RigidBody[] {
-    if (connectedBodiesCache.has(startBody.handle)) {
-      return connectedBodiesCache.get(startBody.handle)!;
-    }
-    const connected = new Set<RigidBody>();
+    const bodies = new Map<number, RigidBody>([[startBody.handle, startBody]]);
     const queue = [startBody];
-    connected.add(startBody);
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      physics.world.impulseJoints.forEachJointHandleAttachedToRigidBody(current.handle, (jointHandle: ImpulseJointHandle) => {
-        const joint = physics.world.impulseJoints.get(jointHandle);
-        if (joint) {
-          const b1 = joint.body1();
-          const b2 = joint.body2();
-          const neighbor = (b1.handle === current.handle) ? b2 : b1;
-          if (!connected.has(neighbor)) {
-            connected.add(neighbor);
-            queue.push(neighbor);
-          }
+      physics.world.impulseJoints.forEachJointHandleAttachedToRigidBody(current.handle, (handle) => {
+        const joint = physics.world.impulseJoints.get(handle);
+        if (!joint) return;
+
+        const b1 = joint.body1();
+        const b2 = joint.body2();
+        const neighbor = b1.handle === current.handle ? b2 : b1;
+
+        if (!bodies.has(neighbor.handle)) {
+          bodies.set(neighbor.handle, neighbor);
+          queue.push(neighbor);
         }
       });
     }
 
-    const arr = Array.from(connected);
-
-    arr.forEach(b => {
-      connectedBodiesCache.set(b.handle, arr);
-    });
-
-    return arr;
+    return Array.from(bodies.values());
   }
 
   /**
@@ -76,12 +101,9 @@ export function createDragger(physics: IPhysics) {
     draggedBodies = getConnectedBodies(grabbedBody);
 
     draggedBodies.forEach((b) => {
-      if (settlingIntervals.has(b)) {
-        clearInterval(settlingIntervals.get(b));
-        settlingIntervals.delete(b);
-      }
+      settlingBodies.delete(b.handle);
 
-      if (b === grabbedBody) {
+      if (b.handle === grabbedBody!.handle) {
         b.setBodyType(RigidBodyType.KinematicPositionBased, true);
       } else {
         b.setBodyType(RigidBodyType.Dynamic, true);
@@ -101,41 +123,37 @@ export function createDragger(physics: IPhysics) {
   function move(targetPoint: { x: number, y: number, z: number }) {
     if (!grabbedBody || !grabbedCollider || !grabOffset) return;
 
-    const currentPos = new Vector3().copy(grabbedBody.translation() as any);
-    const desiredPos = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z).add(grabOffset);
-    const movement = new Vector3().subVectors(desiredPos, currentPos);
-    const minComputedMovement = movement.clone();
+    const currentPos = grabbedBody.translation();
+    const movement = new Vector3(targetPoint.x, targetPoint.y, targetPoint.z)
+      .add(grabOffset)
+      .sub(new Vector3(currentPos.x, currentPos.y, currentPos.z));
+
+    const minMove = movement.clone();
     const numColliders = grabbedBody.numColliders();
 
     for (let i = 0; i < numColliders; i++) {
-      const c = grabbedBody.collider(i);
-      // Compute movement to avoid obstacles, ignore other bodies in this entity group
       characterController.computeColliderMovement(
-        c,
+        grabbedBody.collider(i),
         movement,
         undefined,
         undefined,
         (col: Collider) => {
-          const parent = col.parent();
-          if (parent) {
-             const draggedHandles = draggedBodies.map(b => b.handle);
-             return !draggedHandles.includes(parent.handle);
-          }
-          return true;
+          const parentHandle = col.parent()?.handle;
+          return parentHandle === undefined || !draggedBodies.some(b => b.handle === parentHandle);
         }
       );
-      const cm = characterController.computedMovement();
 
+      const cm = characterController.computedMovement();
       // Take the most restrictive movement along each axis
-      if (Math.abs(cm.x) < Math.abs(minComputedMovement.x)) minComputedMovement.x = cm.x;
-      if (Math.abs(cm.y) < Math.abs(minComputedMovement.y)) minComputedMovement.y = cm.y;
-      if (Math.abs(cm.z) < Math.abs(minComputedMovement.z)) minComputedMovement.z = cm.z;
+      if (Math.abs(cm.x) < Math.abs(minMove.x)) minMove.x = cm.x;
+      if (Math.abs(cm.y) < Math.abs(minMove.y)) minMove.y = cm.y;
+      if (Math.abs(cm.z) < Math.abs(minMove.z)) minMove.z = cm.z;
     }
 
     grabbedBody.setNextKinematicTranslation({
-      x: currentPos.x + minComputedMovement.x,
-      y: currentPos.y + minComputedMovement.y,
-      z: currentPos.z + minComputedMovement.z
+      x: currentPos.x + minMove.x,
+      y: currentPos.y + minMove.y,
+      z: currentPos.z + minMove.z
     });
   }
 
@@ -146,12 +164,9 @@ export function createDragger(physics: IPhysics) {
     if (!grabbedBody) return;
 
     draggedBodies.forEach((b) => {
-      if (game.mode !== 'edit') {
-        // In smash mode, the global setEditMode(false) forces bodies to Dynamic and resets damping.
-        return;
-      }
+      if (game.mode !== 'edit') return;
 
-      if (b === grabbedBody) {
+      if (b.handle === grabbedBody!.handle) {
         b.setBodyType(RigidBodyType.KinematicPositionBased, true);
         b.setLinearDamping(0);
         b.setAngularDamping(0);
@@ -160,37 +175,13 @@ export function createDragger(physics: IPhysics) {
         b.setBodyType(RigidBodyType.Dynamic, true);
         b.setLinearDamping(10.0);
         b.setAngularDamping(10.0);
-
-        const interval = setInterval(() => {
-          try {
-            if (game.mode !== 'edit') {
-               // Game switched to smash mode while settling! Global setEditMode handles cleanup.
-               clearInterval(interval);
-               settlingIntervals.delete(b);
-               return;
-            }
-
-            const lv = b.linvel();
-            const av = b.angvel();
-            const speedSq = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z;
-            const angSq = av.x * av.x + av.y * av.y + av.z * av.z;
-            if (speedSq < 0.005 && angSq < 0.005) {
-              b.setBodyType(RigidBodyType.KinematicPositionBased, true);
-              b.setLinearDamping(0);
-              b.setAngularDamping(0);
-              clearInterval(interval);
-              settlingIntervals.delete(b);
-            }
-          } catch (_err) {
-            // Body was likely destroyed
-            clearInterval(interval);
-            settlingIntervals.delete(b);
-            console.error(_err);
-          }
-        }, 100);
-        settlingIntervals.set(b, interval);
+        settlingBodies.set(b.handle, b);
       }
     });
+
+    if (settlingBodies.size > 0) {
+      startSettlingLoop();
+    }
 
     grabbedCollider = null;
     grabbedBody = null;
@@ -202,9 +193,11 @@ export function createDragger(physics: IPhysics) {
    * Cleans up all active intervals, caches, and controller references.
    */
   function cleanup() {
-    settlingIntervals.forEach((interval) => clearInterval(interval));
-    settlingIntervals.clear();
-    connectedBodiesCache.clear();
+    if (settlingInterval) {
+      clearInterval(settlingInterval);
+      settlingInterval = null;
+    }
+    settlingBodies.clear();
     grabbedCollider = null;
     grabbedBody = null;
     draggedBodies = [];
@@ -236,6 +229,7 @@ export function createDragger(physics: IPhysics) {
       w: threeRot.w
     });
   }
+
 
   return {
     start,
