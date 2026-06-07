@@ -57,7 +57,13 @@ describe('Controls', () => {
         })
       } as any,
       renderer: {
-        domElement: document.createElement('canvas') as any
+        domElement: (() => {
+          const canvas = document.createElement('canvas') as any;
+          canvas.setPointerCapture = vi.fn();
+          canvas.releasePointerCapture = vi.fn();
+          canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
+          return canvas;
+        })()
       } as any,
       scene: {
         add: vi.fn()
@@ -107,8 +113,9 @@ describe('Controls', () => {
     expect(controls).toBeDefined();
   });
 
-  it('should handle mouse down event in edit mode', () => {
-    const event = new MouseEvent('mousedown', {
+  it('should handle pointer down event in edit mode', () => {
+    const event = new PointerEvent('pointerdown', {
+      pointerId: 1,
       clientX: 500,
       clientY: 300
     });
@@ -118,11 +125,13 @@ describe('Controls', () => {
 
     expect(mockPhysics.world.castRay).toHaveBeenCalled();
     expect(mockPhysics.dragger.start).toHaveBeenCalled();
+    expect(mockGraphics.renderer.domElement.setPointerCapture).toHaveBeenCalledWith(1);
   });
 
-  it('should handle mouse move event when an object is selected', () => {
+  it('should handle pointer move event when an object is selected', () => {
     // First select an object
-    const downEvent = new MouseEvent('mousedown', {
+    const downEvent = new PointerEvent('pointerdown', {
+      pointerId: 1,
       clientX: 500,
       clientY: 300
     });
@@ -133,8 +142,9 @@ describe('Controls', () => {
     // Mock that we are dragging
     (mockPhysics.dragger.isDragging as any).mockReturnValue(true);
 
-    // Then move the mouse
-    const moveEvent = new MouseEvent('mousemove', {
+    // Then move the mouse/pointer
+    const moveEvent = new PointerEvent('pointermove', {
+      pointerId: 1,
       clientX: 600,
       clientY: 400
     });
@@ -143,9 +153,10 @@ describe('Controls', () => {
     expect(mockPhysics.dragger.move).toHaveBeenCalled();
   });
 
-  it('should handle mouse up event and reset the selected body', () => {
+  it('should handle pointer up event and reset the selected body', () => {
     // First select an object
-    const downEvent = new MouseEvent('mousedown', {
+    const downEvent = new PointerEvent('pointerdown', {
+      pointerId: 1,
       clientX: 500,
       clientY: 300
     });
@@ -153,12 +164,13 @@ describe('Controls', () => {
     Object.defineProperty(downEvent, 'target', { value: mockGraphics.renderer.domElement, writable: false });
     mockGraphics.renderer.domElement.dispatchEvent(downEvent);
 
-    // Then release the mouse
-    const upEvent = new MouseEvent('mouseup');
+    // Then release the mouse/pointer
+    const upEvent = new PointerEvent('pointerup', { pointerId: 1 });
     window.dispatchEvent(upEvent);
 
     // The dragger should be stopped
     expect(mockPhysics.dragger.stop).toHaveBeenCalled();
+    expect(mockGraphics.renderer.domElement.releasePointerCapture).toHaveBeenCalledWith(1);
   });
 
   it.skip('should not interact with objects when not in edit mode', () => {
@@ -168,7 +180,8 @@ describe('Controls', () => {
     // Recreate controls with new game state
     controls = createControls({ graphics: mockGraphics, physics: mockPhysics });
 
-    const event = new MouseEvent('mousedown', {
+    const event = new PointerEvent('pointerdown', {
+      pointerId: 1,
       clientX: 500,
       clientY: 300
     });

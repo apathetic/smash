@@ -54,22 +54,22 @@ function createControls({ graphics, physics }: ControlProps) {
 
 
   /**
-   * Converts mouse coordinates to normalized device coordinates and updates the raycaster
+   * Converts pointer coordinates to normalized device coordinates and updates the raycaster
    * Note: This assumes the canvas is full-window size.
    *
-   * @param {MouseEvent} event - The mouse event containing client coordinates
+   * @param {PointerEvent} event - The pointer event containing client coordinates
    */
-  function raycast(event: MouseEvent) {
+  function raycast(event: PointerEvent) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;  // note: pre-supposes <canvas> is full-window size
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
   }
 
   /**
-   * Handles mouse down events for entity selection and dragging.
-   * @param {MouseEvent} event - The mouse event containing client coordinates
+   * Handles pointer down events for entity selection and dragging.
+   * @param {PointerEvent} event - The pointer event containing client coordinates
    */
-  function onMouseDown(event: MouseEvent) {
+  function onPointerDown(event: PointerEvent) {
     // In smash mode, no entity interaction - only camera controls
     if (gameState.mode !== 'edit') return;
 
@@ -100,14 +100,16 @@ function createControls({ graphics, physics }: ControlProps) {
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
       dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
+
+      canvas.setPointerCapture(event.pointerId);
     }
   }
 
   /**
-   * Handles mouse move events during entity dragging.
-   * @param {MouseEvent} event - The mouse event containing client coordinates
+   * Handles pointer move events during entity dragging.
+   * @param {PointerEvent} event - The pointer event containing client coordinates
    */
-  function onMouseMove(event: MouseEvent) {
+  function onPointerMove(event: PointerEvent) {
     if (!dragger.isDragging()) return;
     if (gameState.mode !== 'edit') return;
 
@@ -159,9 +161,12 @@ function createControls({ graphics, physics }: ControlProps) {
   }
 
   /**
-   * Handles mouse-up events during entity dragging.
+   * Handles pointer up and cancel events during entity dragging.
    */
-  function onMouseUp() {
+  function onPointerUp(event: PointerEvent) {
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
     controls.enabled = true;
     dragger.stop();
   }
@@ -170,16 +175,18 @@ function createControls({ graphics, physics }: ControlProps) {
    * Destroys the controls and removes event listeners.
    */
   function destroy() {
-    canvas.removeEventListener("mousedown", onMouseDown);
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
+    canvas.removeEventListener("pointerdown", onPointerDown);
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("pointercancel", onPointerUp);
     controls.dispose();
   }
 
 
-  canvas.addEventListener("mousedown", onMouseDown);
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("mouseup", onMouseUp);
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
 
   (controls as any).destroy = destroy;
 
