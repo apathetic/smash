@@ -2,12 +2,17 @@ import { BoxGeometry, MeshPhongMaterial, Mesh } from 'three';
 import { RigidBodyDesc, ColliderDesc, JointData, ActiveEvents,   /* PrismaticImpulseJoint, SphericalImpulseJoint */ } from 'rapier';
 import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
-import type { World, RigidBody } from 'rapier';
+import type { World, RigidBody, RevoluteImpulseJoint } from 'rapier';
 import type { Scene } from 'three';
 
 
-const STIFFNESS = 5.0;
-const DAMPING = 0.8;
+/**
+ * Muscle tone: every hinge joint gets a weak position motor pulling it
+ * back toward the spawn pose, plus rotation limits, so limbs are
+ * moderately stiff and only bend at natural angles.
+ */
+const JOINT_STIFFNESS = 30;
+const JOINT_DAMPING = 5;
 
 const skinColors = [
   0xe9c8bc,
@@ -88,6 +93,20 @@ export class RagDoll extends Base {
     const meshList: Mesh[] = [];
     const bodyList: RigidBody[] = [];
     const createMeshBody = createBoxBody(physics, meshList, bodyList);
+
+    // Jointed neighbours overlap at their anchor points; disabling their
+    // contacts stops them fighting the joint (standard ragdoll practice).
+    // Non-adjacent parts still collide normally. Hinge joints created with
+    // `limits` also get a position motor for muscle tone.
+    const createJoint = (data: JointData, b1: RigidBody, b2: RigidBody, limits?: [number, number]) => {
+      const joint = physics.createImpulseJoint(data, b1, b2, true);
+      joint.setContactsEnabled(false);
+      if (limits) {
+        (joint as RevoluteImpulseJoint).setLimits(...limits);
+        (joint as RevoluteImpulseJoint).configureMotorPosition(0, JOINT_STIFFNESS, JOINT_DAMPING);
+      }
+      return joint;
+    };
 
     const skin  =     skinColors[Math.floor(Math.random() * skinColors.length)];
     const shirt = clothingColors[Math.floor(Math.random() * clothingColors.length)];
@@ -194,13 +213,9 @@ export class RagDoll extends Base {
     const neckJointData = JointData.revolute(
       { x: 0, y: -0.25, z: 0 },  // Point where the joint is attached on the first rigid-body
       { x: 0, y: 0.3, z: 0 },    // Point where the joint is attached on the second rigid-body
-      { x: Math.PI/8, y: Math.PI/8, z: 0 }       // Different axis (front-to-back movement)
+      { x: Math.SQRT1_2, y: Math.SQRT1_2, z: 0 } // Different axis (front-to-back movement); must be a unit vector
     );
-    // Modify the joint properties to make it looser
-    neckJointData.stiffness = STIFFNESS;
-    neckJointData.damping = DAMPING;
-    const neckJoint = physics.createImpulseJoint(neckJointData, headBody, chestBody, true);
-    neckJoint.setContactsEnabled(false);
+    const _neckJoint = createJoint(neckJointData, headBody, chestBody, [-0.6, 0.6]);
 
 
     const waistData = JointData.revolute(
@@ -209,57 +224,56 @@ export class RagDoll extends Base {
       { x: 1, y: 0, z: 0 }          // Axis of rotation (x-axis = side-to-side bending)
     );
     const limitAngle = Math.PI / 6; // 30 degrees rotation limit
-    waistData.stiffness = STIFFNESS;
-    waistData.damping = DAMPING;
-    waistData.limitsEnabled = true; // limits to restrict the joint rotation
-    waistData.limits = [limitAngle, limitAngle];
-    const _waistJoint = physics.createImpulseJoint(waistData, chestBody, hipsBody, true);
-    // waistJoint.setContactsEnabled(false);
+    const _waistJoint = createJoint(waistData, chestBody, hipsBody, [-limitAngle, limitAngle]);
 
 
-    const shoulderLData = JointData.spherical({ x: 0.3, y: 0.25, z: 0 }, { x: -0.2, y: 0, z: 0 });
-    shoulderLData.stiffness = STIFFNESS;
-    shoulderLData.damping = DAMPING;
-    const _shoulderLJoint = physics.createImpulseJoint(shoulderLData, chestBody, upperArmLBody, true);
+    // Shoulders hinge about the Z-axis so the arms swing between the
+    // T-pose and hanging at the sides; elbows hinge about Y and bend
+    // forward only, like real elbows
+    const shoulderLData = JointData.revolute({ x: 0.3, y: 0.25, z: 0 }, { x: -0.2, y: 0, z: 0 }, { x: 0, y: 0, z: 1 });
+    const _shoulderLJoint = createJoint(shoulderLData, chestBody, upperArmLBody, [-1.6, 0.3]);
 
 
-    const elbowLData = JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.2, y: 0, z: 0 });
-    const _elbowLJoint = physics.createImpulseJoint(elbowLData, upperArmLBody, foreArmLBody, true);
+    const elbowLData = JointData.revolute({ x: 0.2, y: 0, z: 0 }, { x: -0.2, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    const _elbowLJoint = createJoint(elbowLData, upperArmLBody, foreArmLBody, [-2.4, 0]);
 
 
-    const wristLData = JointData.spherical({ x: 0.2, y: 0, z: 0 }, { x: -0.1, y: 0, z: 0 });
-    const _wristLJoint = physics.createImpulseJoint(wristLData, foreArmLBody, handLBody, true);
+    const wristLData = JointData.revolute({ x: 0.2, y: 0, z: 0 }, { x: -0.1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    const _wristLJoint = createJoint(wristLData, foreArmLBody, handLBody, [-0.5, 0.5]);
 
 
-    const shoulderRData = JointData.spherical({ x: -0.3, y: 0.25, z: 0 }, { x: 0.2, y: 0, z: 0 });
-    const _shoulderRJoint = physics.createImpulseJoint(shoulderRData, chestBody, upperArmRBody, true);
+    const shoulderRData = JointData.revolute({ x: -0.3, y: 0.25, z: 0 }, { x: 0.2, y: 0, z: 0 }, { x: 0, y: 0, z: 1 });
+    const _shoulderRJoint = createJoint(shoulderRData, chestBody, upperArmRBody, [-0.3, 1.6]);
 
 
     // axisA: CANNON.Vec3.UNITX,
     // axisB: CANNON.Vec3.UNITX,
     // angle: Math.PI / 4,
     // twistAngle: Math.PI / 8
-    const elbowRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.2, y: 0, z: 0 });
-    const _elbowRJoint = physics.createImpulseJoint(elbowRData, upperArmRBody, foreArmRBody, true);
+    const elbowRData = JointData.revolute({ x: -0.2, y: 0, z: 0 }, { x: 0.2, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    const _elbowRJoint = createJoint(elbowRData, upperArmRBody, foreArmRBody, [0, 2.4]);
 
 
     // axisA: CANNON.Vec3.UNITX,
     // axisB: CANNON.Vec3.UNITX,
     // angle: Math.PI / 8,
     // twistAngle: Math.PI / 8
-    const wristRData = JointData.spherical({ x: -0.2, y: 0, z: 0 }, { x: 0.1, y: 0, z: 0 });
-    physics.createImpulseJoint(wristRData, foreArmRBody, handRBody, true);
+    const wristRData = JointData.revolute({ x: -0.2, y: 0, z: 0 }, { x: 0.1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    createJoint(wristRData, foreArmRBody, handRBody, [-0.5, 0.5]);
 
 
     // axisA: CANNON.Vec3.UNITY,
     // axisB: CANNON.Vec3.UNITY,
     // angle: Math.PI / 4,
     // twistAngle: Math.PI / 8
-    const hipLData = JointData.spherical(
+    // Hips and knees hinge about the X-axis (fore-aft swing); the limits
+    // stop legs folding up the back or knees bending forward
+    const hipLData = JointData.revolute(
       { x: 0.2, y: -0.15, z: 0 },
-      { x: 0, y: 0.2, z: 0 }
+      { x: 0, y: 0.2, z: 0 },
+      { x: 1, y: 0, z: 0 }
     );
-    physics.createImpulseJoint(hipLData, hipsBody, upperLegLBody, true);
+    createJoint(hipLData, hipsBody, upperLegLBody, [-1.6, 0.5]);
 
 
     // axisA: CANNON.Vec3.UNITX,
@@ -271,29 +285,31 @@ export class RagDoll extends Base {
       { x: 0, y: 0.2, z: 0 },   // Anchor point on lower leg
       { x: 1, y: 0, z: 0 }      // Axis of rotation (x-axis = side-to-side knee movement)
     );
-    physics.createImpulseJoint(kneeLData, upperLegLBody, lowerLegLBody, true);
+    createJoint(kneeLData, upperLegLBody, lowerLegLBody, [0, 2.4]);
 
 
     // axisA: CANNON.Vec3.UNITY,
     // axisB: CANNON.Vec3.UNITY,
     // angle: Math.PI / 8,
     // twistAngle: Math.PI / 8
-    const ankleLData = JointData.spherical(
+    const ankleLData = JointData.revolute(
       { x: 0, y: -0.2, z: 0 },
       { x: 0, y: 0.06, z: -0.04 },
+      { x: 1, y: 0, z: 0 }
     );
-    const _ankleLJoint = physics.createImpulseJoint(ankleLData, lowerLegLBody, footLBody, true);
+    const _ankleLJoint = createJoint(ankleLData, lowerLegLBody, footLBody, [-0.5, 0.5]);
 
 
     // axisA: CANNON.Vec3.UNITY,
     // axisB: CANNON.Vec3.UNITY,
     // angle: Math.PI / 4,
     // twistAngle: Math.PI / 8
-    const hipRData = JointData.spherical(
+    const hipRData = JointData.revolute(
       { x: -0.2, y: -0.15, z: 0 },
       { x: 0,    y: 0.2,   z: 0 },
+      { x: 1, y: 0, z: 0 }
     );
-    const _hipRJoint = physics.createImpulseJoint(hipRData, hipsBody, upperLegRBody, true);
+    const _hipRJoint = createJoint(hipRData, hipsBody, upperLegRBody, [-1.6, 0.5]);
 
 
     // axisA: CANNON.Vec3.UNITY,
@@ -305,7 +321,7 @@ export class RagDoll extends Base {
       { x: 0, y: 0.2, z: 0 },   // Anchor point on lower leg
       { x: 1, y: 0, z: 0 }      // Axis of rotation (x-axis = side-to-side knee movement)
     );
-    physics.createImpulseJoint(kneeRData, upperLegRBody, lowerLegRBody, true);
+    createJoint(kneeRData, upperLegRBody, lowerLegRBody, [0, 2.4]);
 
 
     const ankleRData = JointData.revolute(
@@ -313,9 +329,7 @@ export class RagDoll extends Base {
       { x: 0, y: 0.06, z: -0.04 }, // Anchor point on foot
       { x: 1, y: 0, z: 0 }         // Axis of rotation (side-to-side)
     );
-    ankleRData.stiffness = 15.0;
-    ankleRData.damping = 0.7;
-    const _ankleRJoint = physics.createImpulseJoint(ankleRData, lowerLegRBody, footRBody, true);
+    const _ankleRJoint = createJoint(ankleRData, lowerLegRBody, footRBody, [-0.5, 0.5]);
 
 
     // const decorate(head) => {

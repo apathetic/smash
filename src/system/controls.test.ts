@@ -86,13 +86,6 @@ describe('Controls', () => {
           collider: mockCollider,
           toi: 1.0 // time of impact
         }),
-        createCharacterController: vi.fn().mockImplementation(() => ({
-          setApplyImpulsesToDynamicBodies: vi.fn().mockReturnThis(),
-          enableAutostep: vi.fn().mockReturnThis(),
-          enableSnapToGround: vi.fn().mockReturnThis(),
-          computeColliderMovement: vi.fn(),
-          computedMovement: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 })
-        })),
         impulseJoints: {
           forEachJointHandleAttachedToRigidBody: vi.fn(),
           get: vi.fn()

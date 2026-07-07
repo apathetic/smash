@@ -1,53 +1,67 @@
 import { vi } from 'vitest';
 
-vi.mock('rapier', () => ({
-  World: vi.fn().mockImplementation(() => ({
-    gravity: { x: 0, y: 0, z: 0 },
-    integrationParameters: { numSolverIterations: 4 },
-    step: vi.fn(),
-    forEachRigidBody: vi.fn(),
-    castRay: vi.fn().mockReturnValue({
-      collider: {
-        parent: vi.fn().mockReturnValue({
-          setBodyType: vi.fn(),
-          setTranslation: vi.fn(),
-          setRotation: vi.fn()
-        }),
-        setActiveCollisionTypes: vi.fn()
-      },
-      toi: 1.0
-    }),
-    createCharacterController: vi.fn().mockImplementation(() => ({
-      setApplyImpulsesToDynamicBodies: vi.fn().mockReturnThis(),
-      enableAutostep: vi.fn().mockReturnThis(),
-      enableSnapToGround: vi.fn().mockReturnThis(),
-      computeColliderMovement: vi.fn(),
-      computedMovement: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 })
-    }))
-  })),
-  EventQueue: vi.fn().mockImplementation(() => ({
-    drainContactForceEvents: vi.fn()
-  })),
-  RigidBodyType: { KinematicPositionBased: 1, Dynamic: 2, Fixed: 3 },
-  Ray: vi.fn(),
-  QueryFilterFlags: { ONLY_DYNAMIC: 1 },
-  ActiveCollisionTypes: { DEFAULT: 1, KINEMATIC_FIXED: 2 },
-  Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({ x, y, z })),
-  Quaternion: vi.fn().mockImplementation((x = 0, y = 0, z = 0, w = 1) => ({ x, y, z, w })),
-  RigidBodyDesc: vi.fn().mockImplementation(() => ({
+vi.mock('rapier', () => {
+  const rigidBodyDesc = () => ({
     setTranslation: vi.fn().mockReturnThis(),
     setRotation: vi.fn().mockReturnThis(),
     setAdditionalMass: vi.fn().mockReturnThis(),
     setLinearDamping: vi.fn().mockReturnThis(),
     setAngularDamping: vi.fn().mockReturnThis()
-  })),
-  ColliderDesc: vi.fn().mockImplementation(() => ({
-    setTranslation: vi.fn().mockReturnThis(),
-    setRotation: vi.fn().mockReturnThis(),
-    setSensor: vi.fn().mockReturnThis(),
-    setActiveCollisionTypes: vi.fn().mockReturnThis()
-  }))
-}));
+  });
+
+  return {
+    World: vi.fn().mockImplementation(() => ({
+      gravity: { x: 0, y: 0, z: 0 },
+      integrationParameters: { numSolverIterations: 4 },
+      step: vi.fn(),
+      forEachRigidBody: vi.fn(),
+      castRay: vi.fn().mockReturnValue({
+        collider: {
+          parent: vi.fn().mockReturnValue({
+            setBodyType: vi.fn(),
+            setTranslation: vi.fn(),
+            setRotation: vi.fn()
+          }),
+          setActiveCollisionTypes: vi.fn()
+        },
+        toi: 1.0
+      }),
+      createRigidBody: vi.fn(),
+      removeRigidBody: vi.fn(),
+      createImpulseJoint: vi.fn(),
+      impulseJoints: {
+        forEachJointHandleAttachedToRigidBody: vi.fn(),
+        get: vi.fn()
+      }
+    })),
+    EventQueue: vi.fn().mockImplementation(() => ({
+      drainContactForceEvents: vi.fn()
+    })),
+    RigidBodyType: { KinematicPositionBased: 1, Dynamic: 2, Fixed: 3 },
+    Ray: vi.fn(),
+    QueryFilterFlags: { ONLY_DYNAMIC: 1 },
+    ActiveCollisionTypes: { DEFAULT: 1, KINEMATIC_FIXED: 2 },
+    Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({ x, y, z })),
+    Quaternion: vi.fn().mockImplementation((x = 0, y = 0, z = 0, w = 1) => ({ x, y, z, w })),
+    JointData: {
+      fixed: vi.fn(),
+      spherical: vi.fn(),
+      revolute: vi.fn(),
+      spring: vi.fn()
+    },
+    RigidBodyDesc: Object.assign(vi.fn().mockImplementation(rigidBodyDesc), {
+      dynamic: vi.fn(rigidBodyDesc),
+      fixed: vi.fn(rigidBodyDesc),
+      kinematicPositionBased: vi.fn(rigidBodyDesc)
+    }),
+    ColliderDesc: vi.fn().mockImplementation(() => ({
+      setTranslation: vi.fn().mockReturnThis(),
+      setRotation: vi.fn().mockReturnThis(),
+      setSensor: vi.fn().mockReturnThis(),
+      setActiveCollisionTypes: vi.fn().mockReturnThis()
+    }))
+  };
+});
 
 vi.mock('three', () => ({
   Vector2: vi.fn().mockImplementation((x, y) => ({
@@ -63,7 +77,18 @@ vi.mock('three', () => ({
     multiplyScalar: vi.fn().mockReturnThis(),
     addScaledVector: vi.fn().mockReturnThis(),
     subVectors: vi.fn().mockReturnThis(),
-    unproject: vi.fn().mockReturnThis()
+    unproject: vi.fn().mockReturnThis(),
+    applyQuaternion: vi.fn().mockReturnThis(),
+    length: vi.fn().mockReturnValue(0),
+    setLength: vi.fn().mockReturnThis()
+  })),
+  Quaternion: vi.fn().mockImplementation((x = 0, y = 0, z = 0, w = 1) => ({
+    x, y, z, w,
+    set: vi.fn().mockReturnThis(),
+    identity: vi.fn().mockReturnThis(),
+    invert: vi.fn().mockReturnThis(),
+    premultiply: vi.fn().mockReturnThis(),
+    setFromAxisAngle: vi.fn().mockReturnThis()
   })),
   Plane: vi.fn().mockImplementation(() => ({
     constant: 0,

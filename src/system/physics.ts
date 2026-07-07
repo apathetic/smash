@@ -33,11 +33,11 @@ function createPhysics() {
 
   /**
    * Advances the physics simulation by a single frame.
-   * Note: `_delta` is not used at this time.
    */
-  function update(_delta: number) {
+  function update(delta: number) {
     if (paused) return;
 
+    instance.dragger.step(delta); // [TODO] couple dragger, here?
     instance.world.step(eventQueue);
     instance.stepId += 1;
     eventQueue.drainContactForceEvents(damageHandler);
@@ -47,6 +47,7 @@ function createPhysics() {
    * Saves the state of the Physics simulation.
    */
   function save() {
+    instance.dragger.cleanup(); // an active drag must not leak its state into the snapshot
     instance.setBodiesKinematic(true);
     snapshot = instance.world.takeSnapshot();
     hasEdited = false;
@@ -201,7 +202,12 @@ function createPhysics() {
       instance.setGravity(true);
     } else if (game.mode === 'edit') {
       instance.setPaused(false);
-      instance.setGravity(false);
+
+      // instance.setGravity(false);
+      // Gravity stays on: kinematic bodies ignore it (so the frozen layout
+      // holds), while any body the dragger makes dynamic falls naturally.
+      instance.setGravity(true);
+
       instance.setBodiesKinematic(true);
     }
   });
