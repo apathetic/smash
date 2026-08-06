@@ -1,5 +1,5 @@
 import { Vector3, Quaternion } from "three";
-import { RigidBodyType, RigidBodyDesc, JointData } from "rapier";
+import { RigidBodyType } from "rapier";
 import { useGameState } from "~/game/store";
 import type { RigidBody, Collider } from "rapier";
 
@@ -12,26 +12,43 @@ const DRAG_LINEAR_DAMPING = 0.4;
 const DRAG_ANGULAR_DAMPING = 1.0;
 
 /**
- * The drag spring (a classic mouse joint): a kinematic anchor follows the
- * cursor and a stiff spring joint pulls the grabbed body's grab point to
- * it.
- *
- * - DRAG_FREQUENCY (rad/s) sets stiffness (k = m·ω²). High, so tracking
- *   error is a couple of centimetres — no visible rubber-banding.
- * - DRAG_DAMPING_RATIO ≥ 1 (c = 2ζmω) means the spring never overshoots,
- *   so the body cannot snap past the cursor and oscillate back.
- * - MAX_STRETCH (m) caps how far the anchor may lead the grab point. It
- *   is a max-force limit (F ≤ k · MAX_STRETCH): when a limb snags on
- *   terrain the spring simply stretches to its limit and the assembly
- *   stops, instead of the drag bulldozing parts through the world.
- * - GRAB_DAMPING damps the grabbed body itself. The spring's own damping
- *   only acts along its axis, so this is what stops the body circling the
- *   cursor sideways.
+ * Damping once released. Much higher than while held: a free-swinging
+ * limb is a very lightly damped pendulum and would sway for tens of
+ * seconds before Rapier's sleep detector ever saw it as at rest. This
+ * brings the assembly to a hanging stop in a second or two, then it
+ * freezes.
  */
-const DRAG_FREQUENCY = 40;
-const DRAG_DAMPING_RATIO = 1.2;
-const MAX_STRETCH = 0.35;
-const GRAB_DAMPING = 2.0;
+const SETTLE_LINEAR_DAMPING = 3.0;
+const SETTLE_ANGULAR_DAMPING = 5.0;
+
+/**
+ * How heavy the grabbed body is made relative to the rest of its
+ * assembly, for the duration of the drag.
+ *
+ * A ragdoll's limbs outweigh any one part ~5:1, so a velocity commanded
+ * on the grabbed part gets negotiated away by the joints against all that
+ * stationary mass (the body then tracks at a fraction of cursor speed),
+ * and when the cursor stops, the limbs' momentum keeps throwing the light
+ * part around (rubber-banding). A truck feels right for the opposite
+ * reason: its chassis dominates its wheels.
+ *
+ * Making the held part dominate its own assembly reproduces that. The
+ * mass stays finite, so joint and contact corrections are still shared
+ * and bounded — this is nothing like the infinite mass of a kinematic
+ * body. The limbs are untouched, so they still swing and flail freely;
+ * they simply stop dragging the held part off the cursor.
+ */
+const DRAG_MASS_RATIO = 20;
+
+/**
+ * Ceiling on the grabbed body's commanded speed (m/s). The drag is
+ * velocity-driven — each step the grabbed body is given exactly the
+ * velocity that lands its grab point on the cursor — so tracking is exact
+ * and it stops dead the moment the cursor does. This cap bounds how far
+ * the body may outrun a snagged limb in one step, keeping joint
+ * corrections finite.
+ */
+const MAX_DRAG_SPEED = 40;
 
 const UP = new Vector3(0, 1, 0);
 
@@ -42,13 +59,15 @@ const isFiniteVec = (v: { x: number, y: number, z: number }) =>
 /**
  * Creates a dragger for the physics world.
  *
- * A kinematic anchor follows the cursor and a stiff, critically damped
- * spring joint pulls the grabbed body to it. Only the grabbed body is
- * driven — every connected limb is left completely free, so their inertia
- * makes them trail and flail behind the drag and hang under gravity.
- * Because the grabbed body is dynamic (finite mass) and the spring's
- * force is capped, nothing in the assembly can be driven hard enough to
- * detonate the solver or be bulldozed through the world.
+ * The grabbed body is velocity-driven: each step it is given exactly the
+ * velocity that puts its grab point on the cursor, so it tracks exactly
+ * and stops dead when the cursor stops — no spring, no lag, no rebound.
+ * It stays *dynamic*, so obstacles still stop it and its joints share
+ * load with finite mass rather than acting as an immovable anchor.
+ *
+ * Only the grabbed body is driven — every connected limb is left
+ * completely free, so their own inertia makes them trail and flail behind
+ * the drag and hang under gravity.
  *
  * On release the grabbed body freezes exactly where it was dropped and
  * the limbs swing on until they fall asleep, then freeze too.
@@ -60,11 +79,10 @@ export function createDragger(physics: IPhysics) {
   const grabOffset = new Vector3(); // from the grab point to the grabbed body's center
   const grabWorldPoint = new Vector3();
   const dragTarget = new Vector3();
-  const anchorNext = new Vector3();
+  const dragVelocity = new Vector3();
 
   const [game] = useGameState();
 
-  let anchorBody: RigidBody | null = null;
   let grabbedBody: RigidBody | null = null;
   let draggedBodies: RigidBody[] = [];
   let settlingBodies: RigidBody[] = [];
@@ -125,37 +143,27 @@ export function createDragger(physics: IPhysics) {
       b.setAngularDamping(DRAG_ANGULAR_DAMPING);
     });
 
-    // Rotations of the grabbed part are locked so its orientation never
-    // changes while held (a body-level lock — no second body involved, so
-    // it cannot transmit an infinite inertia through the joint).
-    grabbedBody.setLinearDamping(GRAB_DAMPING);
-    grabbedBody.lockRotations(true, true);
+    // The grabbed body's velocity is commanded every step, so its own
+    // damping would do nothing but fight the command. Weighting it against
+    // the rest of the assembly is what makes that command stick: the limbs
+    // can no longer negotiate it away through the joints. (A lone body has
+    // nothing to outweigh, so this is a no-op for e.g. a cube.)
+    const restMass = draggedBodies.reduce((sum, b) => sum + b.mass(), 0) - grabbedBody.mass();
+    grabbedBody.setAdditionalMass(restMass * DRAG_MASS_RATIO, true);
+    grabbedBody.setLinearDamping(0);
+
+    // The heaviest body — a ragdoll's torso, a truck's chassis, or a
+    // single-body entity itself — has its rotation locked for the whole
+    // drag. That keeps the entity upright whichever part you grab: pull it
+    // by a hand and the body trails along instead of flipping over, and
+    // every other part still swings freely from its joints. The lock is
+    // body-level (no second body involved), so it cannot transmit an
+    // infinite inertia through a joint.
+    draggedBodies.reduce((a, b) => (b.mass() > a.mass() ? b : a)).lockRotations(true, true);
 
     const pos = grabbedBody.translation();
-    const rot = grabbedBody.rotation();
     grabOffset.set(pos.x - hitPoint.x, pos.y - hitPoint.y, pos.z - hitPoint.z);
     dragTarget.set(hitPoint.x, hitPoint.y, hitPoint.z);
-
-    // Grab point in the grabbed body's local frame
-    const localGrab = new Vector3(-grabOffset.x, -grabOffset.y, -grabOffset.z)
-      .applyQuaternion(new Quaternion(rot.x, rot.y, rot.z, rot.w).invert());
-
-    // Stiffness/damping scale with the grabbed body's mass, so the
-    // response is identical whether you grab a hand or the torso. Gravity
-    // sag is g/ω² — a few millimetres — so no weight feed-forward needed.
-    const mass = grabbedBody.mass();
-    const stiffness = mass * DRAG_FREQUENCY ** 2;
-    const damping = 2 * DRAG_DAMPING_RATIO * mass * DRAG_FREQUENCY;
-
-    anchorBody = physics.world.createRigidBody(
-      RigidBodyDesc.kinematicPositionBased().setTranslation(hitPoint.x, hitPoint.y, hitPoint.z)
-    );
-    physics.world.createImpulseJoint(
-      JointData.spring(0, stiffness, damping, { x: 0, y: 0, z: 0 }, localGrab),
-      anchorBody,
-      grabbedBody,
-      true
-    );
   }
 
   /**
@@ -163,7 +171,7 @@ export function createDragger(physics: IPhysics) {
    */
   function move(targetPoint: { x: number, y: number, z: number }) {
     // A cursor dragged off-screen can project to a degenerate/non-finite
-    // point; ignore it so it can never poison the anchor.
+    // point; ignore it so it can never poison the drive.
     if (!isFiniteVec(targetPoint)) return;
     dragTarget.set(targetPoint.x, targetPoint.y, targetPoint.z);
   }
@@ -197,43 +205,55 @@ export function createDragger(physics: IPhysics) {
   function stop() {
     if (!grabbedBody) return;
 
-    if (anchorBody) physics.world.removeRigidBody(anchorBody); // also removes the spring
-    anchorBody = null;
-
     if (alive(grabbedBody)) {
+      grabbedBody.setAdditionalMass(0, true); // back to its own mass for the smash
       grabbedBody.setBodyType(RigidBodyType.KinematicPositionBased, true);
-      grabbedBody.lockRotations(false, true);
-      grabbedBody.setLinearDamping(0);
+      grabbedBody.lockRotations(false, true); // frozen in place: its orientation is already fixed
     }
 
-    settlingBodies.push(...draggedBodies.filter((b) => b.handle !== grabbedBody!.handle && alive(b)));
+    // The rest keep swinging, but damped hard so they hang still within a
+    // second or two. The orientation lock stays on until each body freezes,
+    // so the entity can't flop over while it settles.
+    draggedBodies
+      .filter((b) => b.handle !== grabbedBody!.handle && alive(b))
+      .forEach((b) => {
+        b.setLinearDamping(SETTLE_LINEAR_DAMPING);
+        b.setAngularDamping(SETTLE_ANGULAR_DAMPING);
+        settlingBodies.push(b);
+      });
+
     grabbedBody = null;
     draggedBodies = [];
   }
 
   /**
-   * Called once per physics step: advances the drag anchor, and freezes
+   * Called once per physics step: drives the grabbed body, and freezes
    * released bodies back to kinematic once they fall asleep.
    */
-  function step(_delta: number) {
+  function step(delta: number) {
     if (grabbedBody && !alive(grabbedBody)) stop();
 
-    if (grabbedBody && anchorBody) {
+    if (grabbedBody) {
       const pos = grabbedBody.translation();
 
-      // The anchor goes to the cursor, but never leads the grab point by
-      // more than MAX_STRETCH — that cap is the spring's max force.
-      grabWorldPoint.set(pos.x - grabOffset.x, pos.y - grabOffset.y, pos.z - grabOffset.z);
-      anchorNext.copy(dragTarget).sub(grabWorldPoint);
-      if (anchorNext.length() > MAX_STRETCH) anchorNext.setLength(MAX_STRETCH);
-      anchorNext.add(grabWorldPoint);
+      // Exactly the velocity that lands the grab point on the cursor this
+      // step. When the cursor stops the remaining distance is zero, so the
+      // command is zero and the body stops dead — it never coasts past and
+      // springs back.
+      dragVelocity.set(
+        (dragTarget.x + grabOffset.x - pos.x) / delta,
+        (dragTarget.y + grabOffset.y - pos.y) / delta,
+        (dragTarget.z + grabOffset.z - pos.z) / delta
+      );
+      if (dragVelocity.length() > MAX_DRAG_SPEED) dragVelocity.setLength(MAX_DRAG_SPEED);
 
-      if (isFiniteVec(anchorNext)) anchorBody.setNextKinematicTranslation(anchorNext);
+      if (isFiniteVec(dragVelocity)) grabbedBody.setLinvel(dragVelocity, true);
     }
 
     if (settlingBodies.length === 0) return;
 
     if (game.mode !== 'edit') {
+      settlingBodies.filter(alive).forEach((b) => b.lockRotations(false, true));
       settlingBodies = [];
       return;
     }
@@ -251,6 +271,7 @@ export function createDragger(physics: IPhysics) {
       b.setBodyType(RigidBodyType.KinematicPositionBased, true);
       b.setLinearDamping(0);
       b.setAngularDamping(0);
+      b.lockRotations(false, true); // no-op unless this was the orientation body
       return false;
     });
   }
@@ -260,6 +281,7 @@ export function createDragger(physics: IPhysics) {
    */
   function cleanup() {
     stop();
+    settlingBodies.filter(alive).forEach((b) => b.lockRotations(false, true));
     settlingBodies = [];
   }
 
