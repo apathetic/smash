@@ -31,7 +31,11 @@ export default function Smash() {
   });
 
   function finishSmash() {
-    console.log("SMASH FINISHED"); setGameState('mode', 'smashed');
+    // Only advance from 'smashing': the user may have already hit
+    // "Replay" (level completes before bodies settle)
+    if (gameState.mode === 'smashing') {
+      console.log("SMASH FINISHED"); setGameState('mode', 'smashed');
+    }
     clearTimeout(checkTimeout);
     clearInterval(checkInterval);
     clearTimeout(timeoutTimer);

@@ -22,13 +22,7 @@ export function Inventory() {
         scale: [0.6, 1],
         translateY: [20, 0],
         delay: stagger(35),
-        ease: spring({ bounce: 0.5, duration: 380 }),
-        // TODO: Backdrop-filter still pops in late (after ~0.5s) when the entrance transform settles and is cleared.
-        onComplete: (anim) => {
-          anim.targets.forEach((t) => {
-            t.style.removeProperty("transform");
-          });
-        }
+        ease: spring({ bounce: 0.5, duration: 380 })
       });
     },
     onExit: (el, done) => {
@@ -46,18 +40,32 @@ export function Inventory() {
   return (
     <div ref={animationContainer} class="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 pointer-events-none">
       {inventoryCounts().map(({ type, count }) => (
-        <div key={type} class="inventory-tile opacity-0 pointer-events-auto">
-          <div class="card-blur cursor-pointer">
-            <EntityIcon type={type} />
-            {count > 1 && (
-              <div class="absolute -top-3 -right-3 bg-fuchsia-600 text-white text-sm font-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg pointer-events-none">
-                {count}
-              </div>
-            )}
-          </div>
+        <div
+          key={type}
+          class="card-blur opacity-0 pointer-events-auto cursor-pointer"
+          onMouseEnter={(e) => {
+            animate(e.currentTarget, {
+              scale: 1.05,
+              duration: 100,
+              ease: "outQuad"
+            });
+          }}
+          onMouseLeave={(e) => {
+            animate(e.currentTarget, {
+              scale: 1,
+              duration: 80,
+              ease: "outQuad"
+            });
+          }}
+        >
+          <EntityIcon type={type} />
+          {count > 1 && (
+            <div class="absolute -top-3 -right-3 bg-fuchsia-600 text-white text-sm font-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+              {count}
+            </div>
+          )}
         </div>
       ))}
     </div>
   );
 }
-

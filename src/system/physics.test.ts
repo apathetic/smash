@@ -67,6 +67,23 @@ describe('Physics', () => {
 
 
 
+  it('should not step the world while paused', () => {
+    const initialStep = physics.stepId;
+
+    physics.setPaused(true);
+    physics.update(1/60);
+    physics.update(1/60);
+
+    expect(physics.world.step).not.toHaveBeenCalled();
+    expect(physics.stepId).toBe(initialStep);
+
+    physics.setPaused(false);
+    physics.update(1/60);
+
+    expect(physics.world.step).toHaveBeenCalledOnce();
+    expect(physics.stepId).toBe(initialStep + 1);
+  });
+
   it('should increment stepId on each update', () => {
     // Read the current stepId (physics is a singleton, so it might not be 0)
     const initialStep = physics.stepId;

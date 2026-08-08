@@ -2,6 +2,7 @@ import { animate, spring, createTimeline } from "animejs";
 import { createSignal, createEffect, onCleanup, untrack, createMemo } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { saveLevel } from "~/game/hooks/saveLevel";
+import { replayLevel } from "~/game/hooks/replayLevel";
 import { useGameState } from "~/game/store";
 
 
@@ -97,7 +98,7 @@ function SmashButton() {
 
   function goReplay(e) {
     e.stopPropagation();
-    // doesn't do anything right now
+    replayLevel();
   }
 
   const ledColor = () => {

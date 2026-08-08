@@ -21,7 +21,7 @@ const Damage = () => {
   const damagePercent = createMemo(() => calculateDamagePercentage(gameState.totalDamage, gameState.targetDamage));
 
   return (
-    <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed'}>
+    <Show when={gameState.mode === 'smashing' || gameState.mode === 'smashed' || gameState.mode === 'replay'}>
       <aside
         ref={(el) => {
           animate(el, {

@@ -29,8 +29,11 @@ function createPhysics() {
   let damageHandler = createDamageHandler(world);
   let snapshot: Uint8Array | null = null;
   let hasEdited = true;
+  let paused = false;
 
   function update(_delta: number) {
+    if (paused) return;
+
     instance.world.step(eventQueue);
     instance.stepId += 1;
     eventQueue.drainContactForceEvents(damageHandler);
@@ -63,6 +66,16 @@ function createPhysics() {
 
       hasEdited = false;
     }
+  }
+
+  /**
+   * Freezes the simulation without stopping the render loop, so the
+   * camera stays live. Stepping an idle world still warms the solver's
+   * contact caches, which would make a resumed run diverge from the
+   * original; pausing keeps the world bit-identical to its snapshot.
+   */
+  function setPaused(enabled: boolean) {
+    paused = enabled;
   }
 
   function setGravity(enabled: boolean) {
@@ -140,6 +153,7 @@ function createPhysics() {
     save,
     update,
     restore,
+    setPaused,
     setGravity,
     setBodiesKinematic,
     isSettled,
@@ -163,9 +177,11 @@ function createPhysics() {
       instance.restore();
 
       // note: order is important:
+      instance.setPaused(false);
       instance.setBodiesKinematic(false);
       instance.setGravity(true);
     } else if (game.mode === 'edit') {
+      instance.setPaused(false);
       instance.setGravity(false);
       instance.setBodiesKinematic(true);
     }
