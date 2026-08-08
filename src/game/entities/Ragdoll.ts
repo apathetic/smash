@@ -11,8 +11,40 @@ import type { Scene } from 'three';
  * back toward the spawn pose, plus rotation limits, so limbs are
  * moderately stiff and only bend at natural angles.
  */
-const JOINT_STIFFNESS = 30;
-const JOINT_DAMPING = 5;
+/**
+ * Joint motor gains, expressed *per kg* of the limb the joint holds. Both
+ * muscle tone and the gravity that fights it scale with mass, so scaling
+ * the gains keeps that balance identical for a 0.6kg hand and a 10kg
+ * thigh — gravity leads, the motor only supplies tone.
+ */
+const JOINT_STIFFNESS = 0.3;
+const JOINT_DAMPING = 0.05;
+
+/**
+ * The only parts that may be grabbed. Dragging by a limb hangs the whole
+ * body off one joint chain, which poses it in awkward ways that are hard
+ * to undo; the core parts carry the body predictably.
+ */
+const DRAGGABLE_PARTS = ['head', 'chest', 'hips'];
+
+/**
+ * Body-part masses (kg): a standard anthropometric distribution for a
+ * ~100kg adult. The *ratios* are what matter — the torso has to dominate
+ * the limbs. When every part weighed the same, the arms and legs together
+ * outweighed the torso 5:1, so anything holding the ragdoll was dragged
+ * around by its own limbs.
+ */
+const MASS = {
+  head:     8,
+  chest:    35,
+  hips:     14,
+  upperArm: 3,
+  foreArm:  1.5,
+  hand:     0.6,
+  upperLeg: 10,
+  lowerLeg: 4.5,
+  foot:     1.5,
+};
 
 const skinColors = [
   0xe9c8bc,
@@ -42,7 +74,7 @@ const createMesh = (x: number, y: number, z: number, color: number) => {
 const createBoxBody = (physics: World, meshList: Mesh[], bodyList: RigidBody[]) => ({
   size =     [0, 0, 0] as Tuple,
   position = [0, 0, 0] as Position,
-  mass = 100,
+  mass = 1,
   color = 0xffffff
 }) => {
   const [x, y, z] = size;
@@ -102,8 +134,11 @@ export class RagDoll extends Base {
       const joint = physics.createImpulseJoint(data, b1, b2, true);
       joint.setContactsEnabled(false);
       if (limits) {
+        // Gains scale with the lighter of the two bodies — the segment the
+        // joint actually holds up (a hand at the wrist, the head at the neck).
+        const held = Math.min(b1.mass(), b2.mass());
         (joint as RevoluteImpulseJoint).setLimits(...limits);
-        (joint as RevoluteImpulseJoint).configureMotorPosition(0, JOINT_STIFFNESS, JOINT_DAMPING);
+        (joint as RevoluteImpulseJoint).configureMotorPosition(0, JOINT_STIFFNESS * held, JOINT_DAMPING * held);
       }
       return joint;
     };
@@ -117,92 +152,105 @@ export class RagDoll extends Base {
     const [head, headBody] = createMeshBody({
       size:     [0.5, 0.5,  0.5],
       position: [0.0, 2.35, 0.0],
-      mass: 200,
+      mass: MASS.head,
       color: skin
     });
 
     const [chest, chestBody] = createMeshBody({
       size:     [0.6, 0.6,  0.3],
       position: [0.0, 1.8, 0.0],
-      mass: 300,
+      mass: MASS.chest,
       color: shirt
     });
 
     const [hips, hipsBody] = createMeshBody({
       size:     [0.6, 0.3,  0.3],
       position: [0.0, 1.425, 0.0],
+      mass: MASS.hips,
       color: shirt
     });
 
     const [upperArmL, upperArmLBody] = createMeshBody({
       size:     [0.4,  0.2, 0.2],
       position: [0.5, 2.05, 0.0],
+      mass: MASS.upperArm,
       color: shirt
     });
 
     const [foreArmL, foreArmLBody] = createMeshBody({
       size:     [0.4,  0.2, 0.2],
       position: [0.9, 2.05, 0.0],
+      mass: MASS.foreArm,
       color: skin
     });
 
     const [handL, handLBody] = createMeshBody({
       size:     [0.2,  0.2, 0.2],
       position: [1.2, 2.05, 0.0],
+      mass: MASS.hand,
       color: skin
     });
 
     const [upperArmR, upperArmRBody] = createMeshBody({
       size:     [ 0.4,  0.2, 0.2],
       position: [-0.5, 2.05, 0.0],
+      mass: MASS.upperArm,
       color: shirt
     });
 
     const [foreArmR, foreArmRBody] = createMeshBody({
       size:     [ 0.4,  0.2, 0.2],
       position: [-0.9, 2.05, 0.0],
+      mass: MASS.foreArm,
       color: skin
     });
 
     const [handR, handRBody] = createMeshBody({
       size:     [ 0.2,  0.2, 0.2],
       position: [-1.2, 2.05, 0.0],
+      mass: MASS.hand,
       color: skin
     });
 
     const [upperLegL, upperLegLBody] = createMeshBody({
       size:     [0.2, 0.4,  0.2],
       position: [0.2, 1.075, 0.0],
+      mass: MASS.upperLeg,
       color: pants
     });
 
     const [lowerLegL, lowerLegLBody] = createMeshBody({
       size:     [0.2, 0.4,  0.2],
       position: [0.2, 0.675, 0.0],
+      mass: MASS.lowerLeg,
       color: skin
     });
 
     const [footL, footLBody] = createMeshBody({
       size:     [0.2, 0.12, 0.35],
       position: [0.2, 0.415, 0.04],
+      mass: MASS.foot,
       color: foot
     });
 
     const [upperLegR, upperLegRBody] = createMeshBody({
       size:     [ 0.2, 0.4,  0.2],
       position: [-0.2, 1.075, 0.0],
+      mass: MASS.upperLeg,
       color: pants
     });
 
     const [lowerLegR, lowerLegRBody] = createMeshBody({
       size:     [ 0.2, 0.4,  0.2],
       position: [-0.2, 0.675, 0.0],
+      mass: MASS.lowerLeg,
       color: skin
     });
 
     const [footR, footRBody] = createMeshBody({
       size:     [ 0.2, 0.12, 0.35],
       position: [-0.2, 0.415, 0.04],
+      mass: MASS.foot,
       color: foot
     });
 
@@ -380,6 +428,10 @@ export class RagDoll extends Base {
       { name: 'lowerLegR', mesh: lowerLegR, body: lowerLegRBody },
       { name: 'footR',     mesh: footR,     body: footRBody },
     );
+
+    this.dynamicBodies.forEach((part) => {
+      part.draggable = DRAGGABLE_PARTS.includes(part.name!);
+    });
 
   }
 

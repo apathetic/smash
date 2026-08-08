@@ -2,6 +2,7 @@ import { Ray, QueryFilterFlags } from 'rapier';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
+import { registry } from "~/game/store/registry";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
 
 type ControlProps = {
@@ -89,6 +90,11 @@ function createControls({ graphics, physics }: ControlProps) {
     const hit = physics.world.castRay(ray, maxDistance, solid, filterFlags, filterGroups);
 
     if (hit) {
+      // Some parts aren't grab handles (a ragdoll's limbs): clicking one
+      // does nothing rather than dragging the body around by it.
+      const hitBody = hit.collider.parent();
+      if (hitBody && registry.findPart(hitBody.handle)?.draggable === false) return;
+
       const hitPoint = new Vector3().copy(origin).addScaledVector(direction, hit.timeOfImpact);
 
       dragPosition.copy(hitPoint);

@@ -33,6 +33,7 @@ type DynamicBody = {
   name?: string;
   mesh: import("three").Mesh | any; // Visual representation (skin)
   body: import("rapier").RigidBody; // Physics collider (skeleton)
+  draggable?: boolean; // May this part be used as a grab handle? (default: yes)
 }
 
 type Updatable = {

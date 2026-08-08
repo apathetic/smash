@@ -48,6 +48,17 @@ class EntityRegistry {
   }
 
   /**
+   * Find the part (of whichever entity owns it) driven by a given Rapier
+   * rigid-body handle.
+   */
+  findPart(handle: number): DynamicBody | undefined {
+    for (const entity of this.entities.values()) {
+      const part = entity.dynamicBodies?.find((d) => d.body?.handle === handle);
+      if (part) return part;
+    }
+  }
+
+  /**
    * Clear all entities from the registry
    */
   clear(): void {
