@@ -18,9 +18,10 @@ const SESSION_STORAGE_KEY = 'sssss';
 
 
 /**
- * How long entities hold their starting pose before a replay resumes smashing.
+ * How long entities hold their starting pose before a replay resumes
+ * smashing. Measured from the end of the snap-back animation.
  */
-const REPLAY_PAUSE_MS = 800;
+const REPLAY_PAUSE_MS = 400;
 
 
 /**

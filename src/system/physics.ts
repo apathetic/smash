@@ -73,6 +73,9 @@ function createPhysics() {
    * camera stays live. Stepping an idle world still warms the solver's
    * contact caches, which would make a resumed run diverge from the
    * original; pausing keeps the world bit-identical to its snapshot.
+   *
+   * While paused the timeline also stops syncing meshes to bodies,
+   * which frees the meshes for a settling animation.
    */
   function setPaused(enabled: boolean) {
     paused = enabled;
@@ -157,6 +160,7 @@ function createPhysics() {
     setGravity,
     setBodiesKinematic,
     isSettled,
+    get isPaused() { return paused; },
     markEdited: () => { hasEdited = true; },
     get hasEdited() { return hasEdited; },
   };

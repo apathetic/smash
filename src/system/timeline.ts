@@ -49,7 +49,9 @@ function createTimeline({ graphics, physics, controls, gui }: TimelineProps) {
       gui.stats.begin();
 
       while (accumulator >= timeStep) {
-        if (game.mode !== 'reset') {
+        // While resetting or paused, a settling animation owns the
+        // meshes -- syncing them from the bodies would fight it
+        if (game.mode !== 'reset' && !physics.isPaused) {
           physics.update(timeStep);
           registry.each((entity) => entity.update(timeStep));
         }

@@ -20,6 +20,7 @@ interface IPhysics {
   setGravity: (enabled: boolean) => void;
   setBodiesKinematic: (enabled: boolean) => void;
   setPaused: (enabled: boolean) => void;
+  get isPaused(): boolean;
 
   // MEH: find a better / less hacky way for this:
   markEdited: () => void;

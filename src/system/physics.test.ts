@@ -74,12 +74,15 @@ describe('Physics', () => {
     physics.update(1/60);
     physics.update(1/60);
 
+    // The timeline reads isPaused to leave the meshes to the settling animation
+    expect(physics.isPaused).toBe(true);
     expect(physics.world.step).not.toHaveBeenCalled();
     expect(physics.stepId).toBe(initialStep);
 
     physics.setPaused(false);
     physics.update(1/60);
 
+    expect(physics.isPaused).toBe(false);
     expect(physics.world.step).toHaveBeenCalledOnce();
     expect(physics.stepId).toBe(initialStep + 1);
   });
