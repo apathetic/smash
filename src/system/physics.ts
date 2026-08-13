@@ -2,15 +2,15 @@ import { createEffect } from "solid-js";
 import { World, EventQueue, RigidBodyType} from "rapier";
 import { registry } from "~/game/store/registry";
 import { useGameState } from "~/game/store";
-import { GRAVITY, NUM_SOLVER_ITERATIONS } from "~/system/constants";
-import { createDamageHandler } from "~/system/damage";
 import { createDragger } from "~/system/dragger";
+import { createDamageHandler } from "~/system/damage";
+import { GRAVITY, NUM_SOLVER_ITERATIONS } from "~/system/constants";
 
 
 /**
  * A reference to a Physics instance.
  * The return object exposes a number of functions for interacting
- * with the
+ * with Physics: `save`, `update`, `pause`, `setGravity`, etc
  */
 let physicsHandle: ReturnType<typeof createPhysics>;
 
@@ -31,6 +31,10 @@ function createPhysics() {
   let hasEdited = true;
   let paused = false;
 
+  /**
+   * Advances the physics simulation by a single frame.
+   * Note: `_delta` is not used at this time.
+   */
   function update(_delta: number) {
     if (paused) return;
 
@@ -39,12 +43,18 @@ function createPhysics() {
     eventQueue.drainContactForceEvents(damageHandler);
   }
 
+  /**
+   * Saves the state of the Physics simulation.
+   */
   function save() {
     instance.setBodiesKinematic(true);
     snapshot = instance.world.takeSnapshot();
     hasEdited = false;
   }
 
+  /**
+   * Restores the state of a Physics simulation from a saved snapshot.
+   */
   function restore() {
     if (snapshot) {
       instance.dragger.cleanup();
@@ -69,18 +79,17 @@ function createPhysics() {
   }
 
   /**
-   * Freezes the simulation without stopping the render loop, so the
-   * camera stays live. Stepping an idle world still warms the solver's
-   * contact caches, which would make a resumed run diverge from the
-   * original; pausing keeps the world bit-identical to its snapshot.
-   *
-   * While paused the timeline also stops syncing meshes to bodies,
-   * which frees the meshes for a settling animation.
+   * Freezes the simulation without stopping the render loop, so the camera stays live.
+   * Note: pausing keeps the world bit-identical to its snapshot; stepping an idle world
+   *       does not (it'd warm the solver's contact caches + cause a divergence).
    */
   function setPaused(enabled: boolean) {
     paused = enabled;
   }
 
+  /**
+   * Sets the gravity.
+   */
   function setGravity(enabled: boolean) {
     instance.world.gravity.y = enabled ? GRAVITY : 0;
     if (enabled) {
@@ -90,6 +99,9 @@ function createPhysics() {
     }
   }
 
+  /**
+   * Toggle dynamicBodies; kinematic or dynamic.
+   */
   function setBodiesKinematic(enabled: boolean) {
     registry.each((entity) => {
       entity.dynamicBodies?.forEach(({ body }) => {
@@ -120,6 +132,9 @@ function createPhysics() {
     });
   }
 
+  /**
+   * Check if all dynamic parts are `settled` (motionless below a certain threshhold).
+   */
   function isSettled() {
     let settled = true;
     registry.each((entity) => {
@@ -152,7 +167,7 @@ function createPhysics() {
   const instance: IPhysics = {
     world,
     stepId: 0,
-    dragger: null, // Connected below due to circular construction
+    dragger: null, // Connected below due to circular construction.  TODO why is this here, again?
     save,
     update,
     restore,
@@ -161,8 +176,8 @@ function createPhysics() {
     setBodiesKinematic,
     isSettled,
     get isPaused() { return paused; },
-    markEdited: () => { hasEdited = true; },
-    get hasEdited() { return hasEdited; },
+    markEdited: () => { hasEdited = true; }, // TODO why is this here, again ?
+    get hasEdited() { return hasEdited; }, // TODO this seems to be used only here, internally.
   };
 
   instance.dragger = createDragger(instance);

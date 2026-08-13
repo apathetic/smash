@@ -34,8 +34,8 @@ function createControls({ graphics, physics }: ControlProps) {
   const [gameState] = useGameState();
   const { camera, renderer } = graphics;
   const canvas     = renderer.domElement;
-  const controls   = new OrbitControls(camera, canvas);
   const dragger    = physics.dragger;
+  const controls   = new OrbitControls(camera, canvas);
   const raycaster  = new Raycaster();
   const mouse      = new Vector2();
   const dragPlane  = new Plane();
@@ -96,7 +96,7 @@ function createControls({ graphics, physics }: ControlProps) {
       lastMouseY = event.clientY;
 
       controls.enabled = false; // disable OrbitControls when we actually hit an entity to drag
-      physics.markEdited(); // Flag that the user modified the level layout
+      physics.markEdited(); // Flag that the user modified the level layout. TODO does this belong on `physics`, or in a store?
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
       dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });

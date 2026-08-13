@@ -8,7 +8,11 @@ import { Scene, WebGLRenderer, PerspectiveCamera, DirectionalLight, HemisphereLi
 let graphicsHandle: ReturnType<typeof createGraphics> | null = null;
 
 
-
+/**
+ * Creates a new Three WebGLRenderer.
+ * @param {HTMLCanvasElement} canvas
+ * @returns {WebGLRenderer}
+ */
 function createRenderer(canvas: HTMLCanvasElement) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
 
@@ -19,6 +23,11 @@ function createRenderer(canvas: HTMLCanvasElement) {
   return renderer;
 };
 
+
+/**
+ * Creates a new Three PerspectiveCamera.
+ * @returns {PerspectiveCamera}
+ */
 function createCamera() {
   const aspect = window.innerWidth / window.innerHeight;
   const camera = new PerspectiveCamera(

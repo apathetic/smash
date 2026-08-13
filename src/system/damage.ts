@@ -17,6 +17,10 @@ const DAMAGE_SCALAR = 1000;
 
 const [game, setGameState] = useGameState();
 
+/**
+ * Creates the system that calculates and stores damage (impacts to the different Ragdoll parts).
+ * @param world - The physics world.
+ */
 export const createDamageHandler = (world: World) => {
   return function handleCollisions(event: any) {
     const ragdoll = registry.get('ragdoll');
