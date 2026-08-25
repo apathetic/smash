@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "build": "vinxi build --preset deno_server",
+    "build": "NITRO_PRESET=deno-server vite build",
     "preview": "deno task --config .output/deno.json start",
     "deploy": {
       "command": "deployctl deploy",

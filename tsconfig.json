@@ -13,16 +13,15 @@
     "skipLibCheck": true,
     "target": "ESNext",
 
-    "baseUrl": "./",
     "paths": {
       "~/*": ["./src/*"],
-      "controls": ["three/examples/jsm/controls/OrbitControls"],
+      "controls": ["./node_modules/three/examples/jsm/controls/OrbitControls"],
       "rapier": ["./node_modules/@dimforge/rapier3d"]
     },
     "types": [
       "three",
       "stats.js",
-      "vinxi/types/client"
+      "@solidjs/start/env"
     ]
   }
 }

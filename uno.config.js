@@ -3,6 +3,12 @@ import { defineConfig, presetUno, presetTypography } from 'unocss';
 
 export default defineConfig({
 
+  // Scan sources from disk: relying on Vite's module pipeline misses modules
+  // that are only reachable through lazily-loaded route chunks (Modal, store).
+  content: {
+    filesystem: ['src/**/*.{js,jsx,ts,tsx}']
+  },
+
   rules: [
     ['font-lilita', {
       'font-family': '"Lilita One", sans-serif'
