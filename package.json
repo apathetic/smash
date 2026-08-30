@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "NITRO_PRESET=cloudflare_pages vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "lint": "oxlint src/ --fix -D correctness",
@@ -33,7 +33,7 @@
     "stats.js": "^0.17.0",
     "three": "^0.172.0",
     "typescript": "^6.0.3",
-    "unocss": "^66.7.0",
+    "unocss": "^66.8.1",
     "vite": "^8.2.2",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^3.2.6"

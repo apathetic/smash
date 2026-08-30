@@ -55,9 +55,6 @@ export default defineConfig({
   server: {
     port: 3000
   },
-  build: {
-    outDir: '.output/public'
-  },
   nitro: {
     compatibilityDate: '2025-01-01'
   }
