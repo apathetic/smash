@@ -22,3 +22,7 @@ TODO.md
 # System Files
 .DS_Store
 Thumbs.db
+
+# future
+src/game/shaders
+src/game/boosts
