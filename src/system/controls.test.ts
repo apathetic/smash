@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // import { Vector3 } from 'three';
 import { createControls } from './controls';
+import { registry } from '~/game/store/registry';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 type mockFn = ReturnType<typeof vi.fn>;
@@ -10,6 +11,7 @@ describe('Controls', () => {
   let mockGraphics: IGraphics;
   let mockPhysics: IPhysics;
   let controls: OrbitControls;
+  let cameraDistance: number;
   let mockCollider: {
     parent: () => {
       setBodyType: mockFn;
@@ -49,8 +51,14 @@ describe('Controls', () => {
     //   setTranslation: vi.fn()
     // };
 
+    // grabRadius() converts a screen-space tolerance through the camera,
+    // so fov and the orbit distance have to be real numbers.
+    cameraDistance = 5;
+
     mockGraphics = {
       camera: {
+        fov: 75,
+        position: { distanceTo: () => cameraDistance },
         getWorldDirection: vi.fn().mockImplementation((v) => {
           v.set(0, 0, -1);
           return v;
@@ -82,9 +90,11 @@ describe('Controls', () => {
 
     mockPhysics = {
       world: {
-        castRay: vi.fn().mockReturnValue({
+        castShape: vi.fn().mockReturnValue({
           collider: mockCollider,
-          toi: 1.0 // time of impact
+          time_of_impact: 1.0,
+          // the contact point on the collider, in world space
+          witness1: { x: 1, y: 2, z: 3 }
         }),
         impulseJoints: {
           forEachJointHandleAttachedToRigidBody: vi.fn(),
@@ -116,7 +126,7 @@ describe('Controls', () => {
     Object.defineProperty(event, 'target', { value: mockGraphics.renderer.domElement, writable: false });
     mockGraphics.renderer.domElement.dispatchEvent(event);
 
-    expect(mockPhysics.world.castRay).toHaveBeenCalled();
+    expect(mockPhysics.world.castShape).toHaveBeenCalled();
     expect(mockPhysics.dragger.start).toHaveBeenCalled();
     expect(mockGraphics.renderer.domElement.setPointerCapture).toHaveBeenCalledWith(1);
   });
@@ -164,6 +174,91 @@ describe('Controls', () => {
     // The dragger should be stopped
     expect(mockPhysics.dragger.stop).toHaveBeenCalled();
     expect(mockGraphics.renderer.domElement.releasePointerCapture).toHaveBeenCalledWith(1);
+  });
+
+  describe('grab tolerance', () => {
+    // A fingertip is ~40px across and a ragdoll's grab handles are a
+    // ~36px strip on a phone, so the pick is swept as a small ball. What
+    // gets grabbed is unchanged -- only the precision required.
+    const castArgs = () => (mockPhysics.world.castShape as any).mock.calls[0];
+
+    const pointerDown = () => {
+      const event = new PointerEvent('pointerdown', { pointerId: 1, clientX: 500, clientY: 300 });
+      Object.defineProperty(event, 'target', { value: mockGraphics.renderer.domElement, writable: false });
+      mockGraphics.renderer.domElement.dispatchEvent(event);
+    };
+
+    it('sweeps a ball rather than casting a bare ray', () => {
+      pointerDown();
+      expect(mockPhysics.world.castRay).toBeUndefined();
+      expect(mockPhysics.world.castShape).toHaveBeenCalled();
+      expect(castArgs()[3].radius).toBeGreaterThan(0);
+    });
+
+    it('grabs exactly what the cast reports, with no substitution', () => {
+      pointerDown();
+      expect(mockPhysics.dragger.start).toHaveBeenCalledWith(mockCollider, expect.anything());
+    });
+
+    it('scales the radius with camera distance so the tolerance stays screen-space', () => {
+      pointerDown();
+      const near = castArgs()[3].radius;
+
+      (mockPhysics.world.castShape as any).mockClear();
+      cameraDistance = 20; // 4x further out
+      pointerDown();
+      const far = (mockPhysics.world.castShape as any).mock.calls[0][3].radius;
+
+      expect(far).toBeGreaterThan(near);
+      expect(far / near).toBeCloseTo(4, 1);
+    });
+
+    it('filters the cast to grabbable colliders', () => {
+      pointerDown();
+      const predicate = castArgs()[11];
+
+      const draggablePart = { parent: () => ({ handle: 1 }) };
+      const limb = { parent: () => ({ handle: 2 }) };
+      vi.spyOn(registry, 'findPart').mockImplementation((handle: number) =>
+        handle === 2 ? ({ draggable: false } as any) : ({ draggable: true } as any)
+      );
+
+      expect(predicate(draggablePart)).toBe(true);
+      expect(predicate(limb)).toBe(false);
+    });
+
+    it('treats a body in no entity as grabbable (a plain cube)', () => {
+      pointerDown();
+      const predicate = castArgs()[11];
+      vi.spyOn(registry, 'findPart').mockReturnValue(undefined);
+
+      expect(predicate({ parent: () => ({ handle: 9 }) })).toBe(true);
+    });
+
+    it('rejects a collider with no rigid body', () => {
+      pointerDown();
+      const predicate = castArgs()[11];
+      expect(predicate({ parent: () => null })).toBe(false);
+    });
+
+    it('grabs at the contact point, not the centre of the swept ball', () => {
+      // The ball's centre stops a radius clear of the surface -- and a
+      // radius to the *side* of it for an off-centre grab. That point is
+      // what dragger.rotate() pivots around, so using it swings the
+      // entity around a column floating beside it.
+      pointerDown();
+
+      const point = (mockPhysics.dragger.start as any).mock.calls[0][1];
+      expect(point).toEqual({ x: 1, y: 2, z: 3 });
+    });
+
+    it('leaves orbit controls enabled when the cast finds nothing', () => {
+      (mockPhysics.world.castShape as any).mockReturnValue(null);
+      pointerDown();
+
+      expect(mockPhysics.dragger.start).not.toHaveBeenCalled();
+      expect(controls.enabled).toBe(true);
+    });
   });
 
   it.skip('should not interact with objects when not in edit mode', () => {

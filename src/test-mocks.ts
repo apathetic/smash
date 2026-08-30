@@ -15,7 +15,7 @@ vi.mock('rapier', () => {
       integrationParameters: { numSolverIterations: 4 },
       step: vi.fn(),
       forEachRigidBody: vi.fn(),
-      castRay: vi.fn().mockReturnValue({
+      castShape: vi.fn().mockReturnValue({
         collider: {
           parent: vi.fn().mockReturnValue({
             setBodyType: vi.fn(),
@@ -24,7 +24,8 @@ vi.mock('rapier', () => {
           }),
           setActiveCollisionTypes: vi.fn()
         },
-        toi: 1.0
+        time_of_impact: 1.0,
+        witness1: { x: 0, y: 0, z: 0 }
       }),
       createRigidBody: vi.fn(),
       removeRigidBody: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('rapier', () => {
     })),
     RigidBodyType: { KinematicPositionBased: 1, Dynamic: 2, Fixed: 3 },
     Ray: vi.fn(),
+    Ball: vi.fn().mockImplementation((radius: number) => ({ radius })),
     QueryFilterFlags: { ONLY_DYNAMIC: 1 },
     ActiveCollisionTypes: { DEFAULT: 1, KINEMATIC_FIXED: 2 },
     Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({ x, y, z })),
@@ -71,7 +73,10 @@ vi.mock('three', () => ({
   Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({
     x, y, z,
     set: vi.fn().mockReturnThis(),
-    copy: vi.fn().mockReturnThis(),
+    copy: vi.fn(function (this: any, v: any) {
+      this.x = v.x; this.y = v.y; this.z = v.z;
+      return this;
+    }),
     add: vi.fn().mockReturnThis(),
     sub: vi.fn().mockReturnThis(),
     multiplyScalar: vi.fn().mockReturnThis(),
@@ -119,7 +124,9 @@ vi.mock('controls', () => ({
     minDistance: 0,
     maxDistance: 0,
     maxPolarAngle: 0,
-    enabled: true
+    enabled: true,
+    target: { x: 0, y: 0, z: 0 },
+    dispose: vi.fn()
   }))
 }));
 

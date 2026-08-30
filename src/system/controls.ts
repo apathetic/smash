@@ -1,9 +1,10 @@
-import { Ray, QueryFilterFlags } from 'rapier';
+import { Ball, QueryFilterFlags } from 'rapier';
 import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
+import type { Collider } from 'rapier';
 
 type ControlProps = {
   graphics: IGraphics;
@@ -13,6 +14,20 @@ type ControlProps = {
 type Controls = OrbitControls & {
   destroy: () => void;
 };
+
+/**
+ * How far off a grab may land, in CSS pixels, and still take hold.
+ *
+ * A ray has no width; a fingertip covers ~40px. On a phone a ragdoll's
+ * grab handles are a ~36px-wide strip, so a pick that has to land dead on
+ * one is a coin flip -- and a miss isn't silent, it falls through to
+ * OrbitControls and swings the camera, which reads as dragging being
+ * broken rather than as having missed.
+ */
+const GRAB_TOLERANCE_PX = 20;
+
+/** The grab shape is a sphere, so its orientation never matters. */
+const NO_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
 
 
 /**
@@ -67,6 +82,37 @@ function createControls({ graphics, physics }: ControlProps) {
   }
 
   /**
+   * The grab tolerance in world units.
+   *
+   * GRAB_TOLERANCE_PX is a *screen*-space budget, so it has to be
+   * converted through the camera at the distance it is orbiting -- a
+   * fixed world radius would be a generous grab zoomed out and a
+   * pixel-perfect one zoomed in, when what should stay constant is the
+   * size of the fingertip.
+   */
+  function grabRadius() {
+    const distance = camera.position.distanceTo(controls.target);
+    const worldPerPixel = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * distance / window.innerHeight;
+    return GRAB_TOLERANCE_PX * worldPerPixel;
+  }
+
+  /**
+   * Whether a collider may be grabbed (a ragdoll's limbs may not -- see
+   * DRAGGABLE_PARTS in Ragdoll.ts).
+   *
+   * This is handed to the cast as its filter rather than checked on the
+   * result, because a shape cast reports whatever it lands on *first*. An
+   * arm hanging across the chest would otherwise be the hit, and the grab
+   * would be refused even though the aim was on the chest. Filtered out
+   * during the cast, limbs neither grab nor occlude: the cast finds the
+   * nearest real handle within a fingertip of the aim, or nothing.
+   */
+  function isGrabbable(collider: Collider) {
+    const body = collider.parent();
+    return !!body && registry.findPart(body.handle)?.draggable !== false;
+  }
+
+  /**
    * Handles pointer down events for entity selection and dragging.
    * @param {PointerEvent} event - The pointer event containing client coordinates
    */
@@ -83,19 +129,30 @@ function createControls({ graphics, physics }: ControlProps) {
     const origin = raycaster.ray.origin;
     const direction = raycaster.ray.direction;
     const maxDistance = 100;
-    const solid = true;
-    const ray = new Ray(origin, direction);
+    const targetDistance = 0;
+    const stopAtPenetration = true;
     const filterFlags = QueryFilterFlags.EXCLUDE_SENSORS;
     const filterGroups = COLLISION_GROUP_RAY_DYNAMIC;
-    const hit = physics.world.castRay(ray, maxDistance, solid, filterFlags, filterGroups);
+
+    // Swept as a small ball rather than a ray, so a grab that lands near a
+    // part still takes hold. Nothing about *what* gets grabbed changes --
+    // only how precisely it has to be aimed at.
+    const hit = physics.world.castShape(
+      origin, NO_ROTATION, direction, new Ball(grabRadius()),
+      targetDistance, maxDistance, stopAtPenetration,
+      filterFlags, filterGroups, undefined, undefined, isGrabbable
+    );
 
     if (hit) {
-      // Some parts aren't grab handles (a ragdoll's limbs): clicking one
-      // does nothing rather than dragging the body around by it.
-      const hitBody = hit.collider.parent();
-      if (hitBody && registry.findPart(hitBody.handle)?.draggable === false) return;
-
-      const hitPoint = new Vector3().copy(origin).addScaledVector(direction, hit.timeOfImpact);
+      // The contact point on the grabbed collider, in world space.
+      //
+      // NOT `origin + direction * time_of_impact` -- that is where the
+      // ball's *centre* stopped, a full radius clear of the surface and,
+      // for a grab that lands off to one side, a full radius to the side
+      // of the body. The grab point is the pivot `dragger.rotate()` turns
+      // the assembly around, so a centre-of-ball point swings the entity
+      // around a column floating beside it instead of spinning it in place.
+      const hitPoint = new Vector3().copy(hit.witness1);
 
       dragPosition.copy(hitPoint);
       lastMouseX = event.clientX;
