@@ -7,7 +7,7 @@ import unoCSS from 'unocss/vite';
 
 const RAPIER_IDS = new Set(['rapier', '@dimforge/rapier3d']);
 const RAPIER_STUB_ID = '\0rapier-server-stub';
-const RAPIER_EXPORTS = ['ActiveEvents', 'ColliderDesc', 'EventQueue', 'JointData', 'QueryFilterFlags', 'Quaternion', 'Ray', 'RigidBodyDesc', 'RigidBodyType', 'Vector3', 'World', 'version'];
+const RAPIER_EXPORTS = ['ActiveEvents', 'Ball', 'ColliderDesc', 'EventQueue', 'JointData', 'QueryFilterFlags', 'Quaternion', 'Ray', 'RigidBodyDesc', 'RigidBodyType', 'Vector3', 'World', 'version'];
 
 /**
  * Server-side stand-in for `@dimforge/rapier3d`.
