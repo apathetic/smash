@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, CylinderGeometry, MeshStandardMaterial, Vector3, Quaternion, Group, Euler } from 'three';
+import { Mesh, BoxGeometry, CylinderGeometry, ExtrudeGeometry, Shape, MeshStandardMaterial, Vector3, Quaternion, Group, Euler } from 'three';
 import { ColliderDesc, RigidBodyDesc } from 'rapier';
 import { COLLISION_GROUP_DYNAMIC } from '~/system/constants';
 import { Base } from '~/game/entities/Base';
@@ -7,6 +7,47 @@ import type { Scene } from 'three';
 
 const MAX_FORWARD_VELOCITY = 10;
 const FORWARD_THRUST = 100000;
+
+// Overall footprint (local space, +Z is forward, y=0 is where the tires touch the ground)
+const BODY_WIDTH = 3.6;
+const BODY_LENGTH = 7.2;
+const HALF_WIDTH = BODY_WIDTH / 2;
+const HALF_LENGTH = BODY_LENGTH / 2;
+
+// Wheels
+const WHEEL_RADIUS = 0.6;
+const WHEEL_WIDTH = 0.5;
+const WHEEL_X = HALF_WIDTH - WHEEL_WIDTH / 2; // tires sit flush with the body sides
+const WHEEL_Y = WHEEL_RADIUS;
+const AXLE_Z = 2.3;
+const WELL_HALF_LENGTH = 0.85; // wheel well cutout, fore/aft of the axle
+
+// Vertical layout
+const SKIRT_BOTTOM_Y = 0.35;  // ground clearance
+const SKIRT_TOP_Y = 1.28;     // top of the wheel wells
+const BELT_Y = 1.8;           // hood top / door belt line / bed rail
+const ROOF_Y = 2.65;          // underside of the roof
+const ROOF_THICKNESS = 0.12;
+
+// Longitudinal layout
+const CAB_REAR_Z = -0.9;          // cab back / front of the bed
+const WINDSHIELD_BASE_Z = 1.3;    // cowl
+const WINDSHIELD_TOP_Z = 0.55;
+const WINDSHIELD_LENGTH = Math.hypot(WINDSHIELD_BASE_Z - WINDSHIELD_TOP_Z, ROOF_Y - BELT_Y);
+const WINDSHIELD_ANGLE = -Math.atan2(WINDSHIELD_BASE_Z - WINDSHIELD_TOP_Z, ROOF_Y - BELT_Y); // tilt back
+const WINDSHIELD_Y = (BELT_Y + ROOF_Y) / 2;
+const WINDSHIELD_Z = (WINDSHIELD_BASE_Z + WINDSHIELD_TOP_Z) / 2;
+const PILLAR = 0.16;
+const GLASS_WIDTH = BODY_WIDTH - 0.2; // greenhouse is slightly inset from the body sides
+
+// Bed
+const BED_LENGTH = HALF_LENGTH + CAB_REAR_Z;
+const BED_Z = CAB_REAR_Z - BED_LENGTH / 2;
+const BED_FLOOR_THICKNESS = 0.1;
+const BED_FLOOR_Y = SKIRT_TOP_Y + BED_FLOOR_THICKNESS / 2;
+const BED_WALL_THICKNESS = 0.12;
+const BED_WALL_HEIGHT = BELT_Y - SKIRT_TOP_Y - BED_FLOOR_THICKNESS;
+const BED_WALL_Y = BELT_Y - BED_WALL_HEIGHT / 2;
 
 /**
  * Truck game object.
@@ -20,90 +61,105 @@ export class Truck extends Base {
     const position: Position = this.position || [0, 3, 0];
     const group = new Group();
     const material = new MeshStandardMaterial({ color: 0x3b82f6 }); // Blue truck
+    const glassMaterial = new MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.3 });
+    const trimMaterial = new MeshStandardMaterial({ color: 0x374151 }); // Dark grey bumpers / grille
+    const headlightMaterial = new MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xfde68a, emissiveIntensity: 0.4 });
+    const taillightMaterial = new MeshStandardMaterial({ color: 0xdc2626, emissive: 0x991b1b, emissiveIntensity: 0.4 });
+    const wheelMaterial = new MeshStandardMaterial({ color: 0x111111 }); // Black tires
+    const spokeMaterial = new MeshStandardMaterial({ color: 0xcccccc }); // Light grey hub / spokes
 
-    // Chassis / Base of the bed (width 3.6, length 7.2)
-    const chassisGeo = new BoxGeometry(3.6, 0.4, 7.2);
-    const chassisMesh = new Mesh(chassisGeo, material);
-    chassisMesh.position.set(0, 0.4, 0); // elevated to make room for wheels
-    group.add(chassisMesh);
+    const skirtHeight = SKIRT_TOP_Y - SKIRT_BOTTOM_Y;
+    const skirtY = (SKIRT_TOP_Y + SKIRT_BOTTOM_Y) / 2;
+    const skirtEndLength = HALF_LENGTH - AXLE_Z - WELL_HALF_LENGTH;
+    const skirtMiddleLength = 2 * (AXLE_Z - WELL_HALF_LENGTH);
+    const upperHeight = BELT_Y - SKIRT_TOP_Y;
+    const upperY = (BELT_Y + SKIRT_TOP_Y) / 2;
+    const upperLength = HALF_LENGTH - CAB_REAR_Z;
+    const upperZ = CAB_REAR_Z + upperLength / 2;
+    const greenhouseHeight = ROOF_Y - BELT_Y;
+    const greenhouseLength = WINDSHIELD_TOP_Z - CAB_REAR_Z;
+    const greenhouseZ = CAB_REAR_Z + greenhouseLength / 2;
+    const roofY = ROOF_Y + ROOF_THICKNESS / 2;
+    const windshieldRotation = new Quaternion().setFromEuler(new Euler(WINDSHIELD_ANGLE, 0, 0));
 
-    // Hood
-    const hoodGeo = new BoxGeometry(3.6, 0.5, 2.0);
-    const hoodMesh = new Mesh(hoodGeo, material);
-    hoodMesh.position.set(0, 0.85, 2.6);
-    group.add(hoodMesh);
+    const wheelPositions: Tuple[] = [
+      [WHEEL_X, WHEEL_Y, AXLE_Z],    // Front left
+      [-WHEEL_X, WHEEL_Y, AXLE_Z],   // Front right
+      [WHEEL_X, WHEEL_Y, -AXLE_Z],   // Back left
+      [-WHEEL_X, WHEEL_Y, -AXLE_Z]   // Back right
+    ];
 
-    // Cab Roof
-    const cabRoofGeo = new BoxGeometry(3.6, 0.1, 1.4);
-    const cabRoof = new Mesh(cabRoofGeo, material);
-    cabRoof.position.set(0, 1.55, -0.1);
-    group.add(cabRoof);
+    const addBox = (size: Tuple, at: Tuple, mat: MeshStandardMaterial, tiltX = 0) => {
+      const mesh = new Mesh(new BoxGeometry(...size), mat);
+      mesh.position.set(...at);
+      mesh.rotation.x = tiltX;
+      group.add(mesh);
+      return mesh;
+    };
 
-    // Cab Left
-    const cabLeftGeo = new BoxGeometry(0.1, 0.9, 1.4);
-    const cabLeft = new Mesh(cabLeftGeo, material);
-    cabLeft.position.set(1.75, 1.05, -0.1);
-    group.add(cabLeft);
+    // Lower body: a narrow chassis down the middle plus full-width skirts
+    // fore, aft and between the axles, which leaves a pocket (wheel well) around each wheel.
+    addBox([BODY_WIDTH - 2 * WHEEL_WIDTH - 0.2, skirtHeight - 0.05, BODY_LENGTH], [0, skirtY + 0.025, 0], material);
+    addBox([BODY_WIDTH, skirtHeight, skirtEndLength], [0, skirtY, HALF_LENGTH - skirtEndLength / 2], material);
+    addBox([BODY_WIDTH, skirtHeight, skirtMiddleLength], [0, skirtY, 0], material);
+    addBox([BODY_WIDTH, skirtHeight, skirtEndLength], [0, skirtY, -HALF_LENGTH + skirtEndLength / 2], material);
 
-    // Cab Right
-    const cabRightGeo = new BoxGeometry(0.1, 0.9, 1.4);
-    const cabRight = new Mesh(cabRightGeo, material);
-    cabRight.position.set(-1.75, 1.05, -0.1);
-    group.add(cabRight);
+    // Hood and lower cab (belt line), one slab from the cab back to the nose
+    addBox([BODY_WIDTH, upperHeight, upperLength], [0, upperY, upperZ], material);
 
-    // Cab Front (Windshield)
-    const windshieldLength = Math.sqrt(1.0 * 1.0 + 0.5 * 0.5); // 1.118
-    const cabFrontGeo = new BoxGeometry(3.4, windshieldLength, 0.1);
-    const cabFront = new Mesh(cabFrontGeo, material);
-    cabFront.position.set(0, 1.35, 1.1);
-    const windshieldAngle = -Math.atan(2); // Tilt back
-    cabFront.rotation.x = windshieldAngle;
-    group.add(cabFront);
+    // Greenhouse: a trapezoidal glass prism whose slanted front face is the windshield
+    const cabShape = new Shape();
+    cabShape.moveTo(CAB_REAR_Z, BELT_Y);
+    cabShape.lineTo(WINDSHIELD_BASE_Z, BELT_Y);
+    cabShape.lineTo(WINDSHIELD_TOP_Z, ROOF_Y);
+    cabShape.lineTo(CAB_REAR_Z, ROOF_Y);
+    cabShape.closePath();
+    const cabGeo = new ExtrudeGeometry(cabShape, { depth: GLASS_WIDTH, bevelEnabled: false });
+    cabGeo.rotateY(-Math.PI / 2); // extrude along X: shape (z, y) -> world (x, y, z)
+    cabGeo.translate(GLASS_WIDTH / 2, 0, 0);
+    const cabMesh = new Mesh(cabGeo, glassMaterial);
+    group.add(cabMesh);
 
-    // Cab Back
-    const cabBackGeo = new BoxGeometry(3.4, 0.9, 0.1);
-    const cabBack = new Mesh(cabBackGeo, material);
-    cabBack.position.set(0, 1.05, -0.8);
-    group.add(cabBack);
+    // Roof and pillars
+    addBox([BODY_WIDTH, ROOF_THICKNESS, greenhouseLength + 0.05], [0, roofY, greenhouseZ - 0.025], material);
+    [HALF_WIDTH - PILLAR / 2, -HALF_WIDTH + PILLAR / 2].forEach((x) => {
+      addBox([PILLAR, WINDSHIELD_LENGTH, PILLAR], [x, WINDSHIELD_Y, WINDSHIELD_Z], material, WINDSHIELD_ANGLE); // A-pillar
+      addBox([PILLAR, greenhouseHeight, PILLAR * 0.75], [x, WINDSHIELD_Y, greenhouseZ], material);              // B-pillar
+      addBox([PILLAR, greenhouseHeight, PILLAR], [x, WINDSHIELD_Y, CAB_REAR_Z + PILLAR / 2 - 0.05], material);  // C-pillar, proud of the rear glass
+    });
 
-    // Bed walls
-    const wallLeftGeo = new BoxGeometry(0.1, 0.6, 2.8);
-    const wallLeftMesh = new Mesh(wallLeftGeo, material);
-    wallLeftMesh.position.set(1.75, 0.8, -2.2);
-    group.add(wallLeftMesh);
+    // Bed: floor, side walls and tailgate
+    addBox([BODY_WIDTH, BED_FLOOR_THICKNESS, BED_LENGTH], [0, BED_FLOOR_Y, BED_Z], material);
+    addBox([BED_WALL_THICKNESS, BED_WALL_HEIGHT, BED_LENGTH], [HALF_WIDTH - BED_WALL_THICKNESS / 2, BED_WALL_Y, BED_Z], material);
+    addBox([BED_WALL_THICKNESS, BED_WALL_HEIGHT, BED_LENGTH], [-HALF_WIDTH + BED_WALL_THICKNESS / 2, BED_WALL_Y, BED_Z], material);
+    addBox([BODY_WIDTH - 2 * BED_WALL_THICKNESS, BED_WALL_HEIGHT, BED_WALL_THICKNESS], [0, BED_WALL_Y, -HALF_LENGTH + BED_WALL_THICKNESS / 2], material);
 
-    const wallRightGeo = new BoxGeometry(0.1, 0.6, 2.8);
-    const wallRightMesh = new Mesh(wallRightGeo, material);
-    wallRightMesh.position.set(-1.75, 0.8, -2.2);
-    group.add(wallRightMesh);
-
-    const wallBackGeo = new BoxGeometry(3.4, 0.6, 0.1);
-    const wallBackMesh = new Mesh(wallBackGeo, material);
-    wallBackMesh.position.set(0, 0.8, -3.55);
-    group.add(wallBackMesh);
+    // Bumpers, grille and lights
+    addBox([BODY_WIDTH + 0.1, 0.24, 0.3], [0, 0.55, HALF_LENGTH], trimMaterial);
+    addBox([BODY_WIDTH + 0.1, 0.24, 0.3], [0, 0.55, -HALF_LENGTH], trimMaterial);
+    addBox([2.2, 0.5, 0.08], [0, upperY, HALF_LENGTH + 0.02], trimMaterial);
+    addBox([0.5, 0.28, 0.08], [1.4, upperY, HALF_LENGTH + 0.02], headlightMaterial);
+    addBox([0.5, 0.28, 0.08], [-1.4, upperY, HALF_LENGTH + 0.02], headlightMaterial);
+    addBox([0.3, 0.4, 0.08], [1.5, BED_WALL_Y, -HALF_LENGTH - 0.02], taillightMaterial);
+    addBox([0.3, 0.4, 0.08], [-1.5, BED_WALL_Y, -HALF_LENGTH - 0.02], taillightMaterial);
 
     // Wheels
-    const wheelGeo = new CylinderGeometry(0.5, 0.5, 0.4, 16);
+    const wheelGeo = new CylinderGeometry(WHEEL_RADIUS, WHEEL_RADIUS, WHEEL_WIDTH, 24);
     wheelGeo.rotateZ(Math.PI / 2);
-
-    const wheelMaterial = new MeshStandardMaterial({ color: 0x111111 }); // Black wheels
-    const spokeMaterial = new MeshStandardMaterial({ color: 0xcccccc }); // Light grey spoke
-    const spokeGeo = new BoxGeometry(0.42, 0.8, 0.1); // Spoke to visualize rotation
-
-    const wheelPositions = [
-      [2.04, 0.3, 2.4],   // Front left
-      [-2.04, 0.3, 2.4],  // Front right
-      [2.04, 0.3, -2.4],  // Back left
-      [-2.04, 0.3, -2.4]  // Back right
-    ];
+    const hubGeo = new CylinderGeometry(WHEEL_RADIUS * 0.5, WHEEL_RADIUS * 0.5, WHEEL_WIDTH + 0.02, 16);
+    hubGeo.rotateZ(Math.PI / 2);
+    const spokeGeo = new BoxGeometry(WHEEL_WIDTH + 0.04, WHEEL_RADIUS * 1.6, 0.12); // Spokes to visualize rotation
 
     wheelPositions.forEach(pos => {
       const wheel = new Mesh(wheelGeo, wheelMaterial);
-      wheel.position.set(pos[0], pos[1], pos[2]);
+      wheel.position.set(...pos);
 
-      // Add a spoke to make rotation visible
-      const spoke = new Mesh(spokeGeo, spokeMaterial);
-      wheel.add(spoke);
+      // Add a hub and crossed spokes to make rotation visible
+      wheel.add(new Mesh(hubGeo, spokeMaterial));
+      wheel.add(new Mesh(spokeGeo, spokeMaterial));
+      const crossSpoke = new Mesh(spokeGeo, spokeMaterial);
+      crossSpoke.rotation.x = Math.PI / 2;
+      wheel.add(crossSpoke);
 
       group.add(wheel);
       this.wheels.push(wheel);
@@ -116,87 +172,38 @@ export class Truck extends Base {
 
     const body = physics.createRigidBody(rigidBodyDesc);
 
-    // Base collider
-    const baseColliderDesc = ColliderDesc
-      .cuboid(1.8, 0.2, 3.6)
-      .setTranslation(0, 0.4, 0)
-      .setMass(8600)
-      .setRestitution(0.2)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(baseColliderDesc, body);
+    const addCuboid = (halfExtents: Tuple, at: Tuple, mass: number, rotation?: Quaternion) => {
+      const desc = ColliderDesc
+        .cuboid(...halfExtents)
+        .setTranslation(...at)
+        .setMass(mass)
+        .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
+      if (rotation) desc.setRotation(rotation);
+      physics.createCollider(desc, body);
+      return desc;
+    };
 
-    // Hood collider
-    const hoodColliderDesc = ColliderDesc
-      .cuboid(1.8, 0.25, 1.0)
-      .setTranslation(0, 0.85, 2.6)
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(hoodColliderDesc, body);
+    // Lower body (including bumpers); most of the mass sits down here
+    addCuboid([HALF_WIDTH, skirtHeight / 2, HALF_LENGTH + 0.15], [0, skirtY, 0], 8600).setRestitution(0.2);
 
-    // Cab colliders (Hollow)
-    const cabRoofColliderDesc = ColliderDesc
-      .cuboid(1.8, 0.05, 0.7)
-      .setTranslation(0, 1.55, -0.1)
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(cabRoofColliderDesc, body);
+    // Hood and lower cab
+    addCuboid([HALF_WIDTH, upperHeight / 2, upperLength / 2], [0, upperY, upperZ], 1200);
 
-    const cabLeftColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.45, 0.7)
-      .setTranslation(1.75, 1.05, -0.1)
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(cabLeftColliderDesc, body);
+    // Greenhouse (roof included) and windshield
+    addCuboid([GLASS_WIDTH / 2, (greenhouseHeight + ROOF_THICKNESS) / 2, greenhouseLength / 2], [0, WINDSHIELD_Y + ROOF_THICKNESS / 2, greenhouseZ], 600);
+    addCuboid([GLASS_WIDTH / 2, WINDSHIELD_LENGTH / 2, 0.05], [0, WINDSHIELD_Y, WINDSHIELD_Z], 200, windshieldRotation);
 
-    const cabRightColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.45, 0.7)
-      .setTranslation(-1.75, 1.05, -0.1)
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(cabRightColliderDesc, body);
-
-    const cabFrontColliderDesc = ColliderDesc
-      .cuboid(1.7, windshieldLength / 2, 0.05)
-      .setTranslation(0, 1.35, 1.1)
-      .setRotation(new Quaternion().setFromEuler(new Euler(windshieldAngle, 0, 0)))
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(cabFrontColliderDesc, body);
-
-    const cabBackColliderDesc = ColliderDesc
-      .cuboid(1.7, 0.45, 0.05)
-      .setTranslation(0, 1.05, -0.8)
-      .setMass(400)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(cabBackColliderDesc, body);
-
-    // Bed walls colliders
-    const wallLeftColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.3, 1.4)
-      .setTranslation(1.75, 0.8, -2.2)
-      .setMass(40)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(wallLeftColliderDesc, body);
-
-    const wallRightColliderDesc = ColliderDesc
-      .cuboid(0.05, 0.3, 1.4)
-      .setTranslation(-1.75, 0.8, -2.2)
-      .setMass(40)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(wallRightColliderDesc, body);
-
-    const wallBackColliderDesc = ColliderDesc
-      .cuboid(1.7, 0.3, 0.05)
-      .setTranslation(0, 0.8, -3.55)
-      .setMass(40)
-      .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
-    physics.createCollider(wallBackColliderDesc, body);
+    // Bed floor and walls (hollow so things can ride in the bed)
+    addCuboid([HALF_WIDTH, BED_FLOOR_THICKNESS / 2, BED_LENGTH / 2], [0, BED_FLOOR_Y, BED_Z], 300);
+    addCuboid([BED_WALL_THICKNESS / 2, BED_WALL_HEIGHT / 2, BED_LENGTH / 2], [HALF_WIDTH - BED_WALL_THICKNESS / 2, BED_WALL_Y, BED_Z], 100);
+    addCuboid([BED_WALL_THICKNESS / 2, BED_WALL_HEIGHT / 2, BED_LENGTH / 2], [-HALF_WIDTH + BED_WALL_THICKNESS / 2, BED_WALL_Y, BED_Z], 100);
+    addCuboid([HALF_WIDTH - BED_WALL_THICKNESS, BED_WALL_HEIGHT / 2, BED_WALL_THICKNESS / 2], [0, BED_WALL_Y, -HALF_LENGTH + BED_WALL_THICKNESS / 2], 100);
 
     // Wheel colliders (Sphere) to make them physically rest on the floor
     wheelPositions.forEach((pos) => {
       const wheelColliderDesc = ColliderDesc
-        .ball(0.5) // Match wheel radius
-        .setTranslation(pos[0], pos[1], pos[2])
+        .ball(WHEEL_RADIUS)
+        .setTranslation(...pos)
         .setMass(100)
         .setFriction(0.5)
         .setCollisionGroups(COLLISION_GROUP_DYNAMIC);
@@ -241,7 +248,7 @@ export class Truck extends Base {
       // Rotate wheels
       const velDotFwd = currentVel.x * forward.x + currentVel.y * forward.y + currentVel.z * forward.z;
       const rollDirection = velDotFwd >= 0 ? 1 : -1;
-      const rotationAngle = (currentSpeed * delta / 0.5) * rollDirection; // Updated for radius 0.5
+      const rotationAngle = (currentSpeed * delta / WHEEL_RADIUS) * rollDirection;
       this.wheels.forEach(wheel => {
         wheel.rotateX(rotationAngle);
       });
