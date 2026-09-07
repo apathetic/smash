@@ -41,6 +41,7 @@ Runs linting against the code.
 ## Documentation
 
 - [Overview](docs/OVERVIEW.md) — the three layers of the world, and what a world entity is
+- [Systems](docs/SYSTEMS.md) — systems, hooks and components: what may depend on what
 - [State](docs/STATE.md) — the three tiers of application state
 - [Dragging](docs/DRAGGING.md) — dragging the ragdoll: approaches tried, and what stuck
 - [Joints](docs/JOINTS.md) — the ragdoll's joint design

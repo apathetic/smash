@@ -57,6 +57,17 @@ the entity — and provides the default `update` and `destroy`.
 
 ## Related documents
 
+- [SYSTEMS.md](./SYSTEMS.md) — systems, hooks and components: what may depend on what
 - [STATE.md](./STATE.md) — the three tiers of application state
 - [DRAGGING.md](./DRAGGING.md) — dragging entities with the cursor
 - [JOINTS.md](./JOINTS.md) — the ragdoll's joint design
+
+
+
+
+
+
+
+
+notes:
+- later in the game, an extra life should be made available in the store

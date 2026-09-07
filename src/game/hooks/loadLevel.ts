@@ -6,8 +6,7 @@ import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
 import { Wall } from "~/game/environment/Wall";
 import { RagDoll } from "~/game/entities/Ragdoll";
-import { Cube } from "~/game/entities/Cube";
-import { Truck } from "~/game/entities/Truck";
+import { ENTITIES } from "~/game/entities";
 
 
 /**
@@ -57,14 +56,8 @@ async function loadLevel(lvl: number) {
   setGameState('entities', reconcile({}));
 
   levelData.entities.forEach((entity) => {
-    switch(entity.type) {
-      case "Cube":
-        add(new Cube(entity));
-        break;
-      case "Truck":
-        add(new Truck(entity));
-        break;
-    }
+    const Entity = ENTITIES[entity.type as keyof typeof ENTITIES];
+    if (Entity) add(new Entity(entity));
   });
 
   levelData.environment.forEach((env) => {

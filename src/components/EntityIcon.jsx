@@ -1,14 +1,6 @@
 import { onMount, onCleanup } from "solid-js";
 import { WebGLRenderer, Scene, PerspectiveCamera, AmbientLight, DirectionalLight, Box3, Vector3 } from "three";
-import { Cube } from "~/game/entities/Cube";
-import { Truck } from "~/game/entities/Truck";
-import { Rocket } from "~/game/entities/Rocket";
-
-const ENTITY_MAP = {
-  Cube,
-  Truck,
-  Rocket
-};
+import { ENTITIES } from "~/game/entities";
 
 export function EntityIcon(props) {
   let canvas;
@@ -29,7 +21,7 @@ export function EntityIcon(props) {
     dirLight.position.set(5, 10, 5);
     scene.add(dirLight);
 
-    const EntityClass = ENTITY_MAP[props.type];
+    const EntityClass = ENTITIES[props.type];
     if (EntityClass) {
       const entity = new EntityClass();
       const fakePhysics = {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Raycaster, Vector3 } from 'three';
-import { createControls } from './controls';
+import { createControls, orbitDistance } from './controls';
 import { registry } from '~/game/store/registry';
 
 type mockFn = ReturnType<typeof vi.fn>;
@@ -263,10 +263,10 @@ describe('Controls', () => {
     });
   });
 
-  describe('pickUp', () => {
-    // An entity pulled from the inventory tray was never under the pointer,
-    // so there is nothing to cast at. It is set down under the pointer and
-    // then held exactly as a grabbed entity would be.
+  describe('holdEntity', () => {
+    // An entity pulled off an inventory tile was never under the pointer,
+    // so there is nothing to cast at. It is set down at the distance the
+    // caller asks for and then held exactly as a grabbed entity would be.
     let entity: WorldEntity;
     let body: { setTranslation: mockFn; collider: mockFn };
 
@@ -277,17 +277,16 @@ describe('Controls', () => {
       entity = { dynamicBodies: [{ body, mesh: { position: { copy: vi.fn() } } }] } as any;
     });
 
-    it('sets the entity down along the pointer ray without casting for it', () => {
-      controls.pickUp(entity, pointerMove());
+    it('sets the entity down at the distance it is given, without casting for it', () => {
+      controls.holdEntity(entity, pointerMove(), 12);
 
-      expect(ray().at).toHaveBeenCalled();
-      expect(ray().intersectPlane).not.toHaveBeenCalled();
+      expect(ray().at).toHaveBeenCalledWith(12, expect.anything());
       expect(body.setTranslation).toHaveBeenCalled();
       expect(mockPhysics.world.castShape).not.toHaveBeenCalled();
     });
 
     it('holds it exactly as a grabbed entity', () => {
-      controls.pickUp(entity, pointerMove());
+      controls.holdEntity(entity, pointerMove(), 12);
 
       expect(mockPhysics.dragger.start).toHaveBeenCalledWith(mockCollider, expect.anything());
       expect(mockPhysics.markEdited).toHaveBeenCalled();
@@ -295,37 +294,23 @@ describe('Controls', () => {
       expect(mockGraphics.renderer.domElement.setPointerCapture).toHaveBeenCalledWith(7);
     });
 
-    it('appears at the orbit focus when that is near enough to look tile-sized', () => {
-      cameraDistance = 1;
-      controls.pickUp(entity, pointerMove());
-
-      expect(ray().at).toHaveBeenCalledWith(1, expect.anything());
-    });
-
-    it('comes nearer than the focus rather than appear smaller than its tile', () => {
-      // A unit cube 1000 units out would be a speck. It is pulled in to
-      // wherever it looks SPAWN_SIZE_PX across instead.
-      cameraDistance = 1000;
-      controls.pickUp(entity, pointerMove());
-
-      const depth = ray().at.mock.calls[0][0];
-      expect(depth).toBeGreaterThan(0);
-      expect(depth).toBeLessThan(cameraDistance);
-    });
-
     it('drags on the camera-facing plane, like any grabbed entity', () => {
-      // A ground plane is ill-conditioned from the tray: a pointer nudged
-      // toward the horizon maps to a point at infinity and the entity
-      // shoots away from the camera.
-      controls.pickUp(entity, pointerMove());
-
+      controls.holdEntity(entity, pointerMove(), 12);
       expect(mockGraphics.camera.getWorldDirection).toHaveBeenCalled();
     });
 
     it('ignores an entity with no body to hold', () => {
-      controls.pickUp({ dynamicBodies: [] } as any, pointerMove());
+      controls.holdEntity({ dynamicBodies: [] } as any, pointerMove(), 12);
 
       expect(body.setTranslation).not.toHaveBeenCalled();
+      expect(mockPhysics.dragger.start).not.toHaveBeenCalled();
+    });
+
+    it('ignores a distance that is not a usable one', () => {
+      [0, -5, NaN, Infinity].forEach((distance) => {
+        controls.holdEntity(entity, pointerMove(), distance);
+      });
+
       expect(mockPhysics.dragger.start).not.toHaveBeenCalled();
     });
   });
@@ -333,9 +318,7 @@ describe('Controls', () => {
   describe('depth drag (alt)', () => {
     // Alt changes one thing: how far away the entity is. It slides along
     // the line from the camera out through it, so it holds its point on
-    // screen and only grows or shrinks. Steering by the pointer's live ray
-    // instead made it track the pointer's new screen position too, so it
-    // climbed or sank on the way in and a drag back landed it elsewhere.
+    // screen and only grows or shrinks.
     //
     // The three mock makes vector maths inert, so the distance the
     // arithmetic starts from is the mocked Vector3.length (10 units). What
@@ -398,31 +381,22 @@ describe('Controls', () => {
     });
   });
 
-  describe('canSpawn', () => {
-    // The tray reads this to hide itself when the camera is too close in.
+  describe('orbit distance', () => {
+    // Published as a bare fact about the camera. What counts as too close
+    // to spawn from the tray is a game rule, and lives with the spawning.
     const orbitChanged = () => {
       const [, listener] = (controls as any).addEventListener.mock.calls.find(([type]: [string]) => type === 'change');
       listener();
     };
 
-    it('allows spawning at a comfortable orbit distance', () => {
-      cameraDistance = 12;
-      orbitChanged();
-      expect(controls.canSpawn()).toBe(true);
+    it('publishes a distance up front, without waiting for the camera to move', () => {
+      expect(orbitDistance()).toBe(5); // the distance the suite builds controls at
     });
 
-    it('refuses while the camera sits close in, so no item is spent', () => {
-      expect(controls.canSpawn()).toBe(false); // the suite grabs at 5
-    });
-
-    it('tracks the orbit as the camera zooms in and back out', () => {
-      cameraDistance = 2;
-      orbitChanged();
-      expect(controls.canSpawn()).toBe(false);
-
+    it('republishes it as the camera moves', () => {
       cameraDistance = 20;
       orbitChanged();
-      expect(controls.canSpawn()).toBe(true);
+      expect(orbitDistance()).toBe(20);
     });
   });
 

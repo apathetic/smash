@@ -2,7 +2,7 @@ import { createSignal } from "solid-js";
 import { useGraphics } from "./scene";
 import { createResizer } from "./resizer";
 import { useTimeline } from "./timeline";
-import { createControls } from "./controls";
+import { useControls } from "./controls";
 import { usePhysics } from "./physics";
 import { createGUI } from "./gui";
 import { registry } from "~/game/store/registry";
@@ -32,7 +32,7 @@ function createWorld(canvas: HTMLCanvasElement) {
   const graphics = useGraphics(canvas);
   const physics  = usePhysics();
   const gui      = createGUI({ graphics, physics });
-  const controls = createControls({ graphics, physics });
+  const controls = useControls({ graphics, physics });
   const timeline = useTimeline({ graphics, physics, controls, gui });
 
   createResizer(graphics);
@@ -88,7 +88,7 @@ function createWorld(canvas: HTMLCanvasElement) {
     physics.restore();
   }
 
-  return { add, remove, clear, destroy, save, restore, controls };
+  return { add, remove, clear, destroy, save, restore };
 };
 
 

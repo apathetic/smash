@@ -1,12 +1,12 @@
 import { createSignal } from 'solid-js';
 import { Ball, QueryFilterFlags } from 'rapier';
-import { Raycaster, Vector2, Vector3, Plane, Box3 } from 'three';
+import { Raycaster, Vector2, Vector3, Plane } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
+import { worldPerPixel } from "~/system/projection";
 import type { Collider } from 'rapier';
-import type { Object3D } from 'three';
 
 type ControlProps = {
   graphics: IGraphics;
@@ -14,48 +14,33 @@ type ControlProps = {
 };
 
 type Controls = OrbitControls & {
-  canSpawn: () => boolean;
-  pickUp: (entity: WorldEntity, event: PointerEvent) => void;
+  holdEntity: (entity: WorldEntity, event: PointerEvent, distance: number) => void;
   destroy: () => void;
 };
 
 /**
+ * How far the camera is currently orbiting from what it is looking at.
+ */
+const [orbitDistance, setOrbitDistance] = createSignal(0);
+
+/**
  * How far off a grab may land, in CSS pixels, and still take hold.
- *
- * A ray has no width; a fingertip covers ~40px. On a phone a ragdoll's
- * grab handles are a ~36px-wide strip, so a pick that has to land dead on
- * one is a coin flip -- and a miss isn't silent, it falls through to
- * OrbitControls and swings the camera, which reads as dragging being
- * broken rather than as having missed.
  */
 const GRAB_TOLERANCE_PX = 20;
 
-/** The grab shape is a sphere, so its orientation never matters. */
+/**
+ * The grab shape is a sphere, so its orientation never matters.
+ */
 const NO_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
 
 /**
- * How big an entity pulled from the inventory tray looks when it appears,
- * in CSS pixels across: about the tile it came off. It is placed as deep
- * as it can be and still look this big, so it never arrives tiny.
- */
-const SPAWN_SIZE_PX = 90;
-
-/**
- * Nearest the camera may orbit and still allow spawning from the tray.
- * Zoomed in closer than this, a spawned entity would arrive larger than
- * its tile with nowhere to go, so the tray hides itself instead.
- */
-const SPAWN_MIN_DISTANCE = 12;
-
-/**
- * How much of its own distance an entity is pushed away from the camera
- * per pixel of pointer travel. A fraction rather than a fixed distance, so
- * the drag covers ground when the entity is far off and grows fine as it
- * comes in -- and so equal and opposite drags cancel exactly.
+ * When option-dragging, how far an entity moves per pixel of pointer travel.
  */
 const DISTANCE_PER_PIXEL = 0.006;
 
-/** How near and how far a depth drag may put an entity, in world units. */
+/**
+ * When option-dragging, the upper and lower bounds for draging an entity.
+ */
 const MIN_DRAG_DISTANCE = 2;
 const MAX_DRAG_DISTANCE = 90;
 
@@ -85,13 +70,11 @@ function createControls({ graphics, physics }: ControlProps) {
   const raycaster  = new Raycaster();
   const mouse      = new Vector2();
   const dragPlane  = new Plane();
-  const spawnPoint = new Vector3();
-  const spawnSize  = new Vector3();
+  const holdPoint  = new Vector3();
   const dragPosition = new Vector3();
   const cameraDir  = new Vector3();
   const normal     = new Vector3();
   const worldPos   = new Vector3();
-  const [orbitDistance, setOrbitDistance] = createSignal(camera.position.distanceTo(controls.target));
   let lastMouseX   = 0;
   let lastMouseY   = 0;
 
@@ -119,43 +102,10 @@ function createControls({ graphics, physics }: ControlProps) {
    * GRAB_TOLERANCE_PX is a *screen*-space budget, so it has to be
    * converted through the camera at the distance it is orbiting -- a
    * fixed world radius would be a generous grab zoomed out and a
-   * pixel-perfect one zoomed in, when what should stay constant is the
-   * size of the fingertip.
+   * pixel-perfect one zoomed in.
    */
   function grabRadius() {
-    return GRAB_TOLERANCE_PX * worldPerPixel(camera.position.distanceTo(controls.target));
-  }
-
-  /**
-   * The width of one CSS pixel, in world units, at a given distance from the camera.
-   */
-  function worldPerPixel(distance: number) {
-    return 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * distance / window.innerHeight;
-  }
-
-  /**
-   * How far along the pointer's ray an entity from the tray appears.
-   *
-   * Along the ray, not on the ground: from the tray at the screen's edge
-   * the ground under the pointer is far off, or beyond the horizon, so the
-   * entity would arrive tiny and distant, or not at all. Instead it appears
-   * at the orbit's focus -- the depth the camera is looking at -- or nearer
-   * if it must be to look SPAWN_SIZE_PX across.
-   */
-  function spawnDistance(mesh: Object3D) {
-    const size = new Box3().setFromObject(mesh).getSize(spawnSize);
-    const extent = Math.max(size.x, size.y, size.z);
-    const focal = camera.position.distanceTo(controls.target);
-    const fitted = extent / (worldPerPixel(1) * SPAWN_SIZE_PX);
-    return Math.min(focal, fitted);
-  }
-
-  /**
-   * Whether the tray may spawn an entity at the current zoom. Reactive, so
-   * the tray can hide itself while it is false.
-   */
-  function canSpawn() {
-    return orbitDistance() >= SPAWN_MIN_DISTANCE;
+    return GRAB_TOLERANCE_PX * worldPerPixel(camera, camera.position.distanceTo(controls.target));
   }
 
   /**
@@ -202,29 +152,27 @@ function createControls({ graphics, physics }: ControlProps) {
   }
 
   /**
-   * Picks up an entity the pointer never hit -- one just pulled from the
-   * inventory tray -- and drags it exactly as a grabbed one.
-   *
-   * The entity appears under the pointer, at the depth `spawnDistance`
-   * picks, and from there it is carried on the same camera-facing plane
-   * as any other drag.
+   * Puts an entity the pointer never hit -- one just pulled off a tile --
+   * down under the pointer and takes hold of it, so the gesture that began
+   * elsewhere carries straight on into dragging it.
    *
    * @param {WorldEntity} entity - Already added to the world. Its first body is the one held
-   * @param {PointerEvent} event - The event the tray handed off; the pointer must still be down
+   * @param {PointerEvent} event - The event that handed off; the pointer must still be down
+   * @param {number} distance - How far down the pointer's ray to place it, in world units
    */
-  function pickUp(entity: WorldEntity, event: PointerEvent) {
+  function holdEntity(entity: WorldEntity, event: PointerEvent, distance: number) {
     const part = entity.dynamicBodies[0];
 
-    if (gameState.mode !== 'edit') return;
     if (!part?.body) return;
+    if (!Number.isFinite(distance) || distance <= 0) return;
 
     raycast(event);
-    raycaster.ray.at(spawnDistance(part.mesh), spawnPoint);
+    raycaster.ray.at(distance, holdPoint);
 
-    part.body.setTranslation(spawnPoint, true);
-    part.mesh.position.copy(spawnPoint);
+    part.body.setTranslation(holdPoint, true);
+    part.mesh.position.copy(holdPoint);
 
-    grab(part.body.collider(0), spawnPoint, event);
+    grab(part.body.collider(0), holdPoint, event);
   }
 
   /**
@@ -237,7 +185,6 @@ function createControls({ graphics, physics }: ControlProps) {
 
     // Only process clicks that originate directly on the canvas -- not menus, buttons, etc
     if (event.target !== canvas) return;
-
 
     raycast(event);
 
@@ -298,20 +245,7 @@ function createControls({ graphics, physics }: ControlProps) {
       dragPlane.setFromNormalAndCoplanarPoint(normal, dragPosition);
     } else if (event.altKey) {
       // Depth: slide the entity along the line it already sits on, from the
-      // camera out through it, changing only how far away it is. Nothing
-      // but that distance moves, so the entity holds the same point on
-      // screen and merely grows or shrinks -- and dragging back the same
-      // distance returns it exactly where it started.
-      //
-      // The pointer's *live* ray is deliberately not used, though it is
-      // what the plain drag follows. Steering by it means the entity
-      // tracks the pointer's new screen position as well as its distance,
-      // so it visibly climbs or sinks on the way in, and a drag back up
-      // lands it somewhere else entirely.
-      //
-      // Sliding along the line cannot change the line, so the reading and
-      // the writing agree step after step; and the scaling is
-      // multiplicative, so equal and opposite drags cancel to exactly 1.
+      // camera out through it, changing only how far away it is.
       const offset = worldPos.subVectors(dragPosition, camera.position);
       const distance = offset.length();
 
@@ -366,12 +300,34 @@ function createControls({ graphics, physics }: ControlProps) {
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("pointercancel", onPointerUp);
   controls.addEventListener("change", onOrbitChange);
+  onOrbitChange(); // publish a starting distance; OrbitControls only fires on movement
 
-  (controls as any).canSpawn = canSpawn;
-  (controls as any).pickUp = pickUp;
+  (controls as any).holdEntity = holdEntity;
   (controls as any).destroy = destroy;
 
   return controls as Controls
 }
 
-export { createControls };
+/**
+ * A reference to a Controls instance.
+ */
+let controlsHandle: Controls;
+
+/**
+ * A hook to provide access to the controls instance.
+ * This is a singleton pattern, so the controls instance is
+ * created once and then returned on subsequent calls.
+ */
+function useControls(props?: ControlProps) {
+  if (props) {
+    controlsHandle = createControls(props);
+  }
+
+  if (!controlsHandle) {
+    throw new Error('[useControls]: was not initialized with `props`');
+  }
+
+  return controlsHandle;
+}
+
+export { createControls, useControls, orbitDistance };

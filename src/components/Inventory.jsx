@@ -1,50 +1,22 @@
 import { For, Show, createMemo } from "solid-js";
 import { animate, stagger, spring } from "animejs";
-import { createCurtain } from "~/system/curtain";
 import { useGameState } from "~/game/store";
-import { useWorld, isWorldReady } from "~/system/world";
-import { Cube } from "~/game/entities/Cube";
+import { spawnEntity, canSpawn } from "~/game/hooks/spawnEntity";
+import { createCurtain } from "./curtain";
 import { EntityIcon } from "./EntityIcon";
 
 export function Inventory() {
-  const [gameState, setGameState] = useGameState();
+  const [gameState] = useGameState();
 
   /**
-   * One tile per type, in the order each was first bought. Keyed by the
-   * type string so a tile survives its count changing: a rebuilt tile
-   * would miss the entrance animation and sit invisible at opacity 0.
+   * One tile per type, in the order each was first bought.
    */
   const types = createMemo(() => [...new Set(gameState.inventory)]);
   const count = (type) => gameState.inventory.filter((item) => item === type).length;
 
   /**
-   * The tray hides itself while the camera is zoomed in too close to
-   * spawn. Hidden by opacity rather than unmounted: a re-mounted tile
-   * would miss its entrance animation and stay invisible.
-   */
-  const canSpawn = () => isWorldReady() && useWorld().controls.canSpawn();
-
-  /**
-   * Pulls one item of `type` out of the tray and into the world, under the
-   * pointer and already held by the dragger. There is no way back: the
-   * item is spent the moment it leaves the tile.
-   */
-  function spawn(type, event) {
-    const index = gameState.inventory.indexOf(type);
-    if (index < 0 || !canSpawn()) return;
-
-    const { add, controls } = useWorld();
-    const entity = new Cube(); // TODO: cubes only, until the tray knows the other types
-
-    setGameState('inventory', (items) => items.filter((_, i) => i !== index));
-    add(entity);
-    controls.pickUp(entity, event);
-  }
-
-  /**
    * A press on a tile becomes a spawn the moment the pointer is dragged off
-   * the tile. Off the tile, not merely moved: spawning is irreversible, and
-   * a fingertip wobbles further than any distance threshold on its own.
+   * the tile. Off the tile, not merely moved: spawning is irreversible.
    * Until then the press is nothing, and a release simply lets go.
    */
   function handlePointerDown(type, event) {
@@ -52,7 +24,7 @@ export function Inventory() {
     const { pointerId } = event;
     const bounds = tile.getBoundingClientRect();
 
-    if (gameState.mode !== 'edit' || !canSpawn()) return;
+    if (!canSpawn()) return;
     if (!event.isPrimary || event.button !== 0) return;
 
     const onMove = (e) => {
@@ -60,7 +32,7 @@ export function Inventory() {
       if (e.clientX >= bounds.left && e.clientX <= bounds.right && e.clientY >= bounds.top && e.clientY <= bounds.bottom) return;
 
       release();
-      spawn(type, e);
+      spawnEntity(type, e);
     };
 
     const release = () => {

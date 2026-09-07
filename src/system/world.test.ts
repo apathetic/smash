@@ -51,7 +51,7 @@ vi.mock('./timeline', () => ({
 }));
 
 vi.mock('./controls', () => ({
-  createControls: vi.fn(() => ({}))
+  useControls: vi.fn(() => ({}))
 }));
 
 vi.mock('./gui', () => ({
