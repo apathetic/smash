@@ -1,10 +1,12 @@
+import { createSignal } from 'solid-js';
 import { Ball, QueryFilterFlags } from 'rapier';
-import { Raycaster, Vector2, Vector3, Plane } from 'three';
+import { Raycaster, Vector2, Vector3, Plane, Box3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGameState } from "~/game/store";
 import { registry } from "~/game/store/registry";
 import { COLLISION_GROUP_RAY_DYNAMIC } from "~/system/constants";
 import type { Collider } from 'rapier';
+import type { Object3D } from 'three';
 
 type ControlProps = {
   graphics: IGraphics;
@@ -12,6 +14,8 @@ type ControlProps = {
 };
 
 type Controls = OrbitControls & {
+  canSpawn: () => boolean;
+  pickUp: (entity: WorldEntity, event: PointerEvent) => void;
   destroy: () => void;
 };
 
@@ -28,6 +32,32 @@ const GRAB_TOLERANCE_PX = 20;
 
 /** The grab shape is a sphere, so its orientation never matters. */
 const NO_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
+
+/**
+ * How big an entity pulled from the inventory tray looks when it appears,
+ * in CSS pixels across: about the tile it came off. It is placed as deep
+ * as it can be and still look this big, so it never arrives tiny.
+ */
+const SPAWN_SIZE_PX = 90;
+
+/**
+ * Nearest the camera may orbit and still allow spawning from the tray.
+ * Zoomed in closer than this, a spawned entity would arrive larger than
+ * its tile with nowhere to go, so the tray hides itself instead.
+ */
+const SPAWN_MIN_DISTANCE = 12;
+
+/**
+ * How much of its own distance an entity is pushed away from the camera
+ * per pixel of pointer travel. A fraction rather than a fixed distance, so
+ * the drag covers ground when the entity is far off and grows fine as it
+ * comes in -- and so equal and opposite drags cancel exactly.
+ */
+const DISTANCE_PER_PIXEL = 0.006;
+
+/** How near and how far a depth drag may put an entity, in world units. */
+const MIN_DRAG_DISTANCE = 2;
+const MAX_DRAG_DISTANCE = 90;
 
 
 /**
@@ -55,11 +85,13 @@ function createControls({ graphics, physics }: ControlProps) {
   const raycaster  = new Raycaster();
   const mouse      = new Vector2();
   const dragPlane  = new Plane();
+  const spawnPoint = new Vector3();
+  const spawnSize  = new Vector3();
   const dragPosition = new Vector3();
   const cameraDir  = new Vector3();
   const normal     = new Vector3();
-  const forwardXZ  = new Vector3();
   const worldPos   = new Vector3();
+  const [orbitDistance, setOrbitDistance] = createSignal(camera.position.distanceTo(controls.target));
   let lastMouseX   = 0;
   let lastMouseY   = 0;
 
@@ -91,9 +123,47 @@ function createControls({ graphics, physics }: ControlProps) {
    * size of the fingertip.
    */
   function grabRadius() {
-    const distance = camera.position.distanceTo(controls.target);
-    const worldPerPixel = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * distance / window.innerHeight;
-    return GRAB_TOLERANCE_PX * worldPerPixel;
+    return GRAB_TOLERANCE_PX * worldPerPixel(camera.position.distanceTo(controls.target));
+  }
+
+  /**
+   * The width of one CSS pixel, in world units, at a given distance from the camera.
+   */
+  function worldPerPixel(distance: number) {
+    return 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * distance / window.innerHeight;
+  }
+
+  /**
+   * How far along the pointer's ray an entity from the tray appears.
+   *
+   * Along the ray, not on the ground: from the tray at the screen's edge
+   * the ground under the pointer is far off, or beyond the horizon, so the
+   * entity would arrive tiny and distant, or not at all. Instead it appears
+   * at the orbit's focus -- the depth the camera is looking at -- or nearer
+   * if it must be to look SPAWN_SIZE_PX across.
+   */
+  function spawnDistance(mesh: Object3D) {
+    const size = new Box3().setFromObject(mesh).getSize(spawnSize);
+    const extent = Math.max(size.x, size.y, size.z);
+    const focal = camera.position.distanceTo(controls.target);
+    const fitted = extent / (worldPerPixel(1) * SPAWN_SIZE_PX);
+    return Math.min(focal, fitted);
+  }
+
+  /**
+   * Whether the tray may spawn an entity at the current zoom. Reactive, so
+   * the tray can hide itself while it is false.
+   */
+  function canSpawn() {
+    return orbitDistance() >= SPAWN_MIN_DISTANCE;
+  }
+
+  /**
+   * Keeps `orbitDistance` current. OrbitControls fires 'change' whenever
+   * the camera moves under it.
+   */
+  function onOrbitChange() {
+    setOrbitDistance(camera.position.distanceTo(controls.target));
   }
 
   /**
@@ -110,6 +180,51 @@ function createControls({ graphics, physics }: ControlProps) {
   function isGrabbable(collider: Collider) {
     const body = collider.parent();
     return !!body && registry.findPart(body.handle)?.draggable !== false;
+  }
+
+  /**
+   * Takes hold of a collider at a world-space point: orbit is handed off to
+   * the dragger, and the pointer is captured so the drag keeps following it
+   * after it leaves the canvas.
+   */
+  function grab(collider: Collider, hitPoint: Vector3, event: PointerEvent) {
+    dragPosition.copy(hitPoint);
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+
+    controls.enabled = false; // disable OrbitControls when we actually hit an entity to drag
+    physics.markEdited(); // Flag that the user modified the level layout. TODO does this belong on `physics`, or in a store?
+    camera.getWorldDirection(normal);
+    dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
+    dragger.start(collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
+
+    canvas.setPointerCapture(event.pointerId);
+  }
+
+  /**
+   * Picks up an entity the pointer never hit -- one just pulled from the
+   * inventory tray -- and drags it exactly as a grabbed one.
+   *
+   * The entity appears under the pointer, at the depth `spawnDistance`
+   * picks, and from there it is carried on the same camera-facing plane
+   * as any other drag.
+   *
+   * @param {WorldEntity} entity - Already added to the world. Its first body is the one held
+   * @param {PointerEvent} event - The event the tray handed off; the pointer must still be down
+   */
+  function pickUp(entity: WorldEntity, event: PointerEvent) {
+    const part = entity.dynamicBodies[0];
+
+    if (gameState.mode !== 'edit') return;
+    if (!part?.body) return;
+
+    raycast(event);
+    raycaster.ray.at(spawnDistance(part.mesh), spawnPoint);
+
+    part.body.setTranslation(spawnPoint, true);
+    part.mesh.position.copy(spawnPoint);
+
+    grab(part.body.collider(0), spawnPoint, event);
   }
 
   /**
@@ -149,22 +264,11 @@ function createControls({ graphics, physics }: ControlProps) {
       // NOT `origin + direction * time_of_impact` -- that is where the
       // ball's *centre* stopped, a full radius clear of the surface and,
       // for a grab that lands off to one side, a full radius to the side
-      // of the body. The grab point is the pivot `dragger.rotate()` turns
-      // the assembly around, so a centre-of-ball point swings the entity
-      // around a column floating beside it instead of spinning it in place.
+      // of the body. That offset becomes the drag's `grabOffset`, so a
+      // centre-of-ball point hangs the entity off the cursor by a radius.
       const hitPoint = new Vector3().copy(hit.witness1);
 
-      dragPosition.copy(hitPoint);
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-
-      controls.enabled = false; // disable OrbitControls when we actually hit an entity to drag
-      physics.markEdited(); // Flag that the user modified the level layout. TODO does this belong on `physics`, or in a store?
-      camera.getWorldDirection(normal);
-      dragPlane.setFromNormalAndCoplanarPoint(normal, hitPoint);
-      dragger.start(hit.collider, { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
-
-      canvas.setPointerCapture(event.pointerId);
+      grab(hit.collider, hitPoint, event);
     }
   }
 
@@ -193,23 +297,33 @@ function createControls({ graphics, physics }: ControlProps) {
       camera.getWorldDirection(normal);
       dragPlane.setFromNormalAndCoplanarPoint(normal, dragPosition);
     } else if (event.altKey) {
-      // Depth modification: slide horizontally along the camera's forward direction
-      const depthSensitivity = 0.03;
-      camera.getWorldDirection(cameraDir);
-      forwardXZ.set(cameraDir.x, 0, cameraDir.z);
+      // Depth: slide the entity along the line it already sits on, from the
+      // camera out through it, changing only how far away it is. Nothing
+      // but that distance moves, so the entity holds the same point on
+      // screen and merely grows or shrinks -- and dragging back the same
+      // distance returns it exactly where it started.
+      //
+      // The pointer's *live* ray is deliberately not used, though it is
+      // what the plain drag follows. Steering by it means the entity
+      // tracks the pointer's new screen position as well as its distance,
+      // so it visibly climbs or sinks on the way in, and a drag back up
+      // lands it somewhere else entirely.
+      //
+      // Sliding along the line cannot change the line, so the reading and
+      // the writing agree step after step; and the scaling is
+      // multiplicative, so equal and opposite drags cancel to exactly 1.
+      const offset = worldPos.subVectors(dragPosition, camera.position);
+      const distance = offset.length();
 
-      if (forwardXZ.lengthSq() < 0.001) {
-        // Fallback if camera is looking straight down (reusing normal as cameraUp)
-        normal.set(0, 1, 0).applyQuaternion(camera.quaternion);
-        forwardXZ.set(normal.x, 0, normal.z).normalize();
-      } else {
-        forwardXZ.normalize();
+      if (distance > 0.001) {
+        const scaled = distance * Math.exp(-deltaY * DISTANCE_PER_PIXEL);
+        const next = Math.min(Math.max(scaled, MIN_DRAG_DISTANCE), MAX_DRAG_DISTANCE);
+
+        dragPosition.copy(camera.position).addScaledVector(offset, next / distance);
+        dragger.move(dragPosition);
+        camera.getWorldDirection(cameraDir);
+        dragPlane.setFromNormalAndCoplanarPoint(cameraDir, dragPosition);
       }
-
-      dragPosition.addScaledVector(forwardXZ, -deltaY * depthSensitivity);
-      dragger.move(dragPosition);
-      camera.getWorldDirection(normal);
-      dragPlane.setFromNormalAndCoplanarPoint(normal, dragPosition);
     } else {
       // Default: Drag along camera-aligned dragPlane
       const res = raycaster.ray.intersectPlane(dragPlane, worldPos);
@@ -242,6 +356,7 @@ function createControls({ graphics, physics }: ControlProps) {
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", onPointerUp);
     window.removeEventListener("pointercancel", onPointerUp);
+    controls.removeEventListener("change", onOrbitChange);
     controls.dispose();
   }
 
@@ -250,7 +365,10 @@ function createControls({ graphics, physics }: ControlProps) {
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("pointercancel", onPointerUp);
+  controls.addEventListener("change", onOrbitChange);
 
+  (controls as any).canSpawn = canSpawn;
+  (controls as any).pickUp = pickUp;
   (controls as any).destroy = destroy;
 
   return controls as Controls

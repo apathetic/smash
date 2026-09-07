@@ -88,7 +88,7 @@ function createWorld(canvas: HTMLCanvasElement) {
     physics.restore();
   }
 
-  return { add, remove, clear, destroy, save, restore };
+  return { add, remove, clear, destroy, save, restore, controls };
 };
 
 

@@ -82,9 +82,12 @@ vi.mock('three', () => ({
     multiplyScalar: vi.fn().mockReturnThis(),
     addScaledVector: vi.fn().mockReturnThis(),
     subVectors: vi.fn().mockReturnThis(),
+    dot: vi.fn().mockReturnValue(10), // a plausible drag depth, in world units
     unproject: vi.fn().mockReturnThis(),
     applyQuaternion: vi.fn().mockReturnThis(),
-    length: vi.fn().mockReturnValue(0),
+    length: vi.fn().mockReturnValue(10), // a plausible drag distance, in world units
+    lengthSq: vi.fn().mockReturnValue(1),
+    normalize: vi.fn().mockReturnThis(),
     setLength: vi.fn().mockReturnThis()
   })),
   Quaternion: vi.fn().mockImplementation((x = 0, y = 0, z = 0, w = 1) => ({
@@ -100,11 +103,16 @@ vi.mock('three', () => ({
     normal: { x: 0, y: 0, z: 1 },
     setFromNormalAndCoplanarPoint: vi.fn().mockReturnThis()
   })),
+  Box3: vi.fn().mockImplementation(() => ({
+    setFromObject: vi.fn().mockReturnThis(),
+    getSize: vi.fn().mockReturnValue({ x: 1, y: 1, z: 1 })
+  })),
   Raycaster: vi.fn().mockImplementation(() => ({
     setFromCamera: vi.fn(),
     ray: {
       origin: { x: 0, y: 0, z: 0 },
       direction: { x: 0, y: 0, z: -1 },
+      at: vi.fn().mockReturnValue({ x: 0, y: 0, z: -1 }),
       intersectPlane: vi.fn().mockReturnValue({ x: 1, y: 2, z: 0 })
     }
   })),
@@ -126,6 +134,8 @@ vi.mock('controls', () => ({
     maxPolarAngle: 0,
     enabled: true,
     target: { x: 0, y: 0, z: 0 },
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     dispose: vi.fn()
   }))
 }));

@@ -77,7 +77,7 @@ const isFiniteVec = (v: { x: number, y: number, z: number }) =>
  */
 export function createDragger(physics: IPhysics) {
   const grabOffset = new Vector3(); // from the grab point to the grabbed body's center
-  const grabWorldPoint = new Vector3();
+  const pivotPoint = new Vector3();
   const dragTarget = new Vector3();
   const dragVelocity = new Vector3();
 
@@ -176,8 +176,17 @@ export function createDragger(physics: IPhysics) {
     dragTarget.set(targetPoint.x, targetPoint.y, targetPoint.z);
   }
 
-  /**
-   * Rotates the dragged assembly around the world Y-axis through the grab point.
+   /**
+   * Rotates the dragged assembly around the world Y-axis through the
+   * grabbed body's centre.
+   *
+   * Through its centre, not the grab point: pivoting on the grab point is
+   * the strictly faithful reading -- the point under the cursor holds
+   * still -- but an entity held near an edge then swings around that edge
+   * like a boom instead of turning on the spot. `grabOffset` is
+   * deliberately left unrotated for the same reason: the drive places the
+   * body at `dragTarget + grabOffset`, so holding it fixed is what keeps
+   * the centre still while the assembly spins beneath the cursor.
    */
   function rotate(deltaAngle: number) {
     if (!grabbedBody || !alive(grabbedBody)) return;
@@ -187,15 +196,14 @@ export function createDragger(physics: IPhysics) {
     const offset = new Vector3();
     const pos = grabbedBody.translation();
 
-    grabWorldPoint.set(pos.x - grabOffset.x, pos.y - grabOffset.y, pos.z - grabOffset.z);
+    pivotPoint.set(pos.x, pos.y, pos.z);
     draggedBodies.forEach((b) => {
       const t = b.translation();
       const r = b.rotation();
-      offset.set(t.x - grabWorldPoint.x, t.y - grabWorldPoint.y, t.z - grabWorldPoint.z).applyQuaternion(deltaRot);
-      b.setTranslation({ x: grabWorldPoint.x + offset.x, y: grabWorldPoint.y + offset.y, z: grabWorldPoint.z + offset.z }, true);
+      offset.set(t.x - pivotPoint.x, t.y - pivotPoint.y, t.z - pivotPoint.z).applyQuaternion(deltaRot);
+      b.setTranslation({ x: pivotPoint.x + offset.x, y: pivotPoint.y + offset.y, z: pivotPoint.z + offset.z }, true);
       b.setRotation(bodyRot.set(r.x, r.y, r.z, r.w).premultiply(deltaRot), true);
     });
-    grabOffset.applyQuaternion(deltaRot);
   }
 
   /**
