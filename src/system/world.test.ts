@@ -12,7 +12,8 @@ vi.mock('./scene', () => ({
     camera: {},
     renderer: {
       dispose: vi.fn()
-    }
+    },
+    destroy: vi.fn()
   }))
 }));
 
@@ -33,10 +34,6 @@ vi.mock('./physics', () => ({
     markEdited: vi.fn(),
     hasEdited: false,
   }))
-}));
-
-vi.mock('./resizer', () => ({
-  createResizer: vi.fn()
 }));
 
 vi.mock('./timeline', () => ({

@@ -7,6 +7,7 @@ interface IGraphics {
   camera: import("three").PerspectiveCamera;
   scene: import("three").Scene;
   renderer: import("three").WebGLRenderer;
+  destroy: () => void;
 }
 
 interface IPhysics {

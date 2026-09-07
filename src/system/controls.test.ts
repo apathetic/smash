@@ -75,6 +75,7 @@ describe('Controls', () => {
       scene: {
         add: vi.fn()
       } as any,
+      destroy: vi.fn(),
       // update: vi.fn()
     };
 

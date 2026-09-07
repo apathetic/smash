@@ -1,6 +1,5 @@
 import { createSignal } from "solid-js";
 import { useGraphics } from "./scene";
-import { createResizer } from "./resizer";
 import { useTimeline } from "./timeline";
 import { useControls } from "./controls";
 import { usePhysics } from "./physics";
@@ -35,8 +34,6 @@ function createWorld(canvas: HTMLCanvasElement) {
   const controls = useControls({ graphics, physics });
   const timeline = useTimeline({ graphics, physics, controls, gui });
 
-  createResizer(graphics);
-
   /**
    * Adds an entity to the world.
    */
@@ -70,8 +67,7 @@ function createWorld(canvas: HTMLCanvasElement) {
     gui.destroy();
     timeline.stop();
     controls.destroy();
-    graphics.renderer.dispose();
-    graphics.scene.clear();
+    graphics.destroy();
   }
 
   /**

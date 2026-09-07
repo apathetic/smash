@@ -75,7 +75,36 @@ function createGraphics(canvas: HTMLCanvasElement) {
 
   scene.add(light, ambientLight);
 
-  return { scene, camera, renderer };
+  /**
+   * Matches the drawing buffer and the camera's aspect to the window.
+   *
+   * The canvas is full-window, an assumption the pointer maths in
+   * `controls` and the pixel maths in `projection` both share.
+   */
+  function onResize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  /**
+   * Releases everything this module built: the resize listener, the
+   * renderer's GPU resources, and the scene graph.
+   */
+  function destroy() {
+    window.removeEventListener('resize', onResize);
+    renderer.dispose();
+    scene.clear();
+  }
+
+  window.addEventListener('resize', onResize);
+  onResize(); // size the canvas before anything reads from it
+
+  return { scene, camera, renderer, destroy };
 }
 
 
