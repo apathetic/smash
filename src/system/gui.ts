@@ -50,7 +50,7 @@ export const createGUI = ({ graphics, physics }: GuiProps) => {
   gui.add(params, "debugRender")
     .listen();
 
-  gui.add(params, "level", { "1-discovery": 0, "2-blocks": 1, "3-alpha": 2 }).name("Select Level").onChange((lvl: number) => {
+  gui.add(params, "level", { "1-discovery": 0, "2-blocks": 1, "3-staircase": 2, "4-alpha": 3 }).name("Select Level").onChange((lvl: number) => {
     loadLevel(lvl);
   }).listen();
 

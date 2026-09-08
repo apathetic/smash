@@ -5,6 +5,7 @@ import { useGameState } from "~/game/store";
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
 import { Wall } from "~/game/environment/Wall";
+import { Staircase } from "~/game/environment/Staircase";
 import { RagDoll } from "~/game/entities/Ragdoll";
 import { ENTITIES } from "~/game/entities";
 
@@ -12,7 +13,7 @@ import { ENTITIES } from "~/game/entities";
 /**
  * Level filenames
  */
-const LEVELS = ['1-discovery', '2-blocks', '3-alpha'];
+const LEVELS = ['1-discovery', '2-blocks', '3-staircase', '4-alpha'];
 
 
 /**
@@ -70,6 +71,9 @@ async function loadLevel(lvl: number) {
         break;
       case "Wall":
         add(new Wall(env));
+        break;
+      case "Staircase":
+        add(new Staircase(env));
         break;
     }
   });

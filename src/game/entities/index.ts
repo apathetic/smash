@@ -4,7 +4,7 @@ import { Rocket } from '~/game/entities/Rocket';
 
 /**
  * All dynamic Entities
- *  - the environment (Floor, Terrain, Wall) is absent b/c is placed by a level.
+ *  - the environment (Floor, Terrain, Wall, Staircase) is absent b/c is placed by a level.
  *  - the ragdoll is also absent, which is loaded once under a fixed id.
  */
 const ENTITIES = {

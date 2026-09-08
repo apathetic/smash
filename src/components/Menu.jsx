@@ -159,7 +159,16 @@ export const Menu = () => {
                 onClick={() => handleLevel(2)}
                 style={{ "pointer-events": isOpen() ? "auto" : "none" }}
               >
-                3. Alpha
+                3. Staircase
+              </button>
+            </li>
+            <li>
+              <button
+                class="text-left text-white bg-transparent border-none uppercase tracking-widest font-bold cursor-pointer pb-2 transition-colors hover:text-fuchsia-400"
+                onClick={() => handleLevel(3)}
+                style={{ "pointer-events": isOpen() ? "auto" : "none" }}
+              >
+                4. Alpha
               </button>
             </li>
           </ul>

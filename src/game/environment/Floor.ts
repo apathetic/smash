@@ -13,7 +13,7 @@ import type { Scene } from 'three';
 export class Floor extends Base {
   setup(scene: Scene, physics: World) {
     // note: same position system, but different system for dimensions (below)
-    const position: [number, number, number] = [0, -1, 0]; // floor is "1" high; this means its top will be at 0
+    const position: [number, number, number] = [0, -0.5, 0]; // floor is "1" high; this means its top will be at 0
 
     const geometry = new BoxGeometry(100, 1, 100); // full extents
     const material = new MeshPhongMaterial({ color: 0x2e7d32 }); // Green grass color

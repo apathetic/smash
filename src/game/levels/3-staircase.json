@@ -1,0 +1,20 @@
+{
+  "targetDamage": 1200,
+  "boosts": {},
+  "entities": [
+    {
+      "type": "Cube",
+      "position": [2, 3.2, 4.5],
+      "meta": { }
+    }
+  ],
+  "environment": [
+    {
+      "type": "Floor"
+    },
+    {
+      "type": "Staircase",
+      "position": [0, 0, 2]
+    }
+  ]
+}
