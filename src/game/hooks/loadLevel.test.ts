@@ -12,6 +12,11 @@ vi.mock('~/system/timeline', () => ({
   useTimeline: () => ({ start: vi.fn(), stop: vi.fn() })
 }));
 
+const resetZoom = vi.fn();
+vi.mock('~/system/controls', () => ({
+  resetZoom: () => resetZoom()
+}));
+
 const mockGameData = {
   entities: [{ type: 'Cube', position: [1, 2, 3], rotation: [0, 0, 0, 1] }],
   environment: [{ type: 'Terrain', position: [0, 0, 0] }]
@@ -33,6 +38,12 @@ describe('loadLevel', () => {
 
     expect(clear).toHaveBeenCalled();
     expect(add).toHaveBeenCalledTimes(3); // Cube, Terrain, + RagDoll (always added)
+  });
+
+  it('should start the level at the standard zoom', async () => {
+    await loadLevel(0);
+
+    expect(resetZoom).toHaveBeenCalled();
   });
 
   it('should handle errors when loading a non-existent level', async () => {

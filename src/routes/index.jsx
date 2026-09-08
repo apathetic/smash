@@ -13,40 +13,86 @@ import { Cube } from "~/game/entities/Cube";
 import { Truck } from "~/game/entities/Truck";
 import { loadLevel } from "~/game/hooks/loadLevel";
 
+/**
+ * How long the camera takes to sweep, and how often a fresh scene created.
+ */
+const SWEEP_MS = 5000;
+
+/**
+ * A number somewhere in [min, max).
+ */
+const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+/**
+ * Heads or tails, evenly.
+ */
+const coinFlip = () => Math.random() > 0.5;
+
+/**
+ * How far along from `from` to `to`, `t` of the way.
+ */
+const lerp = (from, to, t) => from + (to - from) * t;
+
+/**
+ * A spot in the play area, dropped in from between `minY` and `maxY` up.
+ */
+const randomDrop = (minY, maxY) => [
+  randomBetween(-5, 5),
+  randomBetween(minY, maxY),
+  randomBetween(-5, 5)
+];
+
+/**
+ * Fades the whole page, resolving once it has finished.
+ */
+const fadePage = (from, to, duration) => new Promise((resolve) => {
+  animate(document.body, { opacity: [from, to], duration, onComplete: resolve });
+});
+
+
 export default function Index() {
   const [_, setGameState] = useGameState();
   const navigate = useNavigate();
 
+  // Attract mode: a shuffle of random scenes, each watched by a camera
+  // drifting from one end of `sweep` to the other over SWEEP_MS.
   let timer;
   let animFrame;
-  let sceneStartTime = Date.now();
-  let angle = 0;
-  let endAngle = 0;
-  let startRadius = 15;
-  let endRadius = 15;
-  let height = 5;
-  let endHeight = 5;
+  let sweep = {
+    from: { angle: 0, radius: 15, height: 5 },
+    to:   { angle: 0, radius: 15, height: 5 },
+    startedAt: Date.now()
+  };
 
   const animateCamera = () => {
     try {
       const { camera } = useGraphics();
 
       if (camera) {
-        const elapsed = Date.now() - sceneStartTime;
-        const progress = Math.min(elapsed / 5000, 1);
-        const currentAngle = angle + (endAngle - angle) * progress;
-        const currentHeight = height + (endHeight - height) * progress;
-        const currentRadius = startRadius + (endRadius - startRadius) * progress;
+        const progress = Math.min((Date.now() - sweep.startedAt) / SWEEP_MS, 1);
+        const angle    = lerp(sweep.from.angle, sweep.to.angle, progress);
+        const radius   = lerp(sweep.from.radius, sweep.to.radius, progress);
+        const height   = lerp(sweep.from.height, sweep.to.height, progress);
 
         camera.position.set(
-           Math.sin(currentAngle) * currentRadius,
-           currentHeight,
-           Math.cos(currentAngle) * currentRadius
+           Math.sin(angle) * radius,
+           height,
+           Math.cos(angle) * radius
         );
       }
     } catch {}
 
     animFrame = requestAnimationFrame(animateCamera);
+  };
+
+  /**
+   * Stops attract mode: the scene shuffle, and the camera sweep it drives.
+   */
+  const stopAttract = () => {
+    clearInterval(timer);
+    cancelAnimationFrame(animFrame);
+    timer = null;
+    animFrame = null;
   };
 
   const createRandomScene = () => {
@@ -62,17 +108,25 @@ export default function Index() {
       setGameState('totalDamage', 0);
       setGameState('entities', reconcile({}));
 
-      // Setup sweeping trajectory
-      angle = Math.random() * Math.PI * 2;
-      startRadius = 12 + Math.random() * 8;
-      height = 4 + Math.random() * 6;
+      // Setup sweeping trajectory: a radian around to one side, and
+      // slightly up/down and in/out from where it started
+      const from = {
+        angle: randomBetween(0, Math.PI * 2),
+        radius: randomBetween(12, 20),
+        height: randomBetween(4, 10)
+      };
 
-      // End position sweeps 0.5 to 1.0 radians to the side and slightly up/down
-      endAngle = angle + (Math.random() > 0.5 ? 1.0 : -1.0);
-      endHeight = height + (Math.random() * 4 - 2);
-      endRadius = startRadius + (Math.random() > 0.5 ? 4 : -4);
+      const to = {
+        angle: from.angle + (coinFlip() ? 1.0 : -1.0),
+        radius: from.radius + (coinFlip() ? 4 : -4),
+        height: from.height + randomBetween(-2, 2)
+      };
 
-      sceneStartTime = Date.now();
+      sweep = {
+        from,
+        to,
+        startedAt: Date.now()
+      };
 
       // Add Terrain
       add(new Terrain());
@@ -81,20 +135,14 @@ export default function Index() {
       add(new RagDoll());
 
       // Add random cubes
-      const numCubes = Math.floor(Math.random() * 5) + 3; // 3 to 7 cubes
+      const numCubes = Math.floor(randomBetween(3, 8));
       for (let i = 0; i < numCubes; i++) {
-        const x = (Math.random() - 0.5) * 10;
-        const y = Math.random() * 10 + 5; // drop from height 5-15
-        const z = (Math.random() - 0.5) * 10;
-        add(new Cube({ position: [x, y, z] }));
+        add(new Cube({ position: randomDrop(5, 15) }));
       }
 
       // Add a truck sometimes
-      if (Math.random() > 0.5) {
-        const x = (Math.random() - 0.5) * 10;
-        const y = Math.random() * 5 + 3;
-        const z = (Math.random() - 0.5) * 10;
-        add(new Truck({ position: [x, y, z] }));
+      if (coinFlip()) {
+        add(new Truck({ position: randomDrop(3, 8) }));
       }
 
       // Manually enable gravity and dynamics for the demo
@@ -120,40 +168,24 @@ export default function Index() {
   createEffect(() => {
     if (isWorldReady()) {
       createRandomScene();
-      timer = setInterval(createRandomScene, 5000);
+      timer = setInterval(createRandomScene, SWEEP_MS);
     }
   });
 
-  onCleanup(() => {
-    if (timer) clearInterval(timer);
-    if (animFrame) cancelAnimationFrame(animFrame);
-  });
+  onCleanup(stopAttract);
 
   return (
     <div class="fixed inset-0 flex flex-col items-center justify-center z-10 bg-black/10 backdrop-blur-[2px]">
       <button
         onClick={async () => {
-          await new Promise((resolve) => {
-            animate(document.body, {
-              opacity: [1, 0],
-              duration: 400,
-              onComplete: resolve
-            });
-          });
+          stopAttract(); // before the level places the camera
 
+          await fadePage(1, 0, 400);
           await loadLevel(0);
 
           navigate("/set");
 
-          await new Promise((resolve) => {
-            animate(document.body, {
-              opacity: [0, 1],
-              duration: 500,
-              onComplete: resolve
-            });
-          });
-
-
+          await fadePage(0, 1, 500);
         }}
         class="text-white text-3xl drop-shadow-md bg-transparent border-none cursor-pointer font-lilita"
       >

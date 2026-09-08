@@ -19,11 +19,6 @@ type Controls = OrbitControls & {
 };
 
 /**
- * How far the camera is currently orbiting from what it is looking at.
- */
-const [orbitDistance, setOrbitDistance] = createSignal(0);
-
-/**
  * How far off a grab may land, in CSS pixels, and still take hold.
  */
 const GRAB_TOLERANCE_PX = 20;
@@ -43,6 +38,28 @@ const DISTANCE_PER_PIXEL = 0.006;
  */
 const MIN_DRAG_DISTANCE = 2;
 const MAX_DRAG_DISTANCE = 90;
+
+/**
+ * How near and far the camera may zoom ("orbit").
+ * Must be between 0.1 (near clipping plane) and 100 (far clipping).
+ */
+const MIN_ORBIT_DISTANCE = 2;
+const MAX_ORBIT_DISTANCE = 25;
+
+/**
+ * The starting zoom level when a level loads.
+ */
+const START_ORBIT_DISTANCE = MAX_ORBIT_DISTANCE * 0.8;
+
+/**
+ * How far the camera is currently orbiting from what it is looking at.
+ */
+const [orbitDistance, setOrbitDistance] = createSignal(0);
+
+/**
+ * A reference to a Controls instance.
+ */
+let controlsHandle: Controls;
 
 
 /**
@@ -64,22 +81,22 @@ const MAX_DRAG_DISTANCE = 90;
 function createControls({ graphics, physics }: ControlProps) {
   const [gameState] = useGameState();
   const { camera, renderer } = graphics;
-  const canvas     = renderer.domElement;
-  const dragger    = physics.dragger;
-  const controls   = new OrbitControls(camera, canvas);
-  const raycaster  = new Raycaster();
-  const mouse      = new Vector2();
-  const dragPlane  = new Plane();
-  const holdPoint  = new Vector3();
+  const canvas       = renderer.domElement;
+  const dragger      = physics.dragger;
+  const controls     = new OrbitControls(camera, canvas);
+  const raycaster    = new Raycaster();
+  const mouse        = new Vector2();
+  const dragPlane    = new Plane();
+  const holdPoint    = new Vector3();
   const dragPosition = new Vector3();
-  const cameraDir  = new Vector3();
-  const normal     = new Vector3();
-  const worldPos   = new Vector3();
-  let lastMouseX   = 0;
-  let lastMouseY   = 0;
+  const cameraDir    = new Vector3();
+  const normal       = new Vector3();
+  const worldPos     = new Vector3();
+  let lastMouseX     = 0;
+  let lastMouseY     = 0;
 
-  controls.minDistance = 2; // empirically chosen. Cannot be not smaller than 0.1 (camera's near clipping plane)
-  controls.maxDistance = 25; // empirically chosen. Cannot be greater than 100 (far clipping)
+  controls.minDistance = MIN_ORBIT_DISTANCE;
+  controls.maxDistance = MAX_ORBIT_DISTANCE;
   controls.maxPolarAngle = Math.PI / 2 - (10 * Math.PI / 180); // stop 10 degrees above the horizon
   controls.enabled = true;
 
@@ -308,10 +325,18 @@ function createControls({ graphics, physics }: ControlProps) {
   return controls as Controls
 }
 
+
 /**
- * A reference to a Controls instance.
+ * Zooms back out to the starting zoom, maintaining camera direction.
  */
-let controlsHandle: Controls;
+function resetZoom() {
+  const controls = useControls();
+  const { object: camera, target } = controls;
+
+  camera.position.sub(target).setLength(START_ORBIT_DISTANCE).add(target);
+  controls.update(); // fires 'change', which republishes `orbitDistance`
+}
+
 
 /**
  * A hook to provide access to the controls instance.
@@ -330,4 +355,5 @@ function useControls(props?: ControlProps) {
   return controlsHandle;
 }
 
-export { createControls, useControls, orbitDistance };
+
+export { createControls, useControls, resetZoom, orbitDistance };

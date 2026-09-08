@@ -1,6 +1,7 @@
 import { reconcile } from "solid-js/store";
 import { useWorld } from "~/system/world";
 import { useTimeline } from "~/system/timeline";
+import { resetZoom } from "~/system/controls";
 import { useGameState } from "~/game/store";
 import { Floor } from "~/game/environment/Floor";
 import { Terrain } from "~/game/environment/Terrain";
@@ -47,6 +48,7 @@ async function loadLevel(lvl: number) {
 
   stop();
   clear();
+  resetZoom();
 
   setGameState('level', lvl);
   setGameState('impacts', []);
