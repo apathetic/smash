@@ -30,11 +30,19 @@ const params = {
 
 
 /**
- * Debugging widgets
+ * Debugging widgets. Development only.
  * @param {GuiProps}
  * @returns
  */
 export const createGUI = ({ graphics, physics }: GuiProps) => {
+  if (!import.meta.env.DEV) {
+    return {
+      stats: { begin: () => {}, end: () => {} },
+      update: (_delta: number) => {},
+      destroy: () => {}
+    };
+  }
+
   const gui = new GUI({ title: "SMASH" });
   const _rapierVersion = version();
 
